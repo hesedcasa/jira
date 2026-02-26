@@ -112,7 +112,7 @@ export default class IssueGet extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(IssueGet)
-    const config = await readConfig(this.config.configDir, this.log)
+    const config = await readConfig(this.config.configDir, this.log.bind(this))
     if (!config) return
 
     const result = await getIssue(config.auth, args.issueId)
@@ -132,6 +132,10 @@ export default class IssueGet extends Command {
 1. Add method to `JiraApi` or `AgileApi` class in `*-api.ts`
 2. Export wrapper function in corresponding `*-client.ts` with `initJira` pattern
 3. Use `ApiResult` return type for consistent error handling
+
+For methods that return issues, use the shared utilities from `utils.ts`:
+- `defaultFields` — base set of fields always included in issue queries
+- `processIssueRenderedAndFields(issue)` — merges `renderedFields` (HTML→Markdown via `turndown`) into `fields`, strips empty custom fields. Call this on each issue before returning.
 
 ## Configuration
 
