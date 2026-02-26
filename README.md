@@ -26,7 +26,7 @@ $ npm install -g @hesed/jira
 $ jira COMMAND
 running command...
 $ jira (--version)
-@hesed/jira/0.1.0 darwin-arm64 node-v22.14.0
+@hesed/jira/0.1.0 linux-x64 node-v20.20.0
 $ jira --help [COMMAND]
 USAGE
   $ jira COMMAND
@@ -72,12 +72,12 @@ Add Atlassian authentication
 
 ```
 USAGE
-  $ jira jira auth add [--json] [-e <value>] [-t <value>] [-u <value>]
+  $ jira jira auth add -e <value> -t <value> -u <value> [--json]
 
 FLAGS
-  -e, --email=<value>  Account email:
-  -t, --token=<value>  API Token:
-  -u, --url=<value>    Atlassian URL (start with https://):
+  -e, --email=<value>  (required) Account email:
+  -t, --token=<value>  (required) API Token:
+  -u, --url=<value>    (required) Atlassian URL (start with https://):
 
 GLOBAL FLAGS
   --json  Format output as json.
@@ -117,12 +117,12 @@ Update existing authentication
 
 ```
 USAGE
-  $ jira jira auth update [--json] [-e <value>] [-t <value>] [-u <value>]
+  $ jira jira auth update -e <value> -t <value> -u <value> [--json]
 
 FLAGS
-  -e, --email=<value>  Account email
-  -t, --token=<value>  API Token
-  -u, --url=<value>    Atlassian instance URL (start with https://)
+  -e, --email=<value>  (required) Account email
+  -t, --token=<value>  (required) API Token
+  -u, --url=<value>    (required) Atlassian instance URL (start with https://)
 
 GLOBAL FLAGS
   --json  Format output as json.
