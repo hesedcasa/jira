@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.0](https://github.com/hesedcasa/jira/compare/v0.1.0...v0.2.0) (2026-02-27)
+
+
+### 🎉 Features
+
+* initial commit ([8897fcd](https://github.com/hesedcasa/jira/commit/8897fcd106308fda545af023813e3752b8ca0265))
+
+## Changelog
+
 
 All notable changes to this project will be documented in this file.
 
