@@ -59,9 +59,6 @@
     "bin": "jira",
     "dirname": "jira",
     "commands": "./dist/commands",
-    "plugins": [
-      "@oclif/plugin-*"
-    ],
     "topicSeparator": " ",
     "topics": {},
     "update": {
