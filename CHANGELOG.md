@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/hesedcasa/jira/compare/v0.2.0...v0.2.1) (2026-03-04)
+
+
+### 🛠️ Fixes
+
+* remove unused oclif plugin ([bba39ee](https://github.com/hesedcasa/jira/commit/bba39ee1277419f26b5132b3a5a6bf50097ffab8))
+
 ## [0.2.0](https://github.com/hesedcasa/jira/compare/v0.1.0...v0.2.0) (2026-02-27)
 
 
