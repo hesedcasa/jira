@@ -5,7 +5,7 @@ import esmock from 'esmock'
 
 import {createMockConfig} from '../../../helpers/config-mock.js'
 
-describe('issue:update-comment', () => {
+describe('issue:comment-update', () => {
   let IssueUpdateComment: any
   let mockReadConfig: any
   let mockUpdateComment: any
@@ -35,7 +35,7 @@ describe('issue:update-comment', () => {
 
     mockClearClients = () => {}
 
-    IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/update-comment.js', {
+    IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/comment-update.js', {
       '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
@@ -76,7 +76,7 @@ describe('issue:update-comment', () => {
       success: false,
     })
 
-    IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/update-comment.js', {
+    IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/comment-update.js', {
       '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
@@ -99,7 +99,7 @@ describe('issue:update-comment', () => {
   it('exits early when config is not available', async () => {
     mockReadConfig = async () => null
 
-    IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/update-comment.js', {
+    IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/comment-update.js', {
       '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
@@ -127,7 +127,7 @@ describe('issue:update-comment', () => {
       clearClientsCalled = true
     }
 
-    IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/update-comment.js', {
+    IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/comment-update.js', {
       '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,

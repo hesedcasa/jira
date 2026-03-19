@@ -109,6 +109,75 @@ export class JiraApi {
   }
 
   /**
+   * Add a comment with inline media (images/videos) to an issue.
+   */
+  async addCommentWithMedia(issueIdOrKey: string, body: string, filePaths: string[]): Promise<ApiResult> {
+    try {
+      // Convert Markdown body to ADF first so we can locate inline image references.
+      // eslint-disable-next-line unicorn/prefer-string-replace-all
+      const bodyContent = markdownToAdf(body.replace(/\\n/g, '\n'))
+
+      // Collect external mediaSingle nodes keyed by basename (produced by ![alt](path) in markdown).
+      const externalMediaByBasename = new Map<string, Array<Record<string, unknown>>>()
+      this.collectExternalMedia(bodyContent.content, externalMediaByBasename)
+
+      // Split attach paths: those referenced inline vs. those to append at the end.
+      const inlinePaths = filePaths.filter((f) => externalMediaByBasename.has(path.basename(f)))
+      const trailingPaths = filePaths.filter((f) => !externalMediaByBasename.has(path.basename(f)))
+
+      // Upload all files in parallel.
+      const uploadResults = await Promise.all(filePaths.map((filePath) => this.addAttachment(issueIdOrKey, filePath)))
+      const firstFailure = uploadResults.find((r) => !r.success)
+      if (firstFailure) return firstFailure
+
+      // Resolve media UUID for each uploaded file.
+      const uuidByPath = new Map<string, null | string>()
+      await Promise.all(
+        filePaths.map(async (filePath, i) => {
+          const attachments = uploadResults[i].data as Array<{content?: string; thumbnail?: string}>
+          const att = Array.isArray(attachments) ? attachments[0] : undefined
+          uuidByPath.set(filePath, await this.resolveMediaUUID(att?.thumbnail, att?.content))
+        }),
+      )
+
+      // Replace inline external media nodes with resolved file media nodes.
+      for (const filePath of inlinePaths) {
+        const uuid = uuidByPath.get(filePath)
+        if (!uuid) continue
+        for (const attrs of externalMediaByBasename.get(path.basename(filePath)) ?? []) {
+          delete attrs.url
+          delete attrs.alt
+          attrs.collection = ''
+          attrs.id = uuid
+          attrs.type = 'file'
+        }
+      }
+
+      // Append trailing files (not referenced inline) as mediaSingle blocks at the end.
+      for (const filePath of trailingPaths) {
+        const uuid = uuidByPath.get(filePath)
+        if (!uuid) continue
+        bodyContent.content.push({
+          attrs: {layout: 'center'},
+          content: [{attrs: {collection: '', id: uuid, type: 'file'}, type: 'media'}],
+          type: 'mediaSingle',
+        })
+      }
+
+      const client = this.getClient()
+      const response = await client.issueComments.addComment({
+        comment: bodyContent as Parameters<typeof client.issueComments.addComment>[0]['comment'],
+        issueIdOrKey,
+      })
+
+      return {data: response, success: true}
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      return {error: errorMessage, success: false}
+    }
+  }
+
+  /**
    * Assigns an issue to a user
    */
   async assignIssue(accountId: string, issueIdOrKey: string): Promise<ApiResult> {
@@ -699,5 +768,57 @@ export class JiraApi {
         success: false,
       }
     }
+  }
+
+  /**
+   * Walk ADF nodes and collect external mediaSingle nodes
+   * (from ![alt](url) markdown images)
+   */
+  private collectExternalMedia(
+    nodes: Array<Record<string, unknown>>,
+    map: Map<string, Array<Record<string, unknown>>>,
+  ): void {
+    for (const node of nodes) {
+      const content = node.content as Array<Record<string, unknown>> | undefined
+      const media = node.type === 'mediaSingle' ? content?.[0] : undefined
+      const attrs = media?.type === 'media' ? (media.attrs as Record<string, unknown> | undefined) : undefined
+
+      if (attrs?.type === 'external' && typeof attrs.url === 'string') {
+        const base = path.basename(attrs.url)
+        const list = map.get(base) ?? []
+        list.push(attrs)
+        if (!map.has(base)) map.set(base, list)
+        continue
+      }
+
+      if (content) this.collectExternalMedia(content, map)
+    }
+  }
+
+  /**
+   * Resolve Media UUID for an attachment by following
+   * the proxy redirect to api.media.atlassian.com
+   *
+   * Returns null if the UUID cannot be determined
+   * (e.g. non-media files with no thumbnail)
+   */
+  private async resolveMediaUUID(thumbnailUrl?: string, contentUrl?: string): Promise<null | string> {
+    const tryUrl = async (proxyUrl: string): Promise<null | string> => {
+      try {
+        const authString = Buffer.from(`${this.config.email}:${this.config.apiToken}`).toString('base64')
+        // eslint-disable-next-line n/no-unsupported-features/node-builtins -- fetch is available in Node 18+
+        const res = await fetch(proxyUrl, {
+          headers: {Authorization: `Basic ${authString}`},
+          redirect: 'follow',
+        })
+        // Final URL after redirect: https://api.media.atlassian.com/file/{UUID}/...
+        const match = res.url.match(/\/file\/([0-9a-f-]{36})\//i)
+        return match ? match[1] : null
+      } catch {
+        return null
+      }
+    }
+
+    return (thumbnailUrl && (await tryUrl(thumbnailUrl))) || (contentUrl && (await tryUrl(contentUrl))) || null
   }
 }

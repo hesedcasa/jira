@@ -13,6 +13,7 @@ export default class AuthTest extends Command {
   static override flags = {}
 
   public async run(): Promise<ApiResult> {
+    await this.parse(AuthTest)
     const config = await readConfig(this.config.configDir, this.log.bind(this))
     if (!config) {
       return {

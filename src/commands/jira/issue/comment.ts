@@ -2,7 +2,7 @@ import {Args, Command, Flags} from '@oclif/core'
 
 import {readConfig} from '../../../config.js'
 import {formatAsToon} from '../../../format.js'
-import {addComment, clearClients} from '../../../jira/jira-client.js'
+import {addComment, addCommentWithMedia, clearClients} from '../../../jira/jira-client.js'
 
 export default class IssueAddComment extends Command {
   /* eslint-disable perfectionist/sort-objects */
@@ -13,10 +13,18 @@ export default class IssueAddComment extends Command {
   /* eslint-enable perfectionist/sort-objects */
   static override description = 'Add a comment to an issue'
   static override examples = [
-    '<%= config.bin %> <%= command.id %> "\n# Header\n## Sub-header\n- Item 1\n- Item 2\n```bash\nls -a\n```" PROJ-123',
-    '<%= config.bin %> <%= command.id %> "$(cat content.md)" PROJ-123',
+    '<%= config.bin %> <%= command.id %> PROJ-123 "# Header\n- Item 1"',
+    '<%= config.bin %> <%= command.id %> PROJ-123 "$(cat content.md)"',
+    '<%= config.bin %> <%= command.id %> PROJ-123 "Here is the [bug](https://example.com/bug):\n\n![screenshot](./screenshot.png)" --attach ./screenshot.png',
+    '<%= config.bin %> <%= command.id %> PROJ-123 "Step 1:\n\n![step1](./step1.png)\n\nStep 2:\n\n![step2](./step2.png)" --attach ./step1.png --attach ./step2.mp4',
+    '<%= config.bin %> <%= command.id %> PROJ-123 "See also" --attach ./extra.png',
   ]
   static override flags = {
+    attach: Flags.string({
+      description: 'Path to a file to upload and embed inline (can be used multiple times)',
+      multiple: true,
+      required: false,
+    }),
     toon: Flags.boolean({description: 'Format output as toon', required: false}),
   }
 
@@ -27,7 +35,10 @@ export default class IssueAddComment extends Command {
       return
     }
 
-    const result = await addComment(config.auth, args.issueId, args.body)
+    const result =
+      flags.attach && flags.attach.length > 0
+        ? await addCommentWithMedia(config.auth, args.issueId, args.body, flags.attach)
+        : await addComment(config.auth, args.issueId, args.body)
     clearClients()
 
     if (flags.toon) {
