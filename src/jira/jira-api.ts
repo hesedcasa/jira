@@ -113,42 +113,53 @@ export class JiraApi {
    */
   async addCommentWithMedia(issueIdOrKey: string, body: string, filePaths: string[]): Promise<ApiResult> {
     try {
-      // Upload all files in parallel
-      const uploadResults = await Promise.all(filePaths.map((filePath) => this.addAttachment(issueIdOrKey, filePath)))
-      const firstFailure = uploadResults.find((r) => !r.success)
-
-      if (firstFailure) {
-        return firstFailure
-      }
-
-      // Resolve Media UUID each uploaded attachment
-      const mediaUUIDs = await Promise.all(
-        uploadResults.map((r) => {
-          const attachments = r.data as Array<{content?: string; thumbnail?: string}>
-          const att = Array.isArray(attachments) ? attachments[0] : undefined
-          return this.resolveMediaUUID(att?.thumbnail, att?.content)
-        }),
-      )
-
-      // Convert Markdown body to Jira ADF
+      // Convert Markdown body to ADF first so we can locate inline image references.
       // eslint-disable-next-line unicorn/prefer-string-replace-all
       const bodyContent = markdownToAdf(body.replace(/\\n/g, '\n'))
 
-      // Append a mediaSingle node for each attachment whose UUID was resolved.
-      for (const uuid of mediaUUIDs) {
+      // Collect external mediaSingle nodes keyed by basename (produced by ![alt](path) in markdown).
+      const externalMediaByBasename = new Map<string, Array<Record<string, unknown>>>()
+      this.collectExternalMedia(bodyContent.content, externalMediaByBasename)
+
+      // Split attach paths: those referenced inline vs. those to append at the end.
+      const inlinePaths = filePaths.filter((f) => externalMediaByBasename.has(path.basename(f)))
+      const trailingPaths = filePaths.filter((f) => !externalMediaByBasename.has(path.basename(f)))
+
+      // Upload all files in parallel.
+      const uploadResults = await Promise.all(filePaths.map((filePath) => this.addAttachment(issueIdOrKey, filePath)))
+      const firstFailure = uploadResults.find((r) => !r.success)
+      if (firstFailure) return firstFailure
+
+      // Resolve media UUID for each uploaded file.
+      const uuidByPath = new Map<string, null | string>()
+      await Promise.all(
+        filePaths.map(async (filePath, i) => {
+          const attachments = uploadResults[i].data as Array<{content?: string; thumbnail?: string}>
+          const att = Array.isArray(attachments) ? attachments[0] : undefined
+          uuidByPath.set(filePath, await this.resolveMediaUUID(att?.thumbnail, att?.content))
+        }),
+      )
+
+      // Replace inline external media nodes with resolved file media nodes.
+      for (const filePath of inlinePaths) {
+        const uuid = uuidByPath.get(filePath)
+        if (!uuid) continue
+        for (const attrs of externalMediaByBasename.get(path.basename(filePath)) ?? []) {
+          delete attrs.url
+          delete attrs.alt
+          attrs.collection = ''
+          attrs.id = uuid
+          attrs.type = 'file'
+        }
+      }
+
+      // Append trailing files (not referenced inline) as mediaSingle blocks at the end.
+      for (const filePath of trailingPaths) {
+        const uuid = uuidByPath.get(filePath)
         if (!uuid) continue
         bodyContent.content.push({
           attrs: {layout: 'center'},
-          content: [
-            {
-              attrs: {
-                collection: '',
-                id: uuid,
-                type: 'file',
-              },
-              type: 'media',
-            },
-          ],
+          content: [{attrs: {collection: '', id: uuid, type: 'file'}, type: 'media'}],
           type: 'mediaSingle',
         })
       }
@@ -159,10 +170,7 @@ export class JiraApi {
         issueIdOrKey,
       })
 
-      return {
-        data: response,
-        success: true,
-      }
+      return {data: response, success: true}
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       return {error: errorMessage, success: false}
@@ -759,6 +767,31 @@ export class JiraApi {
         error: errorMessage,
         success: false,
       }
+    }
+  }
+
+  /**
+   * Walk ADF nodes and collect external mediaSingle nodes
+   * (from ![alt](url) markdown images)
+   */
+  private collectExternalMedia(
+    nodes: Array<Record<string, unknown>>,
+    map: Map<string, Array<Record<string, unknown>>>,
+  ): void {
+    for (const node of nodes) {
+      const content = node.content as Array<Record<string, unknown>> | undefined
+      const media = node.type === 'mediaSingle' ? content?.[0] : undefined
+      const attrs = media?.type === 'media' ? (media.attrs as Record<string, unknown> | undefined) : undefined
+
+      if (attrs?.type === 'external' && typeof attrs.url === 'string') {
+        const base = path.basename(attrs.url)
+        const list = map.get(base) ?? []
+        list.push(attrs)
+        if (!map.has(base)) map.set(base, list)
+        continue
+      }
+
+      if (content) this.collectExternalMedia(content, map)
     }
   }
 

@@ -15,8 +15,9 @@ export default class IssueAddComment extends Command {
   static override examples = [
     '<%= config.bin %> <%= command.id %> PROJ-123 "# Header\n- Item 1"',
     '<%= config.bin %> <%= command.id %> PROJ-123 "$(cat content.md)"',
-    '<%= config.bin %> <%= command.id %> PROJ-123 "See attached" --attach ./screenshot.png',
-    '<%= config.bin %> <%= command.id %> PROJ-123 "See attached" --attach ./image.png --attach ./video.mp4',
+    '<%= config.bin %> <%= command.id %> PROJ-123 "Here is the [bug](https://example.com/bug):\n\n![screenshot](./screenshot.png)" --attach ./screenshot.png',
+    '<%= config.bin %> <%= command.id %> PROJ-123 "Step 1:\n\n![step1](./step1.png)\n\nStep 2:\n\n![step2](./step2.png)" --attach ./step1.png --attach ./step2.mp4',
+    '<%= config.bin %> <%= command.id %> PROJ-123 "See also" --attach ./extra.png',
   ]
   static override flags = {
     attach: Flags.string({

@@ -57,7 +57,7 @@ USAGE
 * [`jira jira issue transition ISSUEID TRANSITIONID`](#jira-jira-issue-transition-issueid-transitionid)
 * [`jira jira issue transitions ISSUEID`](#jira-jira-issue-transitions-issueid)
 * [`jira jira issue update ISSUEID`](#jira-jira-issue-update-issueid)
-* [`jira jira issue update-comment ISSUEID ID BODY`](#jira-jira-issue-update-comment-issueid-id-body)
+* [`jira jira issue comment-update ISSUEID ID BODY`](#jira-jira-issue-comment-update-issueid-id-body)
 * [`jira jira issue worklog ISSUEID STARTED TIMESPENT [COMMENT]`](#jira-jira-issue-worklog-issueid-started-timespent-comment)
 * [`jira jira issue worklog-delete ISSUEID ID`](#jira-jira-issue-worklog-delete-issueid-id)
 * [`jira jira issue worklogs ISSUEID`](#jira-jira-issue-worklogs-issueid)
@@ -596,13 +596,13 @@ EXAMPLES
 
 _See code: [src/commands/jira/issue/update.ts](https://github.com/hesedcasa/jira/blob/v0.2.1/src/commands/jira/issue/update.ts)_
 
-## `jira jira issue update-comment ISSUEID ID BODY`
+## `jira jira issue comment-update ISSUEID ID BODY`
 
 Update a comment
 
 ```
 USAGE
-  $ jira jira issue update-comment ISSUEID ID BODY [--toon]
+  $ jira jira issue comment-update ISSUEID ID BODY [--toon]
 
 ARGUMENTS
   ISSUEID  Issue ID or issue key
@@ -616,7 +616,7 @@ DESCRIPTION
   Update a comment
 
 EXAMPLES
-  $ jira jira issue update-comment "
+  $ jira jira issue comment-update "
   # Header
   ## Sub-header
   - Item 1
@@ -625,10 +625,10 @@ EXAMPLES
   ls -a
   ```" 123 PROJ-123
 
-  $ jira jira issue update-comment "$(cat content.md)" 123 PROJ-123
+  $ jira jira issue comment-update "$(cat content.md)" 123 PROJ-123
 ```
 
-_See code: [src/commands/jira/issue/update-comment.ts](https://github.com/hesedcasa/jira/blob/v0.2.1/src/commands/jira/issue/update-comment.ts)_
+_See code: [src/commands/jira/issue/comment-update.ts](https://github.com/hesedcasa/jira/blob/v0.2.1/src/commands/jira/issue/comment-update.ts)_
 
 ## `jira jira issue worklog ISSUEID STARTED TIMESPENT [COMMENT]`
 
