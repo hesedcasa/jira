@@ -117,6 +117,23 @@ export async function addComment(config: Config, issueIdOrKey: string, body: str
 }
 
 /**
+ * Add a comment with inline media (images/videos) to an issue
+ * @param config - Jira configuration
+ * @param issueIdOrKey - Issue ID or key
+ * @param body - Comment body (Markdown)
+ * @param filePaths - Local file paths to upload and embed inline
+ */
+export async function addCommentWithMedia(
+  config: Config,
+  issueIdOrKey: string,
+  body: string,
+  filePaths: string[],
+): Promise<ApiResult> {
+  const jira = await initJira(config)
+  return jira.addCommentWithMedia(issueIdOrKey, body, filePaths)
+}
+
+/**
  * Delete a comment from an issue
  * @param config - Jira configuration
  * @param id - Comment ID

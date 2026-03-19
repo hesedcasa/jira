@@ -134,6 +134,7 @@ export default class IssueGet extends Command {
 3. Use `ApiResult` return type for consistent error handling
 
 For methods that return issues, use the shared utilities from `utils.ts`:
+
 - `defaultFields` — base set of fields always included in issue queries
 - `processIssueRenderedAndFields(issue)` — merges `renderedFields` (HTML→Markdown via `turndown`) into `fields`, strips empty custom fields. Call this on each issue before returning.
 

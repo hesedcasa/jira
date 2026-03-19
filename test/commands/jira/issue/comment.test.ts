@@ -9,6 +9,7 @@ describe('issue:add-comment', () => {
   let IssueAddComment: any
   let mockReadConfig: any
   let mockAddComment: any
+  let mockAddCommentWithMedia: any
   let mockClearClients: any
   let jsonOutput: any
   let logOutput: string[]
@@ -30,12 +31,18 @@ describe('issue:add-comment', () => {
       success: true,
     })
 
+    mockAddCommentWithMedia = async () => ({
+      data: {body: 'Test comment with media', id: '10002'},
+      success: true,
+    })
+
     mockClearClients = () => {}
 
     IssueAddComment = await esmock('../../../../src/commands/jira/issue/comment.js', {
       '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         addComment: mockAddComment,
+        addCommentWithMedia: mockAddCommentWithMedia,
         clearClients: mockClearClients,
       },
     })
@@ -77,6 +84,7 @@ describe('issue:add-comment', () => {
       '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         addComment: mockAddComment,
+        addCommentWithMedia: mockAddCommentWithMedia,
         clearClients: mockClearClients,
       },
     })
@@ -100,6 +108,7 @@ describe('issue:add-comment', () => {
       '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         addComment: mockAddComment,
+        addCommentWithMedia: mockAddCommentWithMedia,
         clearClients: mockClearClients,
       },
     })
@@ -128,6 +137,7 @@ describe('issue:add-comment', () => {
       '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         addComment: mockAddComment,
+        addCommentWithMedia: mockAddCommentWithMedia,
         clearClients: mockClearClients,
       },
     })
@@ -138,5 +148,74 @@ describe('issue:add-comment', () => {
     await command.run()
 
     expect(clearClientsCalled).to.be.true
+  })
+
+  it('uses addCommentWithMedia when --attach flag is provided', async () => {
+    let addCommentWithMediaCalled = false
+    let addCommentCalled = false
+    let capturedFilePaths: string[] = []
+
+    mockAddCommentWithMedia = async (_config: any, _issueId: string, _body: string, filePaths: string[]) => {
+      addCommentWithMediaCalled = true
+      capturedFilePaths = filePaths
+      return {data: {body: 'comment with media', id: '10002'}, success: true}
+    }
+
+    mockAddComment = async () => {
+      addCommentCalled = true
+      return {data: {id: '10001'}, success: true}
+    }
+
+    IssueAddComment = await esmock('../../../../src/commands/jira/issue/comment.js', {
+      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '../../../../src/jira/jira-client.js': {
+        addComment: mockAddComment,
+        addCommentWithMedia: mockAddCommentWithMedia,
+        clearClients: mockClearClients,
+      },
+    })
+
+    const command = new IssueAddComment.default(
+      ['TEST-123', 'See attached', '--attach', './screenshot.png'],
+      createMockConfig(),
+    )
+    command.logJson = (output: any) => {
+      jsonOutput = output
+    }
+
+    await command.run()
+
+    expect(addCommentWithMediaCalled).to.be.true
+    expect(addCommentCalled).to.be.false
+    expect(capturedFilePaths).to.deep.equal(['./screenshot.png'])
+    expect(jsonOutput.success).to.be.true
+  })
+
+  it('supports multiple --attach flags', async () => {
+    let capturedFilePaths: string[] = []
+
+    mockAddCommentWithMedia = async (_config: any, _issueId: string, _body: string, filePaths: string[]) => {
+      capturedFilePaths = filePaths
+      return {data: {id: '10002'}, success: true}
+    }
+
+    IssueAddComment = await esmock('../../../../src/commands/jira/issue/comment.js', {
+      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '../../../../src/jira/jira-client.js': {
+        addComment: mockAddComment,
+        addCommentWithMedia: mockAddCommentWithMedia,
+        clearClients: mockClearClients,
+      },
+    })
+
+    const command = new IssueAddComment.default(
+      ['TEST-123', 'See attached', '--attach', './image.png', '--attach', './video.mp4'],
+      createMockConfig(),
+    )
+    command.logJson = () => {}
+
+    await command.run()
+
+    expect(capturedFilePaths).to.deep.equal(['./image.png', './video.mp4'])
   })
 })

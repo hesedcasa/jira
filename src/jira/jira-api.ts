@@ -109,6 +109,67 @@ export class JiraApi {
   }
 
   /**
+   * Add a comment with inline media (images/videos) to an issue.
+   */
+  async addCommentWithMedia(issueIdOrKey: string, body: string, filePaths: string[]): Promise<ApiResult> {
+    try {
+      // Upload all files in parallel
+      const uploadResults = await Promise.all(filePaths.map((filePath) => this.addAttachment(issueIdOrKey, filePath)))
+      const firstFailure = uploadResults.find((r) => !r.success)
+
+      if (firstFailure) {
+        return firstFailure
+      }
+
+      // Resolve Media UUID each uploaded attachment
+      const mediaUUIDs = await Promise.all(
+        uploadResults.map((r) => {
+          const attachments = r.data as Array<{content?: string; thumbnail?: string}>
+          const att = Array.isArray(attachments) ? attachments[0] : undefined
+          return this.resolveMediaUUID(att?.thumbnail, att?.content)
+        }),
+      )
+
+      // Convert Markdown body to Jira ADF
+      // eslint-disable-next-line unicorn/prefer-string-replace-all
+      const bodyContent = markdownToAdf(body.replace(/\\n/g, '\n'))
+
+      // Append a mediaSingle node for each attachment whose UUID was resolved.
+      for (const uuid of mediaUUIDs) {
+        if (!uuid) continue
+        bodyContent.content.push({
+          attrs: {layout: 'center'},
+          content: [
+            {
+              attrs: {
+                collection: '',
+                id: uuid,
+                type: 'file',
+              },
+              type: 'media',
+            },
+          ],
+          type: 'mediaSingle',
+        })
+      }
+
+      const client = this.getClient()
+      const response = await client.issueComments.addComment({
+        comment: bodyContent as Parameters<typeof client.issueComments.addComment>[0]['comment'],
+        issueIdOrKey,
+      })
+
+      return {
+        data: response,
+        success: true,
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      return {error: errorMessage, success: false}
+    }
+  }
+
+  /**
    * Assigns an issue to a user
    */
   async assignIssue(accountId: string, issueIdOrKey: string): Promise<ApiResult> {
@@ -699,5 +760,32 @@ export class JiraApi {
         success: false,
       }
     }
+  }
+
+  /**
+   * Resolve Media UUID for an attachment by following
+   * the proxy redirect to api.media.atlassian.com
+   *
+   * Returns null if the UUID cannot be determined
+   * (e.g. non-media files with no thumbnail)
+   */
+  private async resolveMediaUUID(thumbnailUrl?: string, contentUrl?: string): Promise<null | string> {
+    const tryUrl = async (proxyUrl: string): Promise<null | string> => {
+      try {
+        const authString = Buffer.from(`${this.config.email}:${this.config.apiToken}`).toString('base64')
+        // eslint-disable-next-line n/no-unsupported-features/node-builtins -- fetch is available in Node 18+
+        const res = await fetch(proxyUrl, {
+          headers: {Authorization: `Basic ${authString}`},
+          redirect: 'follow',
+        })
+        // Final URL after redirect: https://api.media.atlassian.com/file/{UUID}/...
+        const match = res.url.match(/\/file\/([0-9a-f-]{36})\//i)
+        return match ? match[1] : null
+      } catch {
+        return null
+      }
+    }
+
+    return (thumbnailUrl && (await tryUrl(thumbnailUrl))) || (contentUrl && (await tryUrl(contentUrl))) || null
   }
 }
