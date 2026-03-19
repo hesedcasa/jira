@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/hesedcasa/jira/compare/v0.2.1...v0.3.0) (2026-03-19)
+
+
+### 🎉 Features
+
+* add --attach flag to issue comment command for inline media ([#16](https://github.com/hesedcasa/jira/issues/16)) ([c6bf86b](https://github.com/hesedcasa/jira/commit/c6bf86bdd01ed54e068794d650dbbcfec54cf2b0))
+
 ## [0.2.1](https://github.com/hesedcasa/jira/compare/v0.2.0...v0.2.1) (2026-03-04)
 
 
