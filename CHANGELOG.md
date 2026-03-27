@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/hesedcasa/jira/compare/v0.3.0...v0.4.0) (2026-03-27)
+
+
+### 🎉 Features
+
+* dynamically detect ADF fields when updating issues ([#27](https://github.com/hesedcasa/jira/issues/27)) ([a8c7dbe](https://github.com/hesedcasa/jira/commit/a8c7dbe30da71f99dd2623e7bbf906e552d581fa))
+
 ## [0.3.0](https://github.com/hesedcasa/jira/compare/v0.2.1...v0.3.0) (2026-03-19)
 
 
