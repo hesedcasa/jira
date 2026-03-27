@@ -698,7 +698,27 @@ export class JiraApi {
   async updateIssue(issueIdOrKey: string, fields: Record<string, unknown>): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      // Parse JSON-encoded strings for individual fields
+
+      // Fetch schemas only for the custom fields being updated to determine which require ADF.
+      // System fields like 'description' are always treated as ADF (fallback set).
+      const customFieldIds = Object.keys(fields).filter((k) => k.startsWith('customfield_'))
+      const adfFieldIds = new Set<string>(['description'])
+      if (customFieldIds.length > 0) {
+        try {
+          const page = await client.issueFields.getFieldsPaginated({id: customFieldIds, type: ['custom']})
+          for (const f of (page.values ?? []).filter(
+            (f) =>
+              f.schema?.type === 'any' ||
+              f.schema?.custom?.includes('textarea') ||
+              f.schema?.custom?.includes('multilinetexteditor'),
+          )) {
+            adfFieldIds.add(f.id)
+          }
+        } catch {
+          // non-fatal — proceed with fallback set
+        }
+      }
+
       const processedFields = Object.fromEntries(
         Object.entries(fields).map(([key, value]) => {
           if (typeof value === 'string') {
@@ -707,20 +727,19 @@ export class JiraApi {
               try {
                 return [key, JSON.parse(trimmed)]
               } catch {
-                // If parsing fails, keep the original string value
-                return [key, value]
+                // fall through to plain string / ADF conversion below
               }
+            }
+
+            if (adfFieldIds.has(key)) {
+              // eslint-disable-next-line unicorn/prefer-string-replace-all
+              return [key, markdownToAdf(value.replace(/\\n/g, '\n'))]
             }
           }
 
           return [key, value]
         }),
       ) as typeof fields
-      // Convert Markdown description to Jira ADF
-      if (typeof fields.description === 'string') {
-        // eslint-disable-next-line unicorn/prefer-string-replace-all
-        processedFields.description = markdownToAdf(fields.description.replace(/\\n/g, '\n'))
-      }
 
       await client.issues.editIssue({
         fields: processedFields as Parameters<typeof client.issues.editIssue>[0]['fields'],
