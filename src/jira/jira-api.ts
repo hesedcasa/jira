@@ -467,6 +467,42 @@ export class JiraApi {
   }
 
   /**
+   * Get development detail for an issue (branches, commits, pull requests)
+   */
+  async getIssueDevelopment(issueId: string, applicationType: string, dataType: string): Promise<ApiResult> {
+    try {
+      const authString = Buffer.from(`${this.config.email}:${this.config.apiToken}`).toString('base64')
+      const url = `${this.config.host}/rest/dev-status/latest/issue/detail?issueId=${issueId}&applicationType=${applicationType}&dataType=${dataType}`
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- fetch is available in Node 18+
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Basic ${authString}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!res.ok) {
+        return {
+          error: `HTTP ${res.status}: ${res.statusText}`,
+          success: false,
+        }
+      }
+
+      const data = await res.json()
+      return {
+        data,
+        success: true,
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      return {
+        error: errorMessage,
+        success: false,
+      }
+    }
+  }
+
+  /**
    * Get worklogs for an issue (ordered by created time)
    */
   async getIssueWorklog(issueIdOrKey: string, maxResults = 10, startAt?: number): Promise<ApiResult> {
