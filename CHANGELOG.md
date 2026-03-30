@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/hesedcasa/jira/compare/v0.4.0...v0.5.0) (2026-03-30)
+
+
+### 🎉 Features
+
+* add issue dev command to fetch development detail from Jira ([#29](https://github.com/hesedcasa/jira/issues/29)) ([865ca12](https://github.com/hesedcasa/jira/commit/865ca1234939c28d61389880b62c5157068961b4))
+
 ## [0.4.0](https://github.com/hesedcasa/jira/compare/v0.3.0...v0.4.0) (2026-03-27)
 
 
