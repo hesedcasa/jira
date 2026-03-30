@@ -226,6 +226,21 @@ export async function doTransition(config: Config, issueIdOrKey: string, transit
 }
 
 /**
+ * Get development detail for an issue (branches, commits, pull requests)
+ * @param config - Jira configuration
+ * @param issueId - Issue ID
+ */
+export async function getIssueDevelopment(
+  config: Config,
+  issueId: string,
+  applicationType: string,
+  dataType: string,
+): Promise<ApiResult> {
+  const jira = await initJira(config)
+  return jira.getIssueDevelopment(issueId, applicationType, dataType)
+}
+
+/**
  * Clear clients (for cleanup)
  */
 export function clearClients(): void {
