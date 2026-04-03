@@ -11,6 +11,7 @@
     "@inquirer/prompts": "^8.2.0",
     "@oclif/core": "^4",
     "@toon-format/toon": "^2.1.0",
+    "eslint-config": "^0.3.0",
     "fs-extra": "^11.3.3",
     "jira.js": "^5.3.0",
     "marklassian": "^1.1.0",
@@ -28,9 +29,9 @@
     "@types/turndown": "^5.0.6",
     "c8": "^11.0.0",
     "chai": "^6",
-    "eslint": "^9",
+    "eslint": "^10.1.0",
     "eslint-config-oclif": "^6",
-    "eslint-config-prettier": "^10",
+    "eslint-config-prettier": "^10.1.8",
     "esmock": "^2.7.3",
     "mocha": "^11",
     "oclif": "^4",
@@ -38,7 +39,7 @@
     "shx": "^0.4.0",
     "ts-node": "^10",
     "ts-prune": "^0.10.3",
-    "typescript": "^5"
+    "typescript": "^6.0.2"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -74,9 +75,9 @@
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "npm run lint",
     "prepack": "oclif manifest && oclif readme",
-    "test": "mocha --forbid-only \"test/**/*.test.ts\"",
-    "test:coverage": "c8 npm test",
-    "test:coverage:report": "c8 --reporter=html --reporter=text npm test",
+    "test": "TS_NODE_PROJECT=test/tsconfig.json mocha --forbid-only \"test/**/*.test.ts\"",
+    "test:coverage": "TS_NODE_PROJECT=test/tsconfig.json c8 npm test",
+    "test:coverage:report": "TS_NODE_PROJECT=test/tsconfig.json c8 --reporter=html --reporter=text npm test",
     "version": "oclif readme && git add README.md",
     "find-deadcode": "ts-prune --ignore '(run|default)'",
     "format": "eslint --cache --fix --quiet . && prettier --write --cache .",
