@@ -13,7 +13,7 @@ export default class AuthAdd extends Command {
   static override enableJsonFlag = true
   static override examples = ['<%= config.bin %> <%= command.id %>']
   static override flags = {
-    email: Flags.string({char: 'e', description: 'Account email:', required: !process.stdout.isTTY}),
+    email: Flags.string({char: 'e', description: 'Account email:', required: false}),
     token: Flags.string({char: 't', description: 'API Token:', required: !process.stdout.isTTY}),
     url: Flags.string({
       char: 'u',
@@ -26,13 +26,13 @@ export default class AuthAdd extends Command {
     const {flags} = await this.parse(AuthAdd)
 
     const apiToken = flags.token ?? (await input({message: 'API Token:', required: true}))
-    const email = flags.email ?? (await input({message: 'Account email:', required: true}))
+    const email = flags.email ?? (await input({message: 'Account email:', required: false}))
     const host = flags.url ?? (await input({message: 'Atlassian instance URL (start with https://):', required: true}))
     const configPath = path.join(this.config.configDir, 'jira-config.json')
     const auth = {
       auth: {
         apiToken,
-        email,
+        ...(email && { email }),
         host,
       },
     }
