@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/hesedcasa/jira/compare/v0.5.0...v0.6.0) (2026-04-22)
+
+
+### 🎉 Features
+
+* support OAuth2 access token authentication alongside basic auth ([#43](https://github.com/hesedcasa/jira/issues/43)) ([3e57b6c](https://github.com/hesedcasa/jira/commit/3e57b6c683245cd7dec0b3d0b3a346b3ee9366cf))
+
 ## [0.5.0](https://github.com/hesedcasa/jira/compare/v0.4.0...v0.5.0) (2026-03-30)
 
 
