@@ -14,7 +14,7 @@ export interface ApiResult {
 
 export interface Config {
   apiToken: string
-  email: string
+  email?: string
   host: string
 }
 
@@ -178,12 +178,18 @@ export class AgileApi {
     }
 
     const options = {
-      authentication: {
-        basic: {
-          apiToken: this.config.apiToken,
-          email: this.config.email,
-        },
-      },
+      authentication: this.config.email
+        ? {
+            basic: {
+              apiToken: this.config.apiToken,
+              email: this.config.email,
+            },
+          }
+        : {
+            oauth2: {
+              accessToken: this.config.apiToken,
+            },
+          },
       host: this.config.host,
     }
 
