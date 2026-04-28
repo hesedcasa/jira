@@ -14,8 +14,8 @@ export default class IssueDownloadAttachment extends Command {
   /* eslint-enable perfectionist/sort-objects */
   static override description = 'Download attachment from an issue'
   static override examples = [
-    '<%= config.bin %> <%= command.id %> 123 PROJ-123',
-    '<%= config.bin %> <%= command.id %> 123 PROJ-123 ~/Desktop/test.jpg',
+    '<%= config.bin %> <%= command.id %> PROJ-123 123',
+    '<%= config.bin %> <%= command.id %> PROJ-123 123 ~/Desktop/test.jpg',
   ]
   static override flags = {
     toon: Flags.boolean({description: 'Format output as toon', required: false}),

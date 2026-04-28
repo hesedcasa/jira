@@ -13,7 +13,7 @@ export default class IssueAttachment extends Command {
   }
   /* eslint-enable perfectionist/sort-objects */
   static override description = 'Add an attachment to a Jira issue'
-  static override examples = ['<%= config.bin %> <%= command.id %> ./document.pdf PROJ-123']
+  static override examples = ['<%= config.bin %> <%= command.id %> PROJ-123 ./document.pdf']
   static override flags = {
     toon: Flags.boolean({description: 'Format output as toon', required: false}),
   }
