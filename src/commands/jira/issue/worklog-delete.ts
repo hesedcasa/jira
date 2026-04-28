@@ -11,7 +11,7 @@ export default class IssueDeleteWorklog extends Command {
   }
   /* eslint-enable perfectionist/sort-objects */
   static override description = 'Delete a worklog'
-  static override examples = ['<%= config.bin %> <%= command.id %> 123 PROJ-123']
+  static override examples = ['<%= config.bin %> <%= command.id %> PROJ-123 123']
   static override flags = {}
 
   public async run(): Promise<void> {

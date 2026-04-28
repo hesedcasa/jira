@@ -12,7 +12,7 @@ export default class UserGet extends Command {
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> 5b10ac8d82e05b22cc7d4ef5',
-    '<%= config.bin %> <%= command.id %> -query john',
+    '<%= config.bin %> <%= command.id %> --query john',
     '<%= config.bin %> <%= command.id %> -q john@email.com',
   ]
   static override flags = {

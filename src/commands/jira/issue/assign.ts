@@ -11,7 +11,7 @@ export default class IssueAssign extends Command {
   }
   /* eslint-enable perfectionist/sort-objects */
   static override description = 'Assigns an issue to a user'
-  static override examples = ['<%= config.bin %> <%= command.id %> 5b10ac8d82e05b22cc7d4ef5 PROJ-123']
+  static override examples = ['<%= config.bin %> <%= command.id %> PROJ-123 5b10ac8d82e05b22cc7d4ef5']
   static override flags = {}
 
   public async run(): Promise<void> {

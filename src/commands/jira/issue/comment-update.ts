@@ -14,8 +14,8 @@ export default class IssueUpdateComment extends Command {
   /* eslint-enable perfectionist/sort-objects */
   static override description = 'Update a comment'
   static override examples = [
-    '<%= config.bin %> <%= command.id %> "\n# Header\n## Sub-header\n- Item 1\n- Item 2\n```bash\nls -a\n```" 123 PROJ-123',
-    '<%= config.bin %> <%= command.id %> "$(cat content.md)" 123 PROJ-123',
+    '<%= config.bin %> <%= command.id %> PROJ-123 123 "\n# Header\n## Sub-header\n- Item 1\n- Item 2\n```bash\nls -a\n```"',
+    '<%= config.bin %> <%= command.id %> PROJ-123 123 "$(cat content.md)"',
   ]
   static override flags = {
     toon: Flags.boolean({description: 'Format output as toon', required: false}),
