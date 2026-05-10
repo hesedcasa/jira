@@ -18,13 +18,14 @@ export default class BoardBacklogs extends Command {
   static override flags = {
     fields: Flags.string({description: 'Extra list of fields to return', required: false}),
     max: Flags.integer({description: 'Maximum number of items per page', required: false}),
+    profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
     start: Flags.integer({description: 'Index of the first item to return', required: false}),
     toon: Flags.boolean({description: 'Format output as toon', required: false}),
   }
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(BoardBacklogs)
-    const config = await readConfig(this.config.configDir, this.log.bind(this))
+    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
     if (!config) {
       return
     }

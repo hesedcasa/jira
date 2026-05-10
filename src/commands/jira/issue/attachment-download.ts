@@ -18,12 +18,13 @@ export default class IssueDownloadAttachment extends Command {
     '<%= config.bin %> <%= command.id %> PROJ-123 123 ~/Desktop/test.jpg',
   ]
   static override flags = {
+    profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
     toon: Flags.boolean({description: 'Format output as toon', required: false}),
   }
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(IssueDownloadAttachment)
-    const config = await readConfig(this.config.configDir, this.log.bind(this))
+    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
     if (!config) {
       return
     }

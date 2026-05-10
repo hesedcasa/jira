@@ -75,6 +75,72 @@ describe('auth:update', () => {
     expect(logMessages).to.include('Authentication updated successfully')
   })
 
+  it('updates a named profile', async () => {
+    let writtenData: any = null
+
+    mockFs = {
+      ...mockFs,
+      async readJSON() {
+        return {
+          profiles: {
+            default: {
+              apiToken: 'default-token',
+              email: 'default@example.com',
+              host: 'https://default.atlassian.net',
+            },
+            work: {
+              apiToken: 'old-work-token',
+              email: 'work@example.com',
+              host: 'https://work.atlassian.net',
+            },
+          },
+        }
+      },
+      async writeJSON(_path: string, data: any) {
+        writtenData = data
+      },
+    }
+
+    AuthUpdate = await esmock('../../../../src/commands/jira/auth/update.js', {
+      '../../../../src/jira/jira-client.js': {
+        clearClients: mockClearClients,
+        testConnection: mockTestConnection,
+      },
+      '@inquirer/prompts': {
+        confirm: mockConfirm,
+      },
+      '@oclif/core/ux': {
+        action: mockAction,
+      },
+      'fs-extra': mockFs,
+    })
+
+    const command = new AuthUpdate.default(
+      [
+        '--email',
+        'new-work@example.com',
+        '--token',
+        'new-work-token',
+        '--url',
+        'https://new-work.atlassian.net',
+        '--profile',
+        'work',
+      ],
+      createMockConfig(),
+    )
+
+    command.log = (msg: string) => {
+      logMessages.push(msg)
+    }
+
+    const result = await command.run()
+
+    expect(result.success).to.be.true
+    expect(writtenData.profiles.work.apiToken).to.equal('new-work-token')
+    expect(writtenData.profiles.default.apiToken).to.equal('default-token')
+    expect(logMessages).to.include("Authentication for profile 'work' updated successfully")
+  })
+
   it('handles authentication failure', async () => {
     mockTestConnection = async () => ({
       error: 'Invalid credentials',

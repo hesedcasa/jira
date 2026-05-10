@@ -25,12 +25,7 @@ describe('issue:dev', () => {
       },
     })
 
-    mockGetIssueDevelopment = async (
-      _config: any,
-      _issueId: string,
-      _applicationType: string,
-      _dataType: string,
-    ) => ({
+    mockGetIssueDevelopment = async (_config: any, _issueId: string, _applicationType: string, _dataType: string) => ({
       data: {
         detail: [
           {

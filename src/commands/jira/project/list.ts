@@ -9,12 +9,13 @@ export default class ProjectList extends Command {
   static override description = 'List all accessible projects'
   static override examples = ['<%= config.bin %> <%= command.id %>']
   static override flags = {
+    profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
     toon: Flags.boolean({description: 'Format output as toon', required: false}),
   }
 
   public async run(): Promise<void> {
     const {flags} = await this.parse(ProjectList)
-    const config = await readConfig(this.config.configDir, this.log.bind(this))
+    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
     if (!config) {
       return
     }

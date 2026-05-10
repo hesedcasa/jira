@@ -1,4 +1,4 @@
-import {Args, Command} from '@oclif/core'
+import {Args, Command, Flags} from '@oclif/core'
 
 import {readConfig} from '../../../config.js'
 import {assignIssue, clearClients} from '../../../jira/jira-client.js'
@@ -12,11 +12,13 @@ export default class IssueAssign extends Command {
   /* eslint-enable perfectionist/sort-objects */
   static override description = 'Assigns an issue to a user'
   static override examples = ['<%= config.bin %> <%= command.id %> PROJ-123 5b10ac8d82e05b22cc7d4ef5']
-  static override flags = {}
+  static override flags = {
+    profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
+  }
 
   public async run(): Promise<void> {
-    const {args} = await this.parse(IssueAssign)
-    const config = await readConfig(this.config.configDir, this.log.bind(this))
+    const {args, flags} = await this.parse(IssueAssign)
+    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
     if (!config) {
       return
     }

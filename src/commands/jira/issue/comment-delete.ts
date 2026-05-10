@@ -1,4 +1,4 @@
-import {Args, Command} from '@oclif/core'
+import {Args, Command, Flags} from '@oclif/core'
 
 import {readConfig} from '../../../config.js'
 import {clearClients, deleteComment} from '../../../jira/jira-client.js'
@@ -12,11 +12,13 @@ export default class IssueDeleteComment extends Command {
   /* eslint-enable perfectionist/sort-objects */
   static override description = 'Delete a comment'
   static override examples = ['<%= config.bin %> <%= command.id %> PROJ-123 123']
-  static override flags = {}
+  static override flags = {
+    profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
+  }
 
   public async run(): Promise<void> {
-    const {args} = await this.parse(IssueDeleteComment)
-    const config = await readConfig(this.config.configDir, this.log.bind(this))
+    const {args, flags} = await this.parse(IssueDeleteComment)
+    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
     if (!config) {
       return
     }

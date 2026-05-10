@@ -14,13 +14,14 @@ export default class UserListAssignable extends Command {
     '<%= config.bin %> <%= command.id %> PROJ-123 -q john',
   ]
   static override flags = {
+    profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
     query: Flags.string({char: 'q', description: 'Query string that matches user attributes', required: false}),
     toon: Flags.boolean({description: 'Format output as toon', required: false}),
   }
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(UserListAssignable)
-    const config = await readConfig(this.config.configDir, this.log.bind(this))
+    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
     if (!config) {
       return
     }
