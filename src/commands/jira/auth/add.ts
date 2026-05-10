@@ -16,12 +16,12 @@ export default class AuthAdd extends Command {
     '<%= config.bin %> <%= command.id %> --profile work',
   ]
   static override flags = {
-    email: Flags.string({char: 'e', description: 'Account email:', required: false}),
-    profile: Flags.string({char: 'p', description: 'Profile name:', required: false}),
-    token: Flags.string({char: 't', description: 'API Token:', required: !process.stdout.isTTY}),
+    email: Flags.string({char: 'e', description: 'Account email', required: false}),
+    profile: Flags.string({char: 'p', description: 'Profile name', required: false}),
+    token: Flags.string({char: 't', description: 'API Token', required: !process.stdout.isTTY}),
     url: Flags.string({
       char: 'u',
-      description: 'Atlassian URL (start with https://):',
+      description: 'Atlassian URL (start with https://)',
       required: !process.stdout.isTTY,
     }),
   }
