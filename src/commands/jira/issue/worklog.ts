@@ -19,12 +19,13 @@ export default class IssueWorklog extends Command {
     '<%= config.bin %> <%= command.id %> PROJ-123 $(date +"%Y-%m-%dT08:30:00.000%z") 6h',
   ]
   static override flags = {
+    profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
     toon: Flags.boolean({description: 'Format output as toon', required: false}),
   }
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(IssueWorklog)
-    const config = await readConfig(this.config.configDir, this.log.bind(this))
+    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
     if (!config) {
       return
     }

@@ -16,11 +16,12 @@ export default class IssueUpdate extends Command {
   ]
   static override flags = {
     fields: Flags.string({description: 'Issue fields to update in key=value format', multiple: true, required: true}),
+    profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
   }
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(IssueUpdate)
-    const config = await readConfig(this.config.configDir, this.log.bind(this))
+    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
     if (!config) {
       return
     }

@@ -15,12 +15,13 @@ export default class IssueAttachment extends Command {
   static override description = 'Add an attachment to a Jira issue'
   static override examples = ['<%= config.bin %> <%= command.id %> PROJ-123 ./document.pdf']
   static override flags = {
+    profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
     toon: Flags.boolean({description: 'Format output as toon', required: false}),
   }
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(IssueAttachment)
-    const config = await readConfig(this.config.configDir, this.log.bind(this))
+    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
     if (!config) {
       return
     }

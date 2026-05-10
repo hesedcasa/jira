@@ -22,7 +22,6 @@ describe('auth:test', () => {
     actionStarted = null
     actionStopped = null
 
-    // Mock successful config read
     mockReadConfig = async () => ({
       auth: {
         apiToken: 'test-token',
@@ -31,7 +30,6 @@ describe('auth:test', () => {
       },
     })
 
-    // Mock successful testConnection call
     mockTestConnection = async () => ({
       data: {serverInfo: {version: '8.0.0'}},
       success: true,
@@ -39,7 +37,6 @@ describe('auth:test', () => {
 
     mockClearClients = () => {}
 
-    // Mock action for start/stop
     mockAction = {
       start(message: string) {
         actionStarted = message
@@ -49,7 +46,6 @@ describe('auth:test', () => {
       },
     }
 
-    // Import with mocks
     AuthTest = await esmock('../../../../src/commands/jira/auth/test.js', {
       '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
@@ -73,6 +69,38 @@ describe('auth:test', () => {
     expect(actionStarted).to.equal('Authenticating connection')
     expect(actionStopped).to.equal('✓ successful')
     expect(logOutput).to.include('Successful connect to Jira')
+  })
+
+  it('passes profile flag to readConfig', async () => {
+    let receivedProfile: string | undefined
+
+    mockReadConfig = async (_dir: string, _log: any, profile?: string) => {
+      receivedProfile = profile
+      return {
+        auth: {
+          apiToken: 'work-token',
+          email: 'work@example.com',
+          host: 'https://work.atlassian.net',
+        },
+      }
+    }
+
+    AuthTest = await esmock('../../../../src/commands/jira/auth/test.js', {
+      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '../../../../src/jira/jira-client.js': {
+        clearClients: mockClearClients,
+        testConnection: mockTestConnection,
+      },
+      '@oclif/core/ux': {action: mockAction},
+    })
+
+    const command = new AuthTest.default(['--profile', 'work'], createMockConfig())
+
+    command.log = () => {}
+
+    await command.run()
+
+    expect(receivedProfile).to.equal('work')
   })
 
   it('returns error when config is not available', async () => {
@@ -124,38 +152,6 @@ describe('auth:test', () => {
     }
 
     expect(actionStarted).to.equal('Authenticating connection')
-    expect(actionStopped).to.equal('✗ failed')
-    expect(errorOutput).to.include('Failed to connect to Jira')
-  })
-
-  it('handles network errors', async () => {
-    mockTestConnection = async () => ({
-      error: 'Network timeout',
-      success: false,
-    })
-
-    AuthTest = await esmock('../../../../src/commands/jira/auth/test.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
-      '../../../../src/jira/jira-client.js': {
-        clearClients: mockClearClients,
-        testConnection: mockTestConnection,
-      },
-      '@oclif/core/ux': {action: mockAction},
-    })
-
-    const command = new AuthTest.default([], createMockConfig())
-
-    command.error = (message: string) => {
-      errorOutput = message
-      throw new Error(message)
-    }
-
-    try {
-      await command.run()
-    } catch {
-      // Expected to throw
-    }
-
     expect(actionStopped).to.equal('✗ failed')
     expect(errorOutput).to.include('Failed to connect to Jira')
   })

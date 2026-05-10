@@ -15,6 +15,7 @@ export default class BoardVersions extends Command {
   ]
   static override flags = {
     max: Flags.integer({description: 'Maximum number of items per page', required: false}),
+    profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
     released: Flags.string({description: 'Filters versions release state (true, false)', required: false}),
     start: Flags.integer({description: 'Index of the first item to return', required: false}),
     toon: Flags.boolean({description: 'Format output as toon', required: false}),
@@ -22,7 +23,7 @@ export default class BoardVersions extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(BoardVersions)
-    const config = await readConfig(this.config.configDir, this.log.bind(this))
+    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
     if (!config) {
       return
     }

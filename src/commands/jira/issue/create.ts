@@ -18,12 +18,13 @@ export default class IssueCreate extends Command {
       required: true,
       summary: 'Issue fields in key=value format',
     }),
+    profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
     toon: Flags.boolean({description: 'Format output as toon', required: false}),
   }
 
   public async run(): Promise<void> {
     const {flags} = await this.parse(IssueCreate)
-    const config = await readConfig(this.config.configDir, this.log.bind(this))
+    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
     if (!config) {
       return
     }
