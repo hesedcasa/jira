@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/hesedcasa/jira/compare/v0.6.1...v0.7.0) (2026-05-10)
+
+
+### 🎉 Features
+
+* add multi-profile authentication support ([#60](https://github.com/hesedcasa/jira/issues/60)) ([030d8f5](https://github.com/hesedcasa/jira/commit/030d8f5227f8db191a284c78195a86bca05b444d))
+
 ## [0.6.1](https://github.com/hesedcasa/jira/compare/v0.6.0...v0.6.1) (2026-04-28)
 
 
