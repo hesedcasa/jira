@@ -51,6 +51,10 @@ export default class AuthUpdate extends Command {
       string,
       Record<string, string>
     >
+    if (!profiles[profileName]) {
+      this.error(`Profile '${profileName}' does not exist. Use 'jira auth add' to create it.`)
+    }
+
     const current = profiles[profileName] ?? {}
 
     const apiToken =
@@ -71,8 +75,10 @@ export default class AuthUpdate extends Command {
       return
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const {auth: _, ...rest} = existing
     const updatedConfig = {
-      ...existing,
+      ...rest,
       profiles: {...profiles, [profileName]: {apiToken, ...(email && {email}), host}},
     }
     await fs.writeJSON(configFilePath, updatedConfig, {mode: 0o600})
