@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/hesedcasa/jira/compare/v0.7.0...v0.7.1) (2026-05-10)
+
+
+### 🛠️ Fixes
+
+* validate profile exists in auth update and consolidate eslint config ([#62](https://github.com/hesedcasa/jira/issues/62)) ([37533ba](https://github.com/hesedcasa/jira/commit/37533bac5d9e4a9754128c53834a6914b6d3251a))
+
 ## [0.7.0](https://github.com/hesedcasa/jira/compare/v0.6.1...v0.7.0) (2026-05-10)
 
 
