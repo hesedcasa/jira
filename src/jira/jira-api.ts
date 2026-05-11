@@ -83,7 +83,7 @@ export class JiraApi {
   /**
    * Add a comment to an issue
    */
-  async addComment(issueIdOrKey: string, body: string): Promise<ApiResult> {
+  async addComment(issueIdOrKey: string, body: string, parentId?: string): Promise<ApiResult> {
     try {
       const client = this.getClient()
       // Convert Markdown body to Jira ADF
@@ -93,6 +93,7 @@ export class JiraApi {
       const response = await client.issueComments.addComment({
         comment: bodyContent as Parameters<typeof client.issueComments.addComment>[0]['comment'],
         issueIdOrKey,
+        ...(parentId && {parentId}),
       })
 
       return {
@@ -111,7 +112,12 @@ export class JiraApi {
   /**
    * Add a comment with inline media (images/videos) to an issue.
    */
-  async addCommentWithMedia(issueIdOrKey: string, body: string, filePaths: string[]): Promise<ApiResult> {
+  async addCommentWithMedia(
+    issueIdOrKey: string,
+    body: string,
+    filePaths: string[],
+    parentId?: string,
+  ): Promise<ApiResult> {
     try {
       // Convert Markdown body to ADF first so we can locate inline image references.
       // eslint-disable-next-line unicorn/prefer-string-replace-all
@@ -168,6 +174,7 @@ export class JiraApi {
       const response = await client.issueComments.addComment({
         comment: bodyContent as Parameters<typeof client.issueComments.addComment>[0]['comment'],
         issueIdOrKey,
+        ...(parentId && {parentId}),
       })
 
       return {data: response, success: true}

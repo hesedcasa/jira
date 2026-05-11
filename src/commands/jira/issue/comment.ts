@@ -25,6 +25,7 @@ export default class IssueAddComment extends Command {
       multiple: true,
       required: false,
     }),
+    parent: Flags.string({description: 'Parent comment ID to reply to', required: false}),
     profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
     toon: Flags.boolean({description: 'Format output as toon', required: false}),
   }
@@ -38,8 +39,8 @@ export default class IssueAddComment extends Command {
 
     const result =
       flags.attach && flags.attach.length > 0
-        ? await addCommentWithMedia(config.auth, args.issueId, args.body, flags.attach)
-        : await addComment(config.auth, args.issueId, args.body)
+        ? await addCommentWithMedia(config.auth, args.issueId, args.body, flags.attach, flags.parent)
+        : await addComment(config.auth, args.issueId, args.body, flags.parent)
     clearClients()
 
     if (flags.toon) {

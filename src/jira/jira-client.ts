@@ -111,9 +111,14 @@ export async function addAttachment(config: Config, issueIdOrKey: string, filePa
  * @param issueIdOrKey - Issue ID or key
  * @param body - Comment body
  */
-export async function addComment(config: Config, issueIdOrKey: string, body: string): Promise<ApiResult> {
+export async function addComment(
+  config: Config,
+  issueIdOrKey: string,
+  body: string,
+  parentId?: string,
+): Promise<ApiResult> {
   const jira = await initJira(config)
-  return jira.addComment(issueIdOrKey, body)
+  return jira.addComment(issueIdOrKey, body, parentId)
 }
 
 /**
@@ -123,14 +128,16 @@ export async function addComment(config: Config, issueIdOrKey: string, body: str
  * @param body - Comment body (Markdown)
  * @param filePaths - Local file paths to upload and embed inline
  */
+// eslint-disable-next-line max-params
 export async function addCommentWithMedia(
   config: Config,
   issueIdOrKey: string,
   body: string,
   filePaths: string[],
+  parentId?: string,
 ): Promise<ApiResult> {
   const jira = await initJira(config)
-  return jira.addCommentWithMedia(issueIdOrKey, body, filePaths)
+  return jira.addCommentWithMedia(issueIdOrKey, body, filePaths, parentId)
 }
 
 /**
