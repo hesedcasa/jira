@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/hesedcasa/jira/compare/v0.7.1...v0.8.0) (2026-05-11)
+
+
+### 🎉 Features
+
+* add --parent flag to comment command for threaded replies ([#64](https://github.com/hesedcasa/jira/issues/64)) ([04df65d](https://github.com/hesedcasa/jira/commit/04df65d38351dc959ffd586947674856fe0cdb92))
+
 ## [0.7.1](https://github.com/hesedcasa/jira/compare/v0.7.0...v0.7.1) (2026-05-10)
 
 
