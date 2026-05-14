@@ -17,10 +17,10 @@ describe('auth:add', () => {
     logMessages = []
 
     mockFs = {
+      async outputJSON() {},
       async readJSON() {
         throw new Error('ENOENT: no such file or directory')
       },
-      async writeJSON() {},
     }
 
     mockTestConnection = async () => ({
@@ -123,6 +123,9 @@ describe('auth:add', () => {
 
     mockFs = {
       ...mockFs,
+      async outputJSON(_path: string, data: any) {
+        writtenData = data
+      },
       async readJSON() {
         return {
           auth: {
@@ -131,9 +134,6 @@ describe('auth:add', () => {
             host: 'https://test.atlassian.net',
           },
         }
-      },
-      async writeJSON(_path: string, data: any) {
-        writtenData = data
       },
     }
 
@@ -175,11 +175,11 @@ describe('auth:add', () => {
 
     mockFs = {
       ...mockFs,
+      async outputJSON() {
+        writeJSONCalled = true
+      },
       async readJSON() {
         throw new Error('ENOENT: no such file or directory')
-      },
-      async writeJSON() {
-        writeJSONCalled = true
       },
     }
 
@@ -220,6 +220,9 @@ describe('auth:add', () => {
 
     mockFs = {
       ...mockFs,
+      async outputJSON(_path: string, data: any) {
+        writtenData = data
+      },
       async readJSON() {
         return {
           profiles: {
@@ -230,9 +233,6 @@ describe('auth:add', () => {
             },
           },
         }
-      },
-      async writeJSON(_path: string, data: any) {
-        writtenData = data
       },
     }
 
