@@ -18,6 +18,7 @@ describe('auth:update', () => {
     logMessages = []
 
     mockFs = {
+      async outputJSON() {},
       async readJSON() {
         return {
           auth: {
@@ -27,7 +28,6 @@ describe('auth:update', () => {
           },
         }
       },
-      async writeJSON() {},
     }
 
     mockTestConnection = async () => ({
@@ -80,6 +80,9 @@ describe('auth:update', () => {
 
     mockFs = {
       ...mockFs,
+      async outputJSON(_path: string, data: any) {
+        writtenData = data
+      },
       async readJSON() {
         return {
           profiles: {
@@ -95,9 +98,6 @@ describe('auth:update', () => {
             },
           },
         }
-      },
-      async writeJSON(_path: string, data: any) {
-        writtenData = data
       },
     }
 
