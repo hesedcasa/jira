@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/hesedcasa/jira/compare/v0.8.0...v0.8.1) (2026-05-14)
+
+
+### 🛠️ Fixes
+
+* use outputJSON instead of writeJSON to create missing directories ([#66](https://github.com/hesedcasa/jira/issues/66)) ([c007561](https://github.com/hesedcasa/jira/commit/c0075619136004ec32a661d6c66a6da69cb87fb6))
+
 ## [0.8.0](https://github.com/hesedcasa/jira/compare/v0.7.1...v0.8.0) (2026-05-11)
 
 
