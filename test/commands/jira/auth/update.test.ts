@@ -218,8 +218,12 @@ describe('auth:update', () => {
     expect(logMessages).to.include('Run auth:add instead')
   })
 
-  it('exits when user cancels confirmation', async () => {
-    mockConfirm = async () => false
+  it('proceeds without confirmation in non-interactive mode', async () => {
+    let confirmCalled = false
+    mockConfirm = async () => {
+      confirmCalled = true
+      return false
+    }
 
     AuthUpdate = await esmock('../../../../src/commands/jira/auth/update.js', {
       '../../../../src/jira/jira-client.js': {
@@ -246,8 +250,9 @@ describe('auth:update', () => {
 
     const result = await command.run()
 
-    expect(result).to.be.undefined
-    expect(logMessages).to.not.include('Authentication updated successfully')
+    expect(confirmCalled).to.be.false
+    expect((result as any)?.success).to.be.true
+    expect(logMessages).to.include('Authentication updated successfully')
   })
 
   it('calls clearClients after execution', async () => {

@@ -7,21 +7,25 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('auth:profile', () => {
   let AuthProfile: any
-  let mockGetDefaultProfile: any
-  let mockSetDefaultProfile: any
+  let mockFs: any
   let logOutput: string[]
 
   beforeEach(async () => {
     logOutput = []
 
-    mockGetDefaultProfile = async () => 'default'
-    mockSetDefaultProfile = async () => {}
+    mockFs = {
+      outputJSON: async () => {},
+      readJSON: async () => ({
+        defaultProfile: 'default',
+        profiles: {
+          default: {apiToken: 'default-token', host: 'https://default.atlassian.net'},
+          work: {apiToken: 'work-token', host: 'https://work.atlassian.net'},
+        },
+      }),
+    }
 
     AuthProfile = await esmock('../../../../src/commands/jira/auth/profile.js', {
-      '../../../../src/config.js': {
-        getDefaultProfile: mockGetDefaultProfile,
-        setDefaultProfile: mockSetDefaultProfile,
-      },
+      'fs-extra': {default: mockFs},
     })
   })
 
@@ -38,52 +42,50 @@ describe('auth:profile', () => {
   })
 
   it('sets default profile with --default flag', async () => {
-    let setProfileCalled = false
-    let setProfileName = ''
+    let writtenData: any = null
 
-    mockSetDefaultProfile = async (_dir: string, profile: string, _log: any) => {
-      setProfileCalled = true
-      setProfileName = profile
+    mockFs = {
+      ...mockFs,
+      outputJSON: async (_path: string, data: any) => {
+        writtenData = data
+      },
     }
 
     AuthProfile = await esmock('../../../../src/commands/jira/auth/profile.js', {
-      '../../../../src/config.js': {
-        getDefaultProfile: mockGetDefaultProfile,
-        setDefaultProfile: mockSetDefaultProfile,
-      },
+      'fs-extra': {default: mockFs},
     })
 
     const command = new AuthProfile.default(['--default', 'work'], createMockConfig())
 
-    command.log = () => {}
+    command.log = (output: string) => {
+      logOutput.push(output)
+    }
 
     await command.run()
 
-    expect(setProfileCalled).to.be.true
-    expect(setProfileName).to.equal('work')
+    expect(writtenData.defaultProfile).to.equal('work')
+    expect(logOutput).to.include("Default profile set to 'work'")
   })
 
-  it('does not call getDefaultProfile when setting default', async () => {
-    let getCalled = false
+  it('does not call outputJSON when showing default profile', async () => {
+    let outputJSONCalled = false
 
-    mockGetDefaultProfile = async () => {
-      getCalled = true
-      return 'default'
+    mockFs = {
+      ...mockFs,
+      outputJSON: async () => {
+        outputJSONCalled = true
+      },
     }
 
     AuthProfile = await esmock('../../../../src/commands/jira/auth/profile.js', {
-      '../../../../src/config.js': {
-        getDefaultProfile: mockGetDefaultProfile,
-        setDefaultProfile: mockSetDefaultProfile,
-      },
+      'fs-extra': {default: mockFs},
     })
 
-    const command = new AuthProfile.default(['--default', 'work'], createMockConfig())
-
+    const command = new AuthProfile.default([], createMockConfig())
     command.log = () => {}
 
     await command.run()
 
-    expect(getCalled).to.be.false
+    expect(outputJSONCalled).to.be.false
   })
 })

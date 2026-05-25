@@ -7,32 +7,30 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('auth:list', () => {
   let AuthList: any
-  let mockReadProfiles: any
-  let mockGetDefaultProfile: any
+  let mockFs: any
   let logOutput: string[]
 
   beforeEach(async () => {
     logOutput = []
 
-    mockReadProfiles = async () => ({
-      default: {
-        apiToken: 'default-token-value',
-        email: 'default@example.com',
-        host: 'https://default.atlassian.net',
-      },
-      work: {
-        apiToken: 'work-token-value',
-        host: 'https://work.atlassian.net',
-      },
-    })
-
-    mockGetDefaultProfile = async () => 'default'
+    mockFs = {
+      readJSON: async () => ({
+        profiles: {
+          default: {
+            apiToken: 'default-token-value',
+            email: 'default@example.com',
+            host: 'https://default.atlassian.net',
+          },
+          work: {
+            apiToken: 'work-token-value',
+            host: 'https://work.atlassian.net',
+          },
+        },
+      }),
+    }
 
     AuthList = await esmock('../../../../src/commands/jira/auth/list.js', {
-      '../../../../src/config.js': {
-        getDefaultProfile: mockGetDefaultProfile,
-        readProfiles: mockReadProfiles,
-      },
+      'fs-extra': {default: mockFs},
     })
   })
 
@@ -66,13 +64,16 @@ describe('auth:list', () => {
   })
 
   it('shows message when no profiles exist', async () => {
-    mockReadProfiles = async () => null
+    mockFs = {
+      readJSON: async () => {
+        const err: any = new Error('ENOENT: no such file or directory')
+        err.code = 'ENOENT'
+        throw err
+      },
+    }
 
     AuthList = await esmock('../../../../src/commands/jira/auth/list.js', {
-      '../../../../src/config.js': {
-        getDefaultProfile: mockGetDefaultProfile,
-        readProfiles: mockReadProfiles,
-      },
+      'fs-extra': {default: mockFs},
     })
 
     const command = new AuthList.default([], createMockConfig())
@@ -88,13 +89,12 @@ describe('auth:list', () => {
   })
 
   it('returns empty profiles when readProfiles returns empty object', async () => {
-    mockReadProfiles = async () => ({})
+    mockFs = {
+      readJSON: async () => ({}),
+    }
 
     AuthList = await esmock('../../../../src/commands/jira/auth/list.js', {
-      '../../../../src/config.js': {
-        getDefaultProfile: mockGetDefaultProfile,
-        readProfiles: mockReadProfiles,
-      },
+      'fs-extra': {default: mockFs},
     })
 
     const command = new AuthList.default([], createMockConfig())

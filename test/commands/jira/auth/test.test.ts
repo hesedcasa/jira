@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('auth:test', () => {
   let AuthTest: any
-  let mockReadConfig: any
+  let mockFs: any
   let mockTestConnection: any
   let mockClearClients: any
   let mockAction: any
@@ -22,13 +22,17 @@ describe('auth:test', () => {
     actionStarted = null
     actionStopped = null
 
-    mockReadConfig = async () => ({
-      auth: {
-        apiToken: 'test-token',
-        email: 'test@example.com',
-        host: 'https://test.atlassian.net',
-      },
-    })
+    mockFs = {
+      readJSON: async () => ({
+        profiles: {
+          default: {
+            apiToken: 'test-token',
+            email: 'test@example.com',
+            host: 'https://test.atlassian.net',
+          },
+        },
+      }),
+    }
 
     mockTestConnection = async () => ({
       data: {serverInfo: {version: '8.0.0'}},
@@ -47,12 +51,12 @@ describe('auth:test', () => {
     }
 
     AuthTest = await esmock('../../../../src/commands/jira/auth/test.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         testConnection: mockTestConnection,
       },
       '@oclif/core/ux': {action: mockAction},
+      'fs-extra': {default: mockFs},
     })
   })
 
@@ -68,59 +72,75 @@ describe('auth:test', () => {
     expect(result.success).to.be.true
     expect(actionStarted).to.equal('Authenticating connection')
     expect(actionStopped).to.equal('✓ successful')
-    expect(logOutput).to.include('Successful connect to Jira')
+    expect(logOutput).to.include('Successful connection to Jira')
   })
 
-  it('passes profile flag to readConfig', async () => {
-    let receivedProfile: string | undefined
+  it('uses correct profile when --profile flag is given', async () => {
+    let receivedAuth: any
 
-    mockReadConfig = async (_dir: string, _log: any, profile?: string) => {
-      receivedProfile = profile
-      return {
-        auth: {
-          apiToken: 'work-token',
-          email: 'work@example.com',
-          host: 'https://work.atlassian.net',
+    mockFs = {
+      readJSON: async () => ({
+        profiles: {
+          default: {apiToken: 'default-token', host: 'https://default.atlassian.net'},
+          work: {apiToken: 'work-token', email: 'work@example.com', host: 'https://work.atlassian.net'},
         },
-      }
+      }),
+    }
+
+    mockTestConnection = async (auth: any) => {
+      receivedAuth = auth
+      return {data: {}, success: true}
     }
 
     AuthTest = await esmock('../../../../src/commands/jira/auth/test.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         testConnection: mockTestConnection,
       },
       '@oclif/core/ux': {action: mockAction},
+      'fs-extra': {default: mockFs},
     })
 
     const command = new AuthTest.default(['--profile', 'work'], createMockConfig())
-
     command.log = () => {}
 
     await command.run()
 
-    expect(receivedProfile).to.equal('work')
+    expect(receivedAuth.apiToken).to.equal('work-token')
   })
 
-  it('returns error when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('throws error when config is not available', async () => {
+    mockFs = {
+      readJSON: async () => {
+        const err: any = new Error('ENOENT: no such file or directory')
+        err.code = 'ENOENT'
+        throw err
+      },
+    }
 
     AuthTest = await esmock('../../../../src/commands/jira/auth/test.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         testConnection: mockTestConnection,
       },
       '@oclif/core/ux': {action: mockAction},
+      'fs-extra': {default: mockFs},
     })
 
     const command = new AuthTest.default([], createMockConfig())
 
-    const result = await command.run()
+    command.error = (message: string) => {
+      errorOutput = message
+      throw new Error(message)
+    }
 
-    expect(result.success).to.be.false
-    expect(result.error).to.equal('Missing authentication config')
+    try {
+      await command.run()
+    } catch {
+      // Expected to throw
+    }
+
+    expect(errorOutput).to.include('Missing authentication config')
   })
 
   it('handles connection failure gracefully', async () => {
@@ -130,12 +150,12 @@ describe('auth:test', () => {
     })
 
     AuthTest = await esmock('../../../../src/commands/jira/auth/test.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         testConnection: mockTestConnection,
       },
       '@oclif/core/ux': {action: mockAction},
+      'fs-extra': {default: mockFs},
     })
 
     const command = new AuthTest.default([], createMockConfig())
@@ -164,12 +184,12 @@ describe('auth:test', () => {
     }
 
     AuthTest = await esmock('../../../../src/commands/jira/auth/test.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         testConnection: mockTestConnection,
       },
       '@oclif/core/ux': {action: mockAction},
+      'fs-extra': {default: mockFs},
     })
 
     const command = new AuthTest.default([], createMockConfig())
@@ -181,7 +201,14 @@ describe('auth:test', () => {
   })
 
   it('does not call testConnection when config is missing', async () => {
-    mockReadConfig = async () => null
+    mockFs = {
+      readJSON: async () => {
+        const err: any = new Error('ENOENT: no such file or directory')
+        err.code = 'ENOENT'
+        throw err
+      },
+    }
+
     let testConnectionCalled = false
 
     mockTestConnection = async () => {
@@ -190,17 +217,24 @@ describe('auth:test', () => {
     }
 
     AuthTest = await esmock('../../../../src/commands/jira/auth/test.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         testConnection: mockTestConnection,
       },
       '@oclif/core/ux': {action: mockAction},
+      'fs-extra': {default: mockFs},
     })
 
     const command = new AuthTest.default([], createMockConfig())
+    command.error = () => {
+      throw new Error('missing config')
+    }
 
-    await command.run()
+    try {
+      await command.run()
+    } catch {
+      // Expected
+    }
 
     expect(testConnectionCalled).to.be.false
   })
