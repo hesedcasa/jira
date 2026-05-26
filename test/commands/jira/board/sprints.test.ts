@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('board:sprints', () => {
   let BoardSprints: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockGetAllSprints: any
   let mockClearClients: any
   let jsonOutput: any
@@ -17,12 +17,12 @@ describe('board:sprints', () => {
     jsonOutput = null
     logOutput = []
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockGetAllSprints = async () => ({
@@ -42,7 +42,7 @@ describe('board:sprints', () => {
         clearClients: mockClearClients,
         getAllSprints: mockGetAllSprints,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -123,7 +123,7 @@ describe('board:sprints', () => {
         clearClients: mockClearClients,
         getAllSprints: mockGetAllSprints,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new BoardSprints.default(['999'], createMockConfig())
@@ -138,15 +138,15 @@ describe('board:sprints', () => {
     expect(jsonOutput.error).to.include('Board not found')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     BoardSprints = await esmock('../../../../src/commands/jira/board/sprints.js', {
       '../../../../src/agile/agile-client.js': {
         clearClients: mockClearClients,
         getAllSprints: mockGetAllSprints,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new BoardSprints.default(['123'], createMockConfig())
@@ -174,7 +174,7 @@ describe('board:sprints', () => {
         clearClients: mockClearClients,
         getAllSprints: mockGetAllSprints,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new BoardSprints.default(['123'], createMockConfig())

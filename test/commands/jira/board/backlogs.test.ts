@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('board:backlogs', () => {
   let BoardBacklogs: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockGetIssuesForBacklog: any
   let mockClearClients: any
   let jsonOutput: any
@@ -17,12 +17,12 @@ describe('board:backlogs', () => {
     jsonOutput = null
     logOutput = []
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockGetIssuesForBacklog = async () => ({
@@ -42,7 +42,7 @@ describe('board:backlogs', () => {
         clearClients: mockClearClients,
         getIssuesForBacklog: mockGetIssuesForBacklog,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -136,7 +136,7 @@ describe('board:backlogs', () => {
         clearClients: mockClearClients,
         getIssuesForBacklog: mockGetIssuesForBacklog,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new BoardBacklogs.default(['999'], createMockConfig())
@@ -151,15 +151,15 @@ describe('board:backlogs', () => {
     expect(jsonOutput.error).to.include('Board not found')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     BoardBacklogs = await esmock('../../../../src/commands/jira/board/backlogs.js', {
       '../../../../src/agile/agile-client.js': {
         clearClients: mockClearClients,
         getIssuesForBacklog: mockGetIssuesForBacklog,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new BoardBacklogs.default(['123'], createMockConfig())
@@ -187,7 +187,7 @@ describe('board:backlogs', () => {
         clearClients: mockClearClients,
         getIssuesForBacklog: mockGetIssuesForBacklog,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new BoardBacklogs.default(['123'], createMockConfig())

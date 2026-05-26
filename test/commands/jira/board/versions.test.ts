@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('board:versions', () => {
   let BoardVersions: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockGetAllVersions: any
   let mockClearClients: any
   let jsonOutput: any
@@ -17,12 +17,12 @@ describe('board:versions', () => {
     jsonOutput = null
     logOutput = []
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockGetAllVersions = async () => ({
@@ -42,7 +42,7 @@ describe('board:versions', () => {
         clearClients: mockClearClients,
         getAllVersions: mockGetAllVersions,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -123,7 +123,7 @@ describe('board:versions', () => {
         clearClients: mockClearClients,
         getAllVersions: mockGetAllVersions,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new BoardVersions.default(['999'], createMockConfig())
@@ -138,15 +138,15 @@ describe('board:versions', () => {
     expect(jsonOutput.error).to.include('Board not found')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     BoardVersions = await esmock('../../../../src/commands/jira/board/versions.js', {
       '../../../../src/agile/agile-client.js': {
         clearClients: mockClearClients,
         getAllVersions: mockGetAllVersions,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new BoardVersions.default(['123'], createMockConfig())
@@ -174,7 +174,7 @@ describe('board:versions', () => {
         clearClients: mockClearClients,
         getAllVersions: mockGetAllVersions,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new BoardVersions.default(['123'], createMockConfig())

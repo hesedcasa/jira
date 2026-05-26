@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('board:list', () => {
   let BoardList: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockGetAllBoards: any
   let mockClearClients: any
   let jsonOutput: any
@@ -17,12 +17,12 @@ describe('board:list', () => {
     jsonOutput = null
     logOutput = []
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockGetAllBoards = async () => ({
@@ -42,7 +42,7 @@ describe('board:list', () => {
         clearClients: mockClearClients,
         getAllBoards: mockGetAllBoards,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -123,7 +123,7 @@ describe('board:list', () => {
         clearClients: mockClearClients,
         getAllBoards: mockGetAllBoards,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new BoardList.default([], createMockConfig())
@@ -138,15 +138,15 @@ describe('board:list', () => {
     expect(jsonOutput.error).to.include('Failed to fetch boards')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     BoardList = await esmock('../../../../src/commands/jira/board/list.js', {
       '../../../../src/agile/agile-client.js': {
         clearClients: mockClearClients,
         getAllBoards: mockGetAllBoards,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new BoardList.default([], createMockConfig())
@@ -174,7 +174,7 @@ describe('board:list', () => {
         clearClients: mockClearClients,
         getAllBoards: mockGetAllBoards,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new BoardList.default([], createMockConfig())
