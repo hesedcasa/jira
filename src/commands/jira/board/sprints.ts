@@ -1,7 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core'
 
 import {clearClients, getAllSprints} from '../../../agile/agile-client.js'
-import {readConfig} from '../../../config.js'
+import {createProfileManager} from '@hesed/plugin-lib'
 import {formatAsToon} from '../../../format.js'
 
 export default class BoardSprints extends Command {
@@ -23,12 +23,13 @@ export default class BoardSprints extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(BoardSprints)
-    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
-    if (!config) {
+    const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
+    const auth = await loadAuthConfig()
+    if (!auth) {
       return
     }
 
-    const result = await getAllSprints(config.auth, args.boardId, flags.max, flags.start, flags.state)
+    const result = await getAllSprints(auth, args.boardId, flags.max, flags.start, flags.state)
     clearClients()
 
     if (flags.toon) {

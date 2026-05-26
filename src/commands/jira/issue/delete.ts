@@ -1,6 +1,6 @@
 import {Args, Command, Flags} from '@oclif/core'
 
-import {readConfig} from '../../../config.js'
+import {createProfileManager} from '@hesed/plugin-lib'
 import {clearClients, deleteIssue} from '../../../jira/jira-client.js'
 
 export default class IssueDelete extends Command {
@@ -15,12 +15,13 @@ export default class IssueDelete extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(IssueDelete)
-    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
-    if (!config) {
+    const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
+    const auth = await loadAuthConfig()
+    if (!auth) {
       return
     }
 
-    const result = await deleteIssue(config.auth, args.issueId)
+    const result = await deleteIssue(auth, args.issueId)
     clearClients()
 
     this.logJson(result)

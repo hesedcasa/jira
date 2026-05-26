@@ -1,6 +1,6 @@
 import {Args, Command, Flags} from '@oclif/core'
 
-import {readConfig} from '../../../config.js'
+import {createProfileManager} from '@hesed/plugin-lib'
 import {formatAsToon} from '../../../format.js'
 import {clearClients, getUser} from '../../../jira/jira-client.js'
 
@@ -23,12 +23,13 @@ export default class UserGet extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(UserGet)
-    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
-    if (!config) {
+    const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
+    const auth = await loadAuthConfig()
+    if (!auth) {
       return
     }
 
-    const result = await getUser(config.auth, args.accountId, flags.query)
+    const result = await getUser(auth, args.accountId, flags.query)
     clearClients()
 
     if (flags.toon) {

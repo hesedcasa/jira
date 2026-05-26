@@ -1,6 +1,6 @@
 import {Args, Command, Flags} from '@oclif/core'
 
-import {readConfig} from '../../../config.js'
+import {createProfileManager} from '@hesed/plugin-lib'
 import {clearClients, updateIssue} from '../../../jira/jira-client.js'
 
 export default class IssueUpdate extends Command {
@@ -21,8 +21,9 @@ export default class IssueUpdate extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(IssueUpdate)
-    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
-    if (!config) {
+    const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
+    const auth = await loadAuthConfig()
+    if (!auth) {
       return
     }
 
@@ -35,7 +36,7 @@ export default class IssueUpdate extends Command {
       }
     }
 
-    const result = await updateIssue(config.auth, args.issueId, fields)
+    const result = await updateIssue(auth, args.issueId, fields)
     clearClients()
 
     this.logJson(result)

@@ -1,6 +1,6 @@
 import {Args, Command, Flags} from '@oclif/core'
 
-import {readConfig} from '../../../config.js'
+import {createProfileManager} from '@hesed/plugin-lib'
 import {formatAsToon} from '../../../format.js'
 import {clearClients, getIssueDevelopment} from '../../../jira/jira-client.js'
 
@@ -29,12 +29,13 @@ export default class IssueDev extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(IssueDev)
-    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
-    if (!config) {
+    const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
+    const auth = await loadAuthConfig()
+    if (!auth) {
       return
     }
 
-    const result = await getIssueDevelopment(config.auth, args.issueId, flags['application-type'], flags['data-type'])
+    const result = await getIssueDevelopment(auth, args.issueId, flags['application-type'], flags['data-type'])
     clearClients()
 
     if (flags.toon) {

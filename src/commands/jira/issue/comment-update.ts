@@ -1,6 +1,6 @@
 import {Args, Command, Flags} from '@oclif/core'
 
-import {readConfig} from '../../../config.js'
+import {createProfileManager} from '@hesed/plugin-lib'
 import {formatAsToon} from '../../../format.js'
 import {clearClients, updateComment} from '../../../jira/jira-client.js'
 
@@ -24,8 +24,9 @@ export default class IssueUpdateComment extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(IssueUpdateComment)
-    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
-    if (!config) {
+    const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
+    const auth = await loadAuthConfig()
+    if (!auth) {
       return
     }
 
@@ -38,7 +39,7 @@ export default class IssueUpdateComment extends Command {
       }
     }
 
-    const result = await updateComment(config.auth, args.id, args.issueId, args.body)
+    const result = await updateComment(auth, args.id, args.issueId, args.body)
     clearClients()
 
     if (flags.toon) {

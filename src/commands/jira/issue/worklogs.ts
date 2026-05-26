@@ -1,6 +1,6 @@
 import {Args, Command, Flags} from '@oclif/core'
 
-import {readConfig} from '../../../config.js'
+import {createProfileManager} from '@hesed/plugin-lib'
 import {formatAsToon} from '../../../format.js'
 import {clearClients, getIssueWorklog} from '../../../jira/jira-client.js'
 
@@ -19,12 +19,13 @@ export default class IssueGetWorklogs extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(IssueGetWorklogs)
-    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
-    if (!config) {
+    const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
+    const auth = await loadAuthConfig()
+    if (!auth) {
       return
     }
 
-    const result = await getIssueWorklog(config.auth, args.issueId, flags.max, flags.start)
+    const result = await getIssueWorklog(auth, args.issueId, flags.max, flags.start)
     clearClients()
 
     if (flags.toon) {

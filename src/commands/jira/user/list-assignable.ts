@@ -1,6 +1,6 @@
 import {Args, Command, Flags} from '@oclif/core'
 
-import {readConfig} from '../../../config.js'
+import {createProfileManager} from '@hesed/plugin-lib'
 import {formatAsToon} from '../../../format.js'
 import {clearClients, findAssignableUsers} from '../../../jira/jira-client.js'
 
@@ -21,12 +21,13 @@ export default class UserListAssignable extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(UserListAssignable)
-    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
-    if (!config) {
+    const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
+    const auth = await loadAuthConfig()
+    if (!auth) {
       return
     }
 
-    const result = await findAssignableUsers(config.auth, args.issueId, flags.query)
+    const result = await findAssignableUsers(auth, args.issueId, flags.query)
     clearClients()
 
     if (flags.toon) {

@@ -1,6 +1,6 @@
 import {Args, Command, Flags} from '@oclif/core'
 
-import {readConfig} from '../../../config.js'
+import {createProfileManager} from '@hesed/plugin-lib'
 import {clearClients, doTransition} from '../../../jira/jira-client.js'
 
 export default class IssueTransition extends Command {
@@ -16,12 +16,13 @@ export default class IssueTransition extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(IssueTransition)
-    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
-    if (!config) {
+    const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
+    const auth = await loadAuthConfig()
+    if (!auth) {
       return
     }
 
-    const result = await doTransition(config.auth, args.issueId, args.transitionId)
+    const result = await doTransition(auth, args.issueId, args.transitionId)
     clearClients()
 
     this.logJson(result)

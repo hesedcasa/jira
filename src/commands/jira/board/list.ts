@@ -1,7 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core'
 
 import {clearClients, getAllBoards} from '../../../agile/agile-client.js'
-import {readConfig} from '../../../config.js'
+import {createProfileManager} from '@hesed/plugin-lib'
 import {formatAsToon} from '../../../format.js'
 
 export default class BoardList extends Command {
@@ -19,12 +19,13 @@ export default class BoardList extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(BoardList)
-    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
-    if (!config) {
+    const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
+    const auth = await loadAuthConfig()
+    if (!auth) {
       return
     }
 
-    const result = await getAllBoards(config.auth, args.projectId, flags.max, flags.start)
+    const result = await getAllBoards(auth, args.projectId, flags.max, flags.start)
     clearClients()
 
     if (flags.toon) {

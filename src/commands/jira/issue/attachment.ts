@@ -1,7 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core'
 import {action} from '@oclif/core/ux'
 
-import {readConfig} from '../../../config.js'
+import {createProfileManager} from '@hesed/plugin-lib'
 import {formatAsToon} from '../../../format.js'
 import {addAttachment, clearClients} from '../../../jira/jira-client.js'
 
@@ -21,14 +21,15 @@ export default class IssueAttachment extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(IssueAttachment)
-    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
-    if (!config) {
+    const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
+    const auth = await loadAuthConfig()
+    if (!auth) {
       return
     }
 
     action.start(`Uploading attachment "${args.file}" to issue ${args.issueId}`)
 
-    const result = await addAttachment(config.auth, args.issueId, args.file)
+    const result = await addAttachment(auth, args.issueId, args.file)
     clearClients()
 
     if (result.success) {

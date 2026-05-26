@@ -1,6 +1,6 @@
 import {Args, Command, Flags} from '@oclif/core'
 
-import {readConfig} from '../../../config.js'
+import {createProfileManager} from '@hesed/plugin-lib'
 import {formatAsToon} from '../../../format.js'
 import {clearClients, downloadAttachment} from '../../../jira/jira-client.js'
 
@@ -24,12 +24,13 @@ export default class IssueDownloadAttachment extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(IssueDownloadAttachment)
-    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
-    if (!config) {
+    const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
+    const auth = await loadAuthConfig()
+    if (!auth) {
       return
     }
 
-    const result = await downloadAttachment(config.auth, args.issueId, args.attachmentId, args.outputPath)
+    const result = await downloadAttachment(auth, args.issueId, args.attachmentId, args.outputPath)
     clearClients()
 
     if (flags.toon) {
