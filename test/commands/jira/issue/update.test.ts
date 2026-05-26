@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('issue:update', () => {
   let IssueUpdate: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockUpdateIssue: any
   let mockClearClients: any
   let jsonOutput: any
@@ -15,16 +15,14 @@ describe('issue:update', () => {
   beforeEach(async () => {
     jsonOutput = null
 
-    // Mock successful config read
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
-    // Mock successful updateIssue call
     mockUpdateIssue = async (_config: any, _issueId: string, _fields: any) => ({
       data: {
         id: '10001',
@@ -35,13 +33,12 @@ describe('issue:update', () => {
 
     mockClearClients = () => {}
 
-    // Import with mocks
     IssueUpdate = await esmock('../../../../src/commands/jira/issue/update.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         updateIssue: mockUpdateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -74,11 +71,11 @@ describe('issue:update', () => {
     }
 
     IssueUpdate = await esmock('../../../../src/commands/jira/issue/update.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         updateIssue: mockUpdateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueUpdate.default(
@@ -105,11 +102,11 @@ describe('issue:update', () => {
     }
 
     IssueUpdate = await esmock('../../../../src/commands/jira/issue/update.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         updateIssue: mockUpdateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueUpdate.default(['PROJ-456', '--fields', 'summary=Test'], createMockConfig())
@@ -133,11 +130,11 @@ describe('issue:update', () => {
     }
 
     IssueUpdate = await esmock('../../../../src/commands/jira/issue/update.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         updateIssue: mockUpdateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueUpdate.default(
@@ -169,11 +166,11 @@ describe('issue:update', () => {
     })
 
     IssueUpdate = await esmock('../../../../src/commands/jira/issue/update.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         updateIssue: mockUpdateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueUpdate.default(['INVALID-999', '--fields', 'summary=Test'], createMockConfig())
@@ -188,15 +185,15 @@ describe('issue:update', () => {
     expect(jsonOutput.error).to.include('Issue not found')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueUpdate = await esmock('../../../../src/commands/jira/issue/update.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         updateIssue: mockUpdateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueUpdate.default(['TEST-123', '--fields', 'summary=Test'], createMockConfig())
@@ -221,11 +218,11 @@ describe('issue:update', () => {
     }
 
     IssueUpdate = await esmock('../../../../src/commands/jira/issue/update.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         updateIssue: mockUpdateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueUpdate.default(['TEST-123', '--fields', 'summary=Test'], createMockConfig())

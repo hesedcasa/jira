@@ -39,12 +39,12 @@ describe('issue:add-comment', () => {
     mockClearClients = () => {}
 
     IssueAddComment = await esmock('../../../../src/commands/jira/issue/comment.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         addComment: mockAddComment,
         addCommentWithMedia: mockAddCommentWithMedia,
         clearClients: mockClearClients,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -81,12 +81,12 @@ describe('issue:add-comment', () => {
     })
 
     IssueAddComment = await esmock('../../../../src/commands/jira/issue/comment.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         addComment: mockAddComment,
         addCommentWithMedia: mockAddCommentWithMedia,
         clearClients: mockClearClients,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueAddComment.default(['TEST-123', 'Test comment'], createMockConfig())
@@ -105,12 +105,12 @@ describe('issue:add-comment', () => {
     mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueAddComment = await esmock('../../../../src/commands/jira/issue/comment.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         addComment: mockAddComment,
         addCommentWithMedia: mockAddCommentWithMedia,
         clearClients: mockClearClients,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueAddComment.default(['TEST-123', 'Test comment'], createMockConfig())
@@ -134,12 +134,12 @@ describe('issue:add-comment', () => {
     }
 
     IssueAddComment = await esmock('../../../../src/commands/jira/issue/comment.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         addComment: mockAddComment,
         addCommentWithMedia: mockAddCommentWithMedia,
         clearClients: mockClearClients,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueAddComment.default(['TEST-123', 'Test comment'], createMockConfig())
@@ -167,12 +167,12 @@ describe('issue:add-comment', () => {
     }
 
     IssueAddComment = await esmock('../../../../src/commands/jira/issue/comment.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         addComment: mockAddComment,
         addCommentWithMedia: mockAddCommentWithMedia,
         clearClients: mockClearClients,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueAddComment.default(
@@ -200,12 +200,12 @@ describe('issue:add-comment', () => {
     }
 
     IssueAddComment = await esmock('../../../../src/commands/jira/issue/comment.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         addComment: mockAddComment,
         addCommentWithMedia: mockAddCommentWithMedia,
         clearClients: mockClearClients,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueAddComment.default(

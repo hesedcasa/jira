@@ -118,11 +118,7 @@ export async function testConnection(config: AuthConfig): Promise<ApiResult> {
   return jira.testConnection()
 }
 
-export async function doTransition(
-  config: AuthConfig,
-  issueIdOrKey: string,
-  transitionId: string,
-): Promise<ApiResult> {
+export async function doTransition(config: AuthConfig, issueIdOrKey: string, transitionId: string): Promise<ApiResult> {
   const jira = await getClient(config)
   return jira.doTransition(issueIdOrKey, transitionId)
 }

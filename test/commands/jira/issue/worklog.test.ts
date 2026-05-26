@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('issue:worklog', () => {
   let IssueWorklog: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockWorklog: any
   let mockClearClients: any
   let jsonOutput: any
@@ -17,12 +17,12 @@ describe('issue:worklog', () => {
     jsonOutput = null
     logOutput = []
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockWorklog = async () => ({
@@ -36,11 +36,11 @@ describe('issue:worklog', () => {
     mockClearClients = () => {}
 
     IssueWorklog = await esmock('../../../../src/commands/jira/issue/worklog.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         worklog: mockWorklog,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -96,11 +96,11 @@ describe('issue:worklog', () => {
     })
 
     IssueWorklog = await esmock('../../../../src/commands/jira/issue/worklog.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         worklog: mockWorklog,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueWorklog.default(['TEST-123', 'invalid-date', '1h'], createMockConfig())
@@ -115,15 +115,15 @@ describe('issue:worklog', () => {
     expect(jsonOutput.error).to.include('Invalid time format')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueWorklog = await esmock('../../../../src/commands/jira/issue/worklog.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         worklog: mockWorklog,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueWorklog.default(['TEST-123', '2024-01-01T10:00:00.000+0000', '1h'], createMockConfig())
@@ -147,11 +147,11 @@ describe('issue:worklog', () => {
     }
 
     IssueWorklog = await esmock('../../../../src/commands/jira/issue/worklog.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         worklog: mockWorklog,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueWorklog.default(['TEST-123', '2024-01-01T10:00:00.000+0000', '1h'], createMockConfig())

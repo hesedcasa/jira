@@ -31,11 +31,11 @@ describe('issue:delete-comment', () => {
     mockClearClients = () => {}
 
     IssueDeleteComment = await esmock('../../../../src/commands/jira/issue/comment-delete.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         deleteComment: mockDeleteComment,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -59,11 +59,11 @@ describe('issue:delete-comment', () => {
     })
 
     IssueDeleteComment = await esmock('../../../../src/commands/jira/issue/comment-delete.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         deleteComment: mockDeleteComment,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueDeleteComment.default(['TEST-123', '99999'], createMockConfig())
@@ -82,11 +82,11 @@ describe('issue:delete-comment', () => {
     mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueDeleteComment = await esmock('../../../../src/commands/jira/issue/comment-delete.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         deleteComment: mockDeleteComment,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueDeleteComment.default(['TEST-123', '10001'], createMockConfig())
@@ -110,11 +110,11 @@ describe('issue:delete-comment', () => {
     }
 
     IssueDeleteComment = await esmock('../../../../src/commands/jira/issue/comment-delete.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         deleteComment: mockDeleteComment,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueDeleteComment.default(['TEST-123', '10001'], createMockConfig())

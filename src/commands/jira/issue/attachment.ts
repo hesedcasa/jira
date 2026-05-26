@@ -1,8 +1,7 @@
+import {createProfileManager, formatAsToon} from '@hesed/plugin-lib'
 import {Args, Command, Flags} from '@oclif/core'
 import {action} from '@oclif/core/ux'
 
-import {createProfileManager} from '@hesed/plugin-lib'
-import {formatAsToon} from '../../../format.js'
 import {addAttachment, clearClients} from '../../../jira/jira-client.js'
 
 export default class IssueAttachment extends Command {

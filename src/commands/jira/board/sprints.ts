@@ -1,8 +1,7 @@
+import {createProfileManager, formatAsToon} from '@hesed/plugin-lib'
 import {Args, Command, Flags} from '@oclif/core'
 
 import {clearClients, getAllSprints} from '../../../agile/agile-client.js'
-import {createProfileManager} from '@hesed/plugin-lib'
-import {formatAsToon} from '../../../format.js'
 
 export default class BoardSprints extends Command {
   static override args = {

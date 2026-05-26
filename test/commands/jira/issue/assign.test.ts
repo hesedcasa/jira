@@ -31,11 +31,11 @@ describe('issue:assign', () => {
     mockClearClients = () => {}
 
     IssueAssign = await esmock('../../../../src/commands/jira/issue/assign.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         assignIssue: mockAssignIssue,
         clearClients: mockClearClients,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -59,11 +59,11 @@ describe('issue:assign', () => {
     })
 
     IssueAssign = await esmock('../../../../src/commands/jira/issue/assign.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         assignIssue: mockAssignIssue,
         clearClients: mockClearClients,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueAssign.default(['TEST-123', 'invalid-user'], createMockConfig())
@@ -82,11 +82,11 @@ describe('issue:assign', () => {
     mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueAssign = await esmock('../../../../src/commands/jira/issue/assign.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         assignIssue: mockAssignIssue,
         clearClients: mockClearClients,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueAssign.default(['TEST-123', 'user-id'], createMockConfig())
@@ -110,11 +110,11 @@ describe('issue:assign', () => {
     }
 
     IssueAssign = await esmock('../../../../src/commands/jira/issue/assign.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         assignIssue: mockAssignIssue,
         clearClients: mockClearClients,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueAssign.default(['TEST-123', 'user-id'], createMockConfig())

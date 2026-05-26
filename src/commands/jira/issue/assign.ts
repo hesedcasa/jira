@@ -1,6 +1,6 @@
+import {createProfileManager} from '@hesed/plugin-lib'
 import {Args, Command, Flags} from '@oclif/core'
 
-import {createProfileManager} from '@hesed/plugin-lib'
 import {assignIssue, clearClients} from '../../../jira/jira-client.js'
 
 export default class IssueAssign extends Command {

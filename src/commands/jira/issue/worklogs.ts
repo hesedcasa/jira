@@ -1,7 +1,6 @@
+import {createProfileManager, formatAsToon} from '@hesed/plugin-lib'
 import {Args, Command, Flags} from '@oclif/core'
 
-import {createProfileManager} from '@hesed/plugin-lib'
-import {formatAsToon} from '../../../format.js'
 import {clearClients, getIssueWorklog} from '../../../jira/jira-client.js'
 
 export default class IssueGetWorklogs extends Command {

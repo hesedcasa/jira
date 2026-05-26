@@ -40,11 +40,11 @@ describe('issue:get', () => {
     mockClearClients = () => {}
 
     IssueGet = await esmock('../../../../src/commands/jira/issue/get.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssue: mockGetIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -83,11 +83,11 @@ describe('issue:get', () => {
     })
 
     IssueGet = await esmock('../../../../src/commands/jira/issue/get.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssue: mockGetIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueGet.default(['INVALID-999'], createMockConfig())
@@ -106,11 +106,11 @@ describe('issue:get', () => {
     mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueGet = await esmock('../../../../src/commands/jira/issue/get.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssue: mockGetIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueGet.default(['TEST-123'], createMockConfig())
@@ -134,11 +134,11 @@ describe('issue:get', () => {
     }
 
     IssueGet = await esmock('../../../../src/commands/jira/issue/get.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssue: mockGetIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueGet.default(['TEST-123'], createMockConfig())

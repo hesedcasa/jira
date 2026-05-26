@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('project:list', () => {
   let ProjectList: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockListProjects: any
   let mockClearClients: any
   let jsonOutput: any
@@ -17,12 +17,12 @@ describe('project:list', () => {
     jsonOutput = null
     logOutput = []
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockListProjects = async () => ({
@@ -36,11 +36,11 @@ describe('project:list', () => {
     mockClearClients = () => {}
 
     ProjectList = await esmock('../../../../src/commands/jira/project/list.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         listProjects: mockListProjects,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -78,11 +78,11 @@ describe('project:list', () => {
     })
 
     ProjectList = await esmock('../../../../src/commands/jira/project/list.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         listProjects: mockListProjects,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new ProjectList.default([], createMockConfig())
@@ -97,15 +97,15 @@ describe('project:list', () => {
     expect(jsonOutput.error).to.include('Authentication failed')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     ProjectList = await esmock('../../../../src/commands/jira/project/list.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         listProjects: mockListProjects,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new ProjectList.default([], createMockConfig())
@@ -129,11 +129,11 @@ describe('project:list', () => {
     }
 
     ProjectList = await esmock('../../../../src/commands/jira/project/list.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         listProjects: mockListProjects,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new ProjectList.default([], createMockConfig())

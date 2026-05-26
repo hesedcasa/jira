@@ -1,6 +1,6 @@
+import {createProfileManager} from '@hesed/plugin-lib'
 import {Args, Command, Flags} from '@oclif/core'
 
-import {createProfileManager} from '@hesed/plugin-lib'
 import {clearClients, doTransition} from '../../../jira/jira-client.js'
 
 export default class IssueTransition extends Command {

@@ -36,11 +36,11 @@ describe('issue:download-attachment', () => {
     mockClearClients = () => {}
 
     IssueDownloadAttachment = await esmock('../../../../src/commands/jira/issue/attachment-download.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         downloadAttachment: mockDownloadAttachment,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -90,11 +90,11 @@ describe('issue:download-attachment', () => {
     })
 
     IssueDownloadAttachment = await esmock('../../../../src/commands/jira/issue/attachment-download.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         downloadAttachment: mockDownloadAttachment,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueDownloadAttachment.default(['TEST-123', '999'], createMockConfig())
@@ -113,11 +113,11 @@ describe('issue:download-attachment', () => {
     mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueDownloadAttachment = await esmock('../../../../src/commands/jira/issue/attachment-download.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         downloadAttachment: mockDownloadAttachment,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueDownloadAttachment.default(['TEST-123', '123'], createMockConfig())
@@ -141,11 +141,11 @@ describe('issue:download-attachment', () => {
     }
 
     IssueDownloadAttachment = await esmock('../../../../src/commands/jira/issue/attachment-download.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         downloadAttachment: mockDownloadAttachment,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueDownloadAttachment.default(['TEST-123', '123'], createMockConfig())

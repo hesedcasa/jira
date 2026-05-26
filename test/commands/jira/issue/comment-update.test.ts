@@ -36,11 +36,11 @@ describe('issue:comment-update', () => {
     mockClearClients = () => {}
 
     IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/comment-update.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         updateComment: mockUpdateComment,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -77,11 +77,11 @@ describe('issue:comment-update', () => {
     })
 
     IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/comment-update.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         updateComment: mockUpdateComment,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueUpdateComment.default(['TEST-123', '99999', 'Updated text'], createMockConfig())
@@ -100,11 +100,11 @@ describe('issue:comment-update', () => {
     mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/comment-update.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         updateComment: mockUpdateComment,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueUpdateComment.default(['TEST-123', '10001', 'Updated text'], createMockConfig())
@@ -128,11 +128,11 @@ describe('issue:comment-update', () => {
     }
 
     IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/comment-update.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         updateComment: mockUpdateComment,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueUpdateComment.default(['TEST-123', '10001', 'Updated text'], createMockConfig())

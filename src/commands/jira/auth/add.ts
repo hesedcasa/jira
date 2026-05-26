@@ -5,6 +5,6 @@ import {clearClients, testConnection} from '../../../jira/jira-client.js'
 export default createAuthAddCommand({
   clearClients,
   hasHostFlag: true,
-  serviceName: 'Atlassian',
+  serviceName: 'Jira',
   testConnection,
 })

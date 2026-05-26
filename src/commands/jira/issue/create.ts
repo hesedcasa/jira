@@ -1,7 +1,6 @@
+import {createProfileManager, formatAsToon} from '@hesed/plugin-lib'
 import {Command, Flags} from '@oclif/core'
 
-import {createProfileManager} from '@hesed/plugin-lib'
-import {formatAsToon} from '../../../format.js'
 import {clearClients, createIssue} from '../../../jira/jira-client.js'
 
 export default class IssueCreate extends Command {

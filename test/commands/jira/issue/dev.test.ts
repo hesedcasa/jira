@@ -40,11 +40,11 @@ describe('issue:dev', () => {
     mockClearClients = () => {}
 
     IssueDev = await esmock('../../../../src/commands/jira/issue/dev.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssueDevelopment: mockGetIssueDevelopment,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -81,11 +81,11 @@ describe('issue:dev', () => {
     })
 
     IssueDev = await esmock('../../../../src/commands/jira/issue/dev.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssueDevelopment: mockGetIssueDevelopment,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueDev.default(['99999'], createMockConfig())
@@ -104,11 +104,11 @@ describe('issue:dev', () => {
     mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueDev = await esmock('../../../../src/commands/jira/issue/dev.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssueDevelopment: mockGetIssueDevelopment,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueDev.default(['12345'], createMockConfig())
@@ -132,11 +132,11 @@ describe('issue:dev', () => {
     }
 
     IssueDev = await esmock('../../../../src/commands/jira/issue/dev.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssueDevelopment: mockGetIssueDevelopment,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueDev.default(['12345'], createMockConfig())

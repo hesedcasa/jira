@@ -31,11 +31,11 @@ describe('issue:delete', () => {
     mockClearClients = () => {}
 
     IssueDelete = await esmock('../../../../src/commands/jira/issue/delete.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         deleteIssue: mockDeleteIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -59,11 +59,11 @@ describe('issue:delete', () => {
     })
 
     IssueDelete = await esmock('../../../../src/commands/jira/issue/delete.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         deleteIssue: mockDeleteIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueDelete.default(['TEST-999'], createMockConfig())
@@ -82,11 +82,11 @@ describe('issue:delete', () => {
     mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueDelete = await esmock('../../../../src/commands/jira/issue/delete.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         deleteIssue: mockDeleteIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueDelete.default(['TEST-123'], createMockConfig())
@@ -110,11 +110,11 @@ describe('issue:delete', () => {
     }
 
     IssueDelete = await esmock('../../../../src/commands/jira/issue/delete.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         deleteIssue: mockDeleteIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueDelete.default(['TEST-123'], createMockConfig())

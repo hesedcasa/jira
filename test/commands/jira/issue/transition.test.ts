@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('issue:transition', () => {
   let IssueTransition: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockDoTransition: any
   let mockClearClients: any
   let jsonOutput: any
@@ -15,12 +15,12 @@ describe('issue:transition', () => {
   beforeEach(async () => {
     jsonOutput = null
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockDoTransition = async () => ({
@@ -31,11 +31,11 @@ describe('issue:transition', () => {
     mockClearClients = () => {}
 
     IssueTransition = await esmock('../../../../src/commands/jira/issue/transition.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         doTransition: mockDoTransition,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -59,11 +59,11 @@ describe('issue:transition', () => {
     })
 
     IssueTransition = await esmock('../../../../src/commands/jira/issue/transition.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         doTransition: mockDoTransition,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueTransition.default(['TEST-123', '999'], createMockConfig())
@@ -78,15 +78,15 @@ describe('issue:transition', () => {
     expect(jsonOutput.error).to.include('Invalid transition')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueTransition = await esmock('../../../../src/commands/jira/issue/transition.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         doTransition: mockDoTransition,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueTransition.default(['TEST-123', '11'], createMockConfig())
@@ -110,11 +110,11 @@ describe('issue:transition', () => {
     }
 
     IssueTransition = await esmock('../../../../src/commands/jira/issue/transition.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         doTransition: mockDoTransition,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueTransition.default(['TEST-123', '11'], createMockConfig())

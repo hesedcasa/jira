@@ -1,6 +1,6 @@
+import {createProfileManager} from '@hesed/plugin-lib'
 import {Args, Command, Flags} from '@oclif/core'
 
-import {createProfileManager} from '@hesed/plugin-lib'
 import {clearClients, updateIssue} from '../../../jira/jira-client.js'
 
 export default class IssueUpdate extends Command {

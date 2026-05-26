@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('project:get', () => {
   let ProjectGet: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockGetProject: any
   let mockClearClients: any
   let jsonOutput: any
@@ -17,12 +17,12 @@ describe('project:get', () => {
     jsonOutput = null
     logOutput = []
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockGetProject = async () => ({
@@ -37,11 +37,11 @@ describe('project:get', () => {
     mockClearClients = () => {}
 
     ProjectGet = await esmock('../../../../src/commands/jira/project/get.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getProject: mockGetProject,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -78,11 +78,11 @@ describe('project:get', () => {
     })
 
     ProjectGet = await esmock('../../../../src/commands/jira/project/get.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getProject: mockGetProject,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new ProjectGet.default(['INVALID'], createMockConfig())
@@ -97,15 +97,15 @@ describe('project:get', () => {
     expect(jsonOutput.error).to.include('Project not found')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     ProjectGet = await esmock('../../../../src/commands/jira/project/get.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getProject: mockGetProject,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new ProjectGet.default(['PROJ'], createMockConfig())
@@ -129,11 +129,11 @@ describe('project:get', () => {
     }
 
     ProjectGet = await esmock('../../../../src/commands/jira/project/get.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getProject: mockGetProject,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new ProjectGet.default(['PROJ'], createMockConfig())

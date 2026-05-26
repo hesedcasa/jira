@@ -39,21 +39,25 @@ describe('issue:create', () => {
     mockClearClients = () => {}
 
     IssueCreate = await esmock('../../../../src/commands/jira/issue/create.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         createIssue: mockCreateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
   it('creates issue with all required fields', async () => {
     const command = new IssueCreate.default(
       [
-        '--fields', 'project={"key":"TEST"}',
-        '--fields', 'summary=Test Summary',
-        '--fields', 'description=Test Description',
-        '--fields', 'issuetype={"name":"Task"}',
+        '--fields',
+        'project={"key":"TEST"}',
+        '--fields',
+        'summary=Test Summary',
+        '--fields',
+        'description=Test Description',
+        '--fields',
+        'issuetype={"name":"Task"}',
       ],
       createMockConfig(),
     )
@@ -81,19 +85,23 @@ describe('issue:create', () => {
     }
 
     IssueCreate = await esmock('../../../../src/commands/jira/issue/create.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         createIssue: mockCreateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueCreate.default(
       [
-        '--fields', 'project={"key":"TEST"}',
-        '--fields', 'summary=Test=Summary',
-        '--fields', 'description=Test Description',
-        '--fields', 'issuetype={"name":"Task"}',
+        '--fields',
+        'project={"key":"TEST"}',
+        '--fields',
+        'summary=Test=Summary',
+        '--fields',
+        'description=Test Description',
+        '--fields',
+        'issuetype={"name":"Task"}',
       ],
       createMockConfig(),
     )
@@ -108,9 +116,12 @@ describe('issue:create', () => {
   it('throws error when required field "project" is missing', async () => {
     const command = new IssueCreate.default(
       [
-        '--fields', 'summary=Test Summary',
-        '--fields', 'description=Test Description',
-        '--fields', 'issuetype={"name":"Task"}',
+        '--fields',
+        'summary=Test Summary',
+        '--fields',
+        'description=Test Description',
+        '--fields',
+        'issuetype={"name":"Task"}',
       ],
       createMockConfig(),
     )
@@ -132,9 +143,12 @@ describe('issue:create', () => {
   it('throws error when required field "summary" is missing', async () => {
     const command = new IssueCreate.default(
       [
-        '--fields', 'project={"key":"TEST"}',
-        '--fields', 'description=Test Description',
-        '--fields', 'issuetype={"name":"Task"}',
+        '--fields',
+        'project={"key":"TEST"}',
+        '--fields',
+        'description=Test Description',
+        '--fields',
+        'issuetype={"name":"Task"}',
       ],
       createMockConfig(),
     )
@@ -156,9 +170,12 @@ describe('issue:create', () => {
   it('throws error when required field "description" is missing', async () => {
     const command = new IssueCreate.default(
       [
-        '--fields', 'project={"key":"TEST"}',
-        '--fields', 'summary=Test Summary',
-        '--fields', 'issuetype={"name":"Task"}',
+        '--fields',
+        'project={"key":"TEST"}',
+        '--fields',
+        'summary=Test Summary',
+        '--fields',
+        'issuetype={"name":"Task"}',
       ],
       createMockConfig(),
     )
@@ -180,9 +197,12 @@ describe('issue:create', () => {
   it('throws error when required field "issuetype" is missing', async () => {
     const command = new IssueCreate.default(
       [
-        '--fields', 'project={"key":"TEST"}',
-        '--fields', 'summary=Test Summary',
-        '--fields', 'description=Test Description',
+        '--fields',
+        'project={"key":"TEST"}',
+        '--fields',
+        'summary=Test Summary',
+        '--fields',
+        'description=Test Description',
       ],
       createMockConfig(),
     )
@@ -204,10 +224,14 @@ describe('issue:create', () => {
   it('formats output as TOON when --toon flag is provided', async () => {
     const command = new IssueCreate.default(
       [
-        '--fields', 'project={"key":"TEST"}',
-        '--fields', 'summary=Test Summary',
-        '--fields', 'description=Test Description',
-        '--fields', 'issuetype={"name":"Task"}',
+        '--fields',
+        'project={"key":"TEST"}',
+        '--fields',
+        'summary=Test Summary',
+        '--fields',
+        'description=Test Description',
+        '--fields',
+        'issuetype={"name":"Task"}',
         '--toon',
       ],
       createMockConfig(),
@@ -230,19 +254,23 @@ describe('issue:create', () => {
     })
 
     IssueCreate = await esmock('../../../../src/commands/jira/issue/create.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         createIssue: mockCreateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueCreate.default(
       [
-        '--fields', 'project={"key":"TEST"}',
-        '--fields', 'summary=Test Summary',
-        '--fields', 'description=Test Description',
-        '--fields', 'issuetype={"name":"Task"}',
+        '--fields',
+        'project={"key":"TEST"}',
+        '--fields',
+        'summary=Test Summary',
+        '--fields',
+        'description=Test Description',
+        '--fields',
+        'issuetype={"name":"Task"}',
       ],
       createMockConfig(),
     )
@@ -261,19 +289,23 @@ describe('issue:create', () => {
     mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueCreate = await esmock('../../../../src/commands/jira/issue/create.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         createIssue: mockCreateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueCreate.default(
       [
-        '--fields', 'project={"key":"TEST"}',
-        '--fields', 'summary=Test Summary',
-        '--fields', 'description=Test Description',
-        '--fields', 'issuetype={"name":"Task"}',
+        '--fields',
+        'project={"key":"TEST"}',
+        '--fields',
+        'summary=Test Summary',
+        '--fields',
+        'description=Test Description',
+        '--fields',
+        'issuetype={"name":"Task"}',
       ],
       createMockConfig(),
     )
@@ -298,19 +330,23 @@ describe('issue:create', () => {
     }
 
     IssueCreate = await esmock('../../../../src/commands/jira/issue/create.js', {
-      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         createIssue: mockCreateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueCreate.default(
       [
-        '--fields', 'project={"key":"TEST"}',
-        '--fields', 'summary=Test Summary',
-        '--fields', 'description=Test Description',
-        '--fields', 'issuetype={"name":"Task"}',
+        '--fields',
+        'project={"key":"TEST"}',
+        '--fields',
+        'summary=Test Summary',
+        '--fields',
+        'description=Test Description',
+        '--fields',
+        'issuetype={"name":"Task"}',
       ],
       createMockConfig(),
     )
