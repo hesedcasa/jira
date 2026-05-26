@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('issue:add-comment', () => {
   let IssueAddComment: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockAddComment: any
   let mockAddCommentWithMedia: any
   let mockClearClients: any
@@ -18,12 +18,12 @@ describe('issue:add-comment', () => {
     jsonOutput = null
     logOutput = []
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockAddComment = async () => ({
@@ -39,7 +39,7 @@ describe('issue:add-comment', () => {
     mockClearClients = () => {}
 
     IssueAddComment = await esmock('../../../../src/commands/jira/issue/comment.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         addComment: mockAddComment,
         addCommentWithMedia: mockAddCommentWithMedia,
@@ -81,7 +81,7 @@ describe('issue:add-comment', () => {
     })
 
     IssueAddComment = await esmock('../../../../src/commands/jira/issue/comment.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         addComment: mockAddComment,
         addCommentWithMedia: mockAddCommentWithMedia,
@@ -101,11 +101,11 @@ describe('issue:add-comment', () => {
     expect(jsonOutput.error).to.include('Permission denied')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueAddComment = await esmock('../../../../src/commands/jira/issue/comment.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         addComment: mockAddComment,
         addCommentWithMedia: mockAddCommentWithMedia,
@@ -134,7 +134,7 @@ describe('issue:add-comment', () => {
     }
 
     IssueAddComment = await esmock('../../../../src/commands/jira/issue/comment.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         addComment: mockAddComment,
         addCommentWithMedia: mockAddCommentWithMedia,
@@ -167,7 +167,7 @@ describe('issue:add-comment', () => {
     }
 
     IssueAddComment = await esmock('../../../../src/commands/jira/issue/comment.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         addComment: mockAddComment,
         addCommentWithMedia: mockAddCommentWithMedia,
@@ -200,7 +200,7 @@ describe('issue:add-comment', () => {
     }
 
     IssueAddComment = await esmock('../../../../src/commands/jira/issue/comment.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         addComment: mockAddComment,
         addCommentWithMedia: mockAddCommentWithMedia,

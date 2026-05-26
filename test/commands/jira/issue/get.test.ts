@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('issue:get', () => {
   let IssueGet: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockGetIssue: any
   let mockClearClients: any
   let logOutput: string[]
@@ -17,16 +17,14 @@ describe('issue:get', () => {
     logOutput = []
     jsonOutput = null
 
-    // Mock successful config read
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
-    // Mock successful getIssue call
     mockGetIssue = async (_config: any, issueId: string) => ({
       data: {
         fields: {
@@ -41,9 +39,8 @@ describe('issue:get', () => {
 
     mockClearClients = () => {}
 
-    // Import with mocks
     IssueGet = await esmock('../../../../src/commands/jira/issue/get.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssue: mockGetIssue,
@@ -54,7 +51,6 @@ describe('issue:get', () => {
   it('retrieves issue with valid issue ID', async () => {
     const command = new IssueGet.default(['TEST-123'], createMockConfig())
 
-    // Capture logJson output
     command.logJson = (output: any) => {
       jsonOutput = output
     }
@@ -70,7 +66,6 @@ describe('issue:get', () => {
   it('formats output as TOON when --toon flag is provided', async () => {
     const command = new IssueGet.default(['TEST-123', '--toon'], createMockConfig())
 
-    // Capture log output
     command.log = (output: string) => {
       logOutput.push(output)
     }
@@ -82,14 +77,13 @@ describe('issue:get', () => {
   })
 
   it('handles API errors gracefully', async () => {
-    // Mock failed API call
     mockGetIssue = async () => ({
       error: 'Issue not found',
       success: false,
     })
 
     IssueGet = await esmock('../../../../src/commands/jira/issue/get.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssue: mockGetIssue,
@@ -108,12 +102,11 @@ describe('issue:get', () => {
     expect(jsonOutput.error).to.include('Issue not found')
   })
 
-  it('exits early when config is not available', async () => {
-    // Mock config read failure
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueGet = await esmock('../../../../src/commands/jira/issue/get.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssue: mockGetIssue,
@@ -123,7 +116,6 @@ describe('issue:get', () => {
     const command = new IssueGet.default(['TEST-123'], createMockConfig())
     let getIssueCalled = false
 
-    // Track if getIssue was called
     mockGetIssue = async () => {
       getIssueCalled = true
       return {data: {}, success: true}
@@ -131,7 +123,6 @@ describe('issue:get', () => {
 
     await command.run()
 
-    // Should not call getIssue if config is null
     expect(getIssueCalled).to.be.false
   })
 
@@ -143,7 +134,7 @@ describe('issue:get', () => {
     }
 
     IssueGet = await esmock('../../../../src/commands/jira/issue/get.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssue: mockGetIssue,

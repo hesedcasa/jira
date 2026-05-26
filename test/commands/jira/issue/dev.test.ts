@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('issue:dev', () => {
   let IssueDev: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockGetIssueDevelopment: any
   let mockClearClients: any
   let logOutput: string[]
@@ -17,12 +17,12 @@ describe('issue:dev', () => {
     logOutput = []
     jsonOutput = null
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockGetIssueDevelopment = async (_config: any, _issueId: string, _applicationType: string, _dataType: string) => ({
@@ -40,7 +40,7 @@ describe('issue:dev', () => {
     mockClearClients = () => {}
 
     IssueDev = await esmock('../../../../src/commands/jira/issue/dev.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssueDevelopment: mockGetIssueDevelopment,
@@ -81,7 +81,7 @@ describe('issue:dev', () => {
     })
 
     IssueDev = await esmock('../../../../src/commands/jira/issue/dev.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssueDevelopment: mockGetIssueDevelopment,
@@ -100,11 +100,11 @@ describe('issue:dev', () => {
     expect(jsonOutput.error).to.include('Issue not found')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueDev = await esmock('../../../../src/commands/jira/issue/dev.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssueDevelopment: mockGetIssueDevelopment,
@@ -132,7 +132,7 @@ describe('issue:dev', () => {
     }
 
     IssueDev = await esmock('../../../../src/commands/jira/issue/dev.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssueDevelopment: mockGetIssueDevelopment,

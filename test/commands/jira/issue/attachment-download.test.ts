@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('issue:download-attachment', () => {
   let IssueDownloadAttachment: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockDownloadAttachment: any
   let mockClearClients: any
   let jsonOutput: any
@@ -17,12 +17,12 @@ describe('issue:download-attachment', () => {
     jsonOutput = null
     logOutput = []
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockDownloadAttachment = async () => ({
@@ -36,7 +36,7 @@ describe('issue:download-attachment', () => {
     mockClearClients = () => {}
 
     IssueDownloadAttachment = await esmock('../../../../src/commands/jira/issue/attachment-download.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         downloadAttachment: mockDownloadAttachment,
@@ -90,7 +90,7 @@ describe('issue:download-attachment', () => {
     })
 
     IssueDownloadAttachment = await esmock('../../../../src/commands/jira/issue/attachment-download.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         downloadAttachment: mockDownloadAttachment,
@@ -109,11 +109,11 @@ describe('issue:download-attachment', () => {
     expect(jsonOutput.error).to.include('Attachment not found')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueDownloadAttachment = await esmock('../../../../src/commands/jira/issue/attachment-download.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         downloadAttachment: mockDownloadAttachment,
@@ -141,7 +141,7 @@ describe('issue:download-attachment', () => {
     }
 
     IssueDownloadAttachment = await esmock('../../../../src/commands/jira/issue/attachment-download.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         downloadAttachment: mockDownloadAttachment,

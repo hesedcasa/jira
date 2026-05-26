@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('issue:delete', () => {
   let IssueDelete: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockDeleteIssue: any
   let mockClearClients: any
   let jsonOutput: any
@@ -15,12 +15,12 @@ describe('issue:delete', () => {
   beforeEach(async () => {
     jsonOutput = null
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockDeleteIssue = async () => ({
@@ -31,7 +31,7 @@ describe('issue:delete', () => {
     mockClearClients = () => {}
 
     IssueDelete = await esmock('../../../../src/commands/jira/issue/delete.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         deleteIssue: mockDeleteIssue,
@@ -59,7 +59,7 @@ describe('issue:delete', () => {
     })
 
     IssueDelete = await esmock('../../../../src/commands/jira/issue/delete.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         deleteIssue: mockDeleteIssue,
@@ -78,11 +78,11 @@ describe('issue:delete', () => {
     expect(jsonOutput.error).to.include('Issue not found')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueDelete = await esmock('../../../../src/commands/jira/issue/delete.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         deleteIssue: mockDeleteIssue,
@@ -110,7 +110,7 @@ describe('issue:delete', () => {
     }
 
     IssueDelete = await esmock('../../../../src/commands/jira/issue/delete.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         deleteIssue: mockDeleteIssue,

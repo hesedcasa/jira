@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('issue:comment-update', () => {
   let IssueUpdateComment: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockUpdateComment: any
   let mockClearClients: any
   let jsonOutput: any
@@ -17,12 +17,12 @@ describe('issue:comment-update', () => {
     jsonOutput = null
     logOutput = []
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockUpdateComment = async () => ({
@@ -36,7 +36,7 @@ describe('issue:comment-update', () => {
     mockClearClients = () => {}
 
     IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/comment-update.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         updateComment: mockUpdateComment,
@@ -77,7 +77,7 @@ describe('issue:comment-update', () => {
     })
 
     IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/comment-update.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         updateComment: mockUpdateComment,
@@ -96,11 +96,11 @@ describe('issue:comment-update', () => {
     expect(jsonOutput.error).to.include('Comment not found')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/comment-update.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         updateComment: mockUpdateComment,
@@ -128,7 +128,7 @@ describe('issue:comment-update', () => {
     }
 
     IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/comment-update.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         updateComment: mockUpdateComment,
