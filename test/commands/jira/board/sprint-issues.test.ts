@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('board:sprint-issues', () => {
   let BoardSprintIssues: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockGetBoardIssuesForSprint: any
   let mockClearClients: any
   let jsonOutput: any
@@ -17,12 +17,12 @@ describe('board:sprint-issues', () => {
     jsonOutput = null
     logOutput = []
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockGetBoardIssuesForSprint = async () => ({
@@ -42,7 +42,7 @@ describe('board:sprint-issues', () => {
         clearClients: mockClearClients,
         getBoardIssuesForSprint: mockGetBoardIssuesForSprint,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -136,7 +136,7 @@ describe('board:sprint-issues', () => {
         clearClients: mockClearClients,
         getBoardIssuesForSprint: mockGetBoardIssuesForSprint,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new BoardSprintIssues.default(['123', '999'], createMockConfig())
@@ -151,15 +151,15 @@ describe('board:sprint-issues', () => {
     expect(jsonOutput.error).to.include('Sprint not found')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     BoardSprintIssues = await esmock('../../../../src/commands/jira/board/sprint-issues.js', {
       '../../../../src/agile/agile-client.js': {
         clearClients: mockClearClients,
         getBoardIssuesForSprint: mockGetBoardIssuesForSprint,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new BoardSprintIssues.default(['123', '456'], createMockConfig())
@@ -187,7 +187,7 @@ describe('board:sprint-issues', () => {
         clearClients: mockClearClients,
         getBoardIssuesForSprint: mockGetBoardIssuesForSprint,
       },
-      '../../../../src/config.js': {readConfig: mockReadConfig},
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new BoardSprintIssues.default(['123', '456'], createMockConfig())

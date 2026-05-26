@@ -8,7 +8,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('issue:search', () => {
   let IssueSearch: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockSearchIssues: any
   let mockClearClients: any
   let jsonOutput: any
@@ -18,16 +18,14 @@ describe('issue:search', () => {
     jsonOutput = null
     logOutput = []
 
-    // Mock successful config read
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
-    // Mock successful searchIssues call
     mockSearchIssues = async (_config: any, _jql: string, _max?: number, _next?: string, _fields?: string[]) => ({
       data: {
         issues: [
@@ -55,13 +53,12 @@ describe('issue:search', () => {
 
     mockClearClients = () => {}
 
-    // Import with mocks
     IssueSearch = await esmock('../../../../src/commands/jira/issue/search.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         searchIssues: mockSearchIssues,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -92,11 +89,11 @@ describe('issue:search', () => {
     }
 
     IssueSearch = await esmock('../../../../src/commands/jira/issue/search.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         searchIssues: mockSearchIssues,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueSearch.default(['assignee="john@example.com" AND type=Bug'], createMockConfig())
@@ -120,11 +117,11 @@ describe('issue:search', () => {
     }
 
     IssueSearch = await esmock('../../../../src/commands/jira/issue/search.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         searchIssues: mockSearchIssues,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueSearch.default(['project=TEST', '--max', '10'], createMockConfig())
@@ -148,11 +145,11 @@ describe('issue:search', () => {
     }
 
     IssueSearch = await esmock('../../../../src/commands/jira/issue/search.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         searchIssues: mockSearchIssues,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueSearch.default(['project=TEST', '--next', 'pagination-token'], createMockConfig())
@@ -176,11 +173,11 @@ describe('issue:search', () => {
     }
 
     IssueSearch = await esmock('../../../../src/commands/jira/issue/search.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         searchIssues: mockSearchIssues,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueSearch.default(['project=TEST', '--fields', 'summary,status,assignee'], createMockConfig())
@@ -213,11 +210,11 @@ describe('issue:search', () => {
     })
 
     IssueSearch = await esmock('../../../../src/commands/jira/issue/search.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         searchIssues: mockSearchIssues,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueSearch.default(['invalid jql'], createMockConfig())
@@ -232,15 +229,15 @@ describe('issue:search', () => {
     expect(jsonOutput.error).to.include('Invalid JQL query')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueSearch = await esmock('../../../../src/commands/jira/issue/search.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         searchIssues: mockSearchIssues,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueSearch.default(['project=TEST'], createMockConfig())
@@ -265,11 +262,11 @@ describe('issue:search', () => {
     }
 
     IssueSearch = await esmock('../../../../src/commands/jira/issue/search.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         searchIssues: mockSearchIssues,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueSearch.default(['project=TEST'], createMockConfig())

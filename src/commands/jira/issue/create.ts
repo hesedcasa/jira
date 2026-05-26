@@ -1,7 +1,6 @@
+import {createProfileManager, formatAsToon} from '@hesed/plugin-lib'
 import {Command, Flags} from '@oclif/core'
 
-import {readConfig} from '../../../config.js'
-import {formatAsToon} from '../../../format.js'
 import {clearClients, createIssue} from '../../../jira/jira-client.js'
 
 export default class IssueCreate extends Command {
@@ -24,8 +23,9 @@ export default class IssueCreate extends Command {
 
   public async run(): Promise<void> {
     const {flags} = await this.parse(IssueCreate)
-    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
-    if (!config) {
+    const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
+    const auth = await loadAuthConfig()
+    if (!auth) {
       return
     }
 
@@ -45,7 +45,7 @@ export default class IssueCreate extends Command {
       }
     }
 
-    const result = await createIssue(config.auth, fields)
+    const result = await createIssue(auth, fields)
     clearClients()
 
     if (flags.toon) {

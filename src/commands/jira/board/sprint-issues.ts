@@ -1,8 +1,7 @@
+import {createProfileManager, formatAsToon} from '@hesed/plugin-lib'
 import {Args, Command, Flags} from '@oclif/core'
 
 import {clearClients, getBoardIssuesForSprint} from '../../../agile/agile-client.js'
-import {readConfig} from '../../../config.js'
-import {formatAsToon} from '../../../format.js'
 
 export default class BoardSprintIssues extends Command {
   /* eslint-disable perfectionist/sort-objects */
@@ -27,13 +26,14 @@ export default class BoardSprintIssues extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(BoardSprintIssues)
-    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
-    if (!config) {
+    const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
+    const auth = await loadAuthConfig()
+    if (!auth) {
       return
     }
 
     const result = await getBoardIssuesForSprint(
-      config.auth,
+      auth,
       args.boardId,
       args.sprintId,
       args.jql,

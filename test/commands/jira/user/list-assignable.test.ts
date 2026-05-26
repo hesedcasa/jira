@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('user:list-assignable', () => {
   let UserListAssignable: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockFindAssignableUsers: any
   let mockClearClients: any
   let jsonOutput: any
@@ -17,12 +17,12 @@ describe('user:list-assignable', () => {
     jsonOutput = null
     logOutput = []
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockFindAssignableUsers = async () => ({
@@ -38,11 +38,11 @@ describe('user:list-assignable', () => {
     mockClearClients = () => {}
 
     UserListAssignable = await esmock('../../../../src/commands/jira/user/list-assignable.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         findAssignableUsers: mockFindAssignableUsers,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -106,11 +106,11 @@ describe('user:list-assignable', () => {
     })
 
     UserListAssignable = await esmock('../../../../src/commands/jira/user/list-assignable.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         findAssignableUsers: mockFindAssignableUsers,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new UserListAssignable.default(['INVALID-999'], createMockConfig())
@@ -125,15 +125,15 @@ describe('user:list-assignable', () => {
     expect(jsonOutput.error).to.include('Issue not found')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     UserListAssignable = await esmock('../../../../src/commands/jira/user/list-assignable.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         findAssignableUsers: mockFindAssignableUsers,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new UserListAssignable.default(['TEST-123'], createMockConfig())
@@ -157,11 +157,11 @@ describe('user:list-assignable', () => {
     }
 
     UserListAssignable = await esmock('../../../../src/commands/jira/user/list-assignable.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         findAssignableUsers: mockFindAssignableUsers,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new UserListAssignable.default(['TEST-123'], createMockConfig())

@@ -1,7 +1,6 @@
+import {createProfileManager, formatAsToon} from '@hesed/plugin-lib'
 import {Args, Command, Flags} from '@oclif/core'
 
-import {readConfig} from '../../../config.js'
-import {formatAsToon} from '../../../format.js'
 import {clearClients, getProject} from '../../../jira/jira-client.js'
 
 export default class ProjectGet extends Command {
@@ -17,12 +16,13 @@ export default class ProjectGet extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(ProjectGet)
-    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
-    if (!config) {
+    const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
+    const auth = await loadAuthConfig()
+    if (!auth) {
       return
     }
 
-    const result = await getProject(config.auth, args.projectId)
+    const result = await getProject(auth, args.projectId)
     clearClients()
 
     if (flags.toon) {

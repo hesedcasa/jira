@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('issue:create', () => {
   let IssueCreate: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockCreateIssue: any
   let mockClearClients: any
   let jsonOutput: any
@@ -19,16 +19,14 @@ describe('issue:create', () => {
     logOutput = []
     errorOutput = null
 
-    // Mock successful config read
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
-    // Mock successful createIssue call
     mockCreateIssue = async (_config: any, _fields: any) => ({
       data: {
         id: '10001',
@@ -40,13 +38,12 @@ describe('issue:create', () => {
 
     mockClearClients = () => {}
 
-    // Import with mocks
     IssueCreate = await esmock('../../../../src/commands/jira/issue/create.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         createIssue: mockCreateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -88,11 +85,11 @@ describe('issue:create', () => {
     }
 
     IssueCreate = await esmock('../../../../src/commands/jira/issue/create.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         createIssue: mockCreateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueCreate.default(
@@ -257,11 +254,11 @@ describe('issue:create', () => {
     })
 
     IssueCreate = await esmock('../../../../src/commands/jira/issue/create.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         createIssue: mockCreateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueCreate.default(
@@ -288,15 +285,15 @@ describe('issue:create', () => {
     expect(jsonOutput.error).to.include('Permission denied')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueCreate = await esmock('../../../../src/commands/jira/issue/create.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         createIssue: mockCreateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueCreate.default(
@@ -333,11 +330,11 @@ describe('issue:create', () => {
     }
 
     IssueCreate = await esmock('../../../../src/commands/jira/issue/create.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         createIssue: mockCreateIssue,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueCreate.default(

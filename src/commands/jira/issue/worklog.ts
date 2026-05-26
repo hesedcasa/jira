@@ -1,7 +1,6 @@
+import {createProfileManager, formatAsToon} from '@hesed/plugin-lib'
 import {Args, Command, Flags} from '@oclif/core'
 
-import {readConfig} from '../../../config.js'
-import {formatAsToon} from '../../../format.js'
 import {clearClients, worklog} from '../../../jira/jira-client.js'
 
 export default class IssueWorklog extends Command {
@@ -25,12 +24,13 @@ export default class IssueWorklog extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(IssueWorklog)
-    const config = await readConfig(this.config.configDir, this.log.bind(this), flags.profile)
-    if (!config) {
+    const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
+    const auth = await loadAuthConfig()
+    if (!auth) {
       return
     }
 
-    const result = await worklog(config.auth, args.issueId, args.started, args.timeSpent, args.comment)
+    const result = await worklog(auth, args.issueId, args.started, args.timeSpent, args.comment)
     clearClients()
 
     if (flags.toon) {

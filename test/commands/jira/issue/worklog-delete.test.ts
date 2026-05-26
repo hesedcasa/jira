@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('issue:delete-worklog', () => {
   let IssueDeleteWorklog: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockDeleteWorklog: any
   let mockClearClients: any
   let jsonOutput: any
@@ -15,12 +15,12 @@ describe('issue:delete-worklog', () => {
   beforeEach(async () => {
     jsonOutput = null
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockDeleteWorklog = async () => ({
@@ -31,11 +31,11 @@ describe('issue:delete-worklog', () => {
     mockClearClients = () => {}
 
     IssueDeleteWorklog = await esmock('../../../../src/commands/jira/issue/worklog-delete.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         deleteWorklog: mockDeleteWorklog,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -59,11 +59,11 @@ describe('issue:delete-worklog', () => {
     })
 
     IssueDeleteWorklog = await esmock('../../../../src/commands/jira/issue/worklog-delete.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         deleteWorklog: mockDeleteWorklog,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueDeleteWorklog.default(['TEST-123', '99999'], createMockConfig())
@@ -78,15 +78,15 @@ describe('issue:delete-worklog', () => {
     expect(jsonOutput.error).to.include('Worklog not found')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     IssueDeleteWorklog = await esmock('../../../../src/commands/jira/issue/worklog-delete.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         deleteWorklog: mockDeleteWorklog,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueDeleteWorklog.default(['TEST-123', '10001'], createMockConfig())
@@ -110,11 +110,11 @@ describe('issue:delete-worklog', () => {
     }
 
     IssueDeleteWorklog = await esmock('../../../../src/commands/jira/issue/worklog-delete.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         deleteWorklog: mockDeleteWorklog,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new IssueDeleteWorklog.default(['TEST-123', '10001'], createMockConfig())

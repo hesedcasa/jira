@@ -7,7 +7,7 @@ import {createMockConfig} from '../../../helpers/config-mock.js'
 
 describe('user:get', () => {
   let UserGet: any
-  let mockReadConfig: any
+  let mockCreateProfileManager: any
   let mockGetUser: any
   let mockClearClients: any
   let jsonOutput: any
@@ -17,12 +17,12 @@ describe('user:get', () => {
     jsonOutput = null
     logOutput = []
 
-    mockReadConfig = async () => ({
-      auth: {
+    mockCreateProfileManager = () => ({
+      loadAuthConfig: async () => ({
         apiToken: 'test-token',
         email: 'test@example.com',
         host: 'https://test.atlassian.net',
-      },
+      }),
     })
 
     mockGetUser = async () => ({
@@ -37,11 +37,11 @@ describe('user:get', () => {
     mockClearClients = () => {}
 
     UserGet = await esmock('../../../../src/commands/jira/user/get.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getUser: mockGetUser,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
   })
 
@@ -117,11 +117,11 @@ describe('user:get', () => {
     })
 
     UserGet = await esmock('../../../../src/commands/jira/user/get.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getUser: mockGetUser,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new UserGet.default(['invalid-id'], createMockConfig())
@@ -136,15 +136,15 @@ describe('user:get', () => {
     expect(jsonOutput.error).to.include('User not found')
   })
 
-  it('exits early when config is not available', async () => {
-    mockReadConfig = async () => null
+  it('exits early when auth is not available', async () => {
+    mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
     UserGet = await esmock('../../../../src/commands/jira/user/get.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getUser: mockGetUser,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new UserGet.default(['5b10ac8d82e05b22cc7d4ef5'], createMockConfig())
@@ -168,11 +168,11 @@ describe('user:get', () => {
     }
 
     UserGet = await esmock('../../../../src/commands/jira/user/get.js', {
-      '../../../../src/config.js': {readConfig: mockReadConfig},
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getUser: mockGetUser,
       },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
     })
 
     const command = new UserGet.default(['5b10ac8d82e05b22cc7d4ef5'], createMockConfig())
