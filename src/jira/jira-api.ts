@@ -1,3 +1,4 @@
+import {type ApiResult, type AuthConfig, buildAuthHeader} from '@hesed/plugin-lib'
 import fs from 'fs-extra'
 import {Version3Client} from 'jira.js'
 import {markdownToAdf} from 'marklassian'
@@ -6,29 +7,14 @@ import path from 'node:path'
 import {defaultFields, processIssueRenderedAndFields} from '../utils.js'
 
 /**
- * Generic API result
- */
-export interface ApiResult {
-  data?: unknown
-  error?: unknown
-  success: boolean
-}
-
-export interface Config {
-  apiToken: string
-  email?: string
-  host: string
-}
-
-/**
  * Jira API Utility Module
  * Provides core Jira API operations with formatting
  */
 export class JiraApi {
   private client?: Version3Client
-  private config: Config
+  private config: AuthConfig
 
-  constructor(config: Config) {
+  constructor(config: AuthConfig) {
     this.config = config
   }
 
@@ -361,10 +347,7 @@ export class JiraApi {
         }
       }
 
-      // Build auth header from config
-      const authHeader = this.config.email
-        ? `Basic ${Buffer.from(`${this.config.email}:${this.config.apiToken}`).toString('base64')}`
-        : `Bearer ${this.config.apiToken}`
+      const authHeader = buildAuthHeader(this.config)
 
       // Download the attachment content
       // eslint-disable-next-line n/no-unsupported-features/node-builtins -- fetch is available in Node 18+
@@ -486,9 +469,7 @@ export class JiraApi {
    */
   async getIssueDevelopment(issueId: string, applicationType: string, dataType: string): Promise<ApiResult> {
     try {
-      const authHeader = this.config.email
-        ? `Basic ${Buffer.from(`${this.config.email}:${this.config.apiToken}`).toString('base64')}`
-        : `Bearer ${this.config.apiToken}`
+      const authHeader = buildAuthHeader(this.config)
       const url = `${this.config.host}/rest/dev-status/latest/issue/detail?issueId=${issueId}&applicationType=${applicationType}&dataType=${dataType}`
       // eslint-disable-next-line n/no-unsupported-features/node-builtins -- fetch is available in Node 18+
       const res = await fetch(url, {
@@ -877,9 +858,7 @@ export class JiraApi {
   private async resolveMediaUUID(thumbnailUrl?: string, contentUrl?: string): Promise<null | string> {
     const tryUrl = async (proxyUrl: string): Promise<null | string> => {
       try {
-        const authHeader = this.config.email
-          ? `Basic ${Buffer.from(`${this.config.email}:${this.config.apiToken}`).toString('base64')}`
-          : `Bearer ${this.config.apiToken}`
+        const authHeader = buildAuthHeader(this.config)
         // eslint-disable-next-line n/no-unsupported-features/node-builtins -- fetch is available in Node 18+
         const res = await fetch(proxyUrl, {
           headers: {Authorization: authHeader},

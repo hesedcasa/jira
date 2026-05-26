@@ -1,22 +1,8 @@
+import {type ApiResult, type AuthConfig} from '@hesed/plugin-lib'
 import {AgileClient} from 'jira.js'
 import {Issue} from 'jira.js/version3/models/issue'
 
 import {defaultFields, processIssueRenderedAndFields} from '../utils.js'
-
-/**
- * Generic API result
- */
-export interface ApiResult {
-  data?: unknown
-  error?: unknown
-  success: boolean
-}
-
-export interface Config {
-  apiToken: string
-  email?: string
-  host: string
-}
 
 interface PaginateResult {
   expand?: string
@@ -32,9 +18,9 @@ interface PaginateResult {
  */
 export class AgileApi {
   private client?: AgileClient
-  private config: Config
+  private config: AuthConfig
 
-  constructor(config: Config) {
+  constructor(config: AuthConfig) {
     this.config = config
   }
 
