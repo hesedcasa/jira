@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/hesedcasa/jira/compare/v0.8.1...v0.9.0) (2026-05-27)
+
+
+### 🎉 Features
+
+* add auth delete command to clear saved credentials ([#73](https://github.com/hesedcasa/jira/issues/73)) ([7d5319a](https://github.com/hesedcasa/jira/commit/7d5319a9cc325c3d7e5860264d998785d9cbeb47))
+
+
+### ♻️ Chores
+
+* migrate auth commands and format to @hesed/plugin-lib ([#72](https://github.com/hesedcasa/jira/issues/72)) ([e0b496d](https://github.com/hesedcasa/jira/commit/e0b496d8be51f5a75adda8bec1b5e88657f1f742))
+
 ## [0.8.1](https://github.com/hesedcasa/jira/compare/v0.8.0...v0.8.1) (2026-05-14)
 
 
