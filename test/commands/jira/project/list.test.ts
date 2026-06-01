@@ -116,7 +116,7 @@ describe('project:list', () => {
       return {data: [], success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(listProjectsCalled).to.be.false
   })

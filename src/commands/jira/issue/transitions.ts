@@ -19,7 +19,7 @@ export default class IssueGetTransitions extends Command {
     const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
     const auth = await loadAuthConfig()
     if (!auth) {
-      return
+      this.error(`Missing authentication config.`)
     }
 
     const result = await getTransitions(auth, args.issueId)

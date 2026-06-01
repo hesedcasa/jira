@@ -144,7 +144,7 @@ describe('user:list-assignable', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(findAssignableUsersCalled).to.be.false
   })

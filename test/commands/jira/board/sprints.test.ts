@@ -157,7 +157,7 @@ describe('board:sprints', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(getAllSprintsCalled).to.be.false
   })

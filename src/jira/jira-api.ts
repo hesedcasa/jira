@@ -433,7 +433,7 @@ export class JiraApi {
               accessToken: this.config.apiToken,
             },
           },
-      host: this.config.host,
+      host: this.config.host!,
     }
 
     this.client = new Version3Client(options)

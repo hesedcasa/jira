@@ -115,7 +115,7 @@ describe('issue:comment-update', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(updateCommentCalled).to.be.false
   })

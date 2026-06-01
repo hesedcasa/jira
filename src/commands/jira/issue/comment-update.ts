@@ -26,7 +26,7 @@ export default class IssueUpdateComment extends Command {
     const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
     const auth = await loadAuthConfig()
     if (!auth) {
-      return
+      this.error(`Missing authentication config.`)
     }
 
     const fields: Record<string, string> = {}

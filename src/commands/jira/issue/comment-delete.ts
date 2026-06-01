@@ -21,7 +21,7 @@ export default class IssueDeleteComment extends Command {
     const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
     const auth = await loadAuthConfig()
     if (!auth) {
-      return
+      this.error(`Missing authentication config.`)
     }
 
     const result = await deleteComment(auth, args.id, args.issueId)

@@ -1,3 +1,3 @@
 import {createAuthListCommand} from '@hesed/plugin-lib'
 
-export default createAuthListCommand({hasHostFlag: true})
+export default createAuthListCommand()

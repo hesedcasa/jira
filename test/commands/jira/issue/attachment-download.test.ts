@@ -128,7 +128,7 @@ describe('issue:download-attachment', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(downloadAttachmentCalled).to.be.false
   })

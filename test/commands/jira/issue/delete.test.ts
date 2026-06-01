@@ -97,7 +97,7 @@ describe('issue:delete', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(deleteIssueCalled).to.be.false
   })

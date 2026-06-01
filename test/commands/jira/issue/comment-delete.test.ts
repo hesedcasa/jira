@@ -97,7 +97,7 @@ describe('issue:delete-comment', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(deleteCommentCalled).to.be.false
   })

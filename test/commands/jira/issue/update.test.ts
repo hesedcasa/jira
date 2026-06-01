@@ -205,7 +205,7 @@ describe('issue:update', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(updateIssueCalled).to.be.false
   })

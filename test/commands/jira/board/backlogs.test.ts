@@ -170,7 +170,7 @@ describe('board:backlogs', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(getIssuesForBacklogCalled).to.be.false
   })

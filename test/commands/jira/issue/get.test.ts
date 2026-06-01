@@ -121,7 +121,7 @@ describe('issue:get', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(getIssueCalled).to.be.false
   })

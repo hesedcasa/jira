@@ -116,7 +116,7 @@ describe('project:get', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(getProjectCalled).to.be.false
   })

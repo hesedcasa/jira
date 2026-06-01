@@ -170,7 +170,7 @@ describe('board:sprint-issues', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(getBoardIssuesForSprintCalled).to.be.false
   })
