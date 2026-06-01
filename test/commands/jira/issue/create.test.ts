@@ -317,7 +317,7 @@ describe('issue:create', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(createIssueCalled).to.be.false
   })

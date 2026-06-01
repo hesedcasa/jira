@@ -21,7 +21,7 @@ export default class BoardList extends Command {
     const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
     const auth = await loadAuthConfig()
     if (!auth) {
-      return
+      this.error(`Missing authentication config.`)
     }
 
     const result = await getAllBoards(auth, args.projectId, flags.max, flags.start)

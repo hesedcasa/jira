@@ -4,7 +4,6 @@ import {clearClients, testConnection} from '../../../jira/jira-client.js'
 
 export default createAuthTestCommand({
   clearClients,
-  hasHostFlag: true,
   serviceName: 'Jira',
   testConnection,
 })

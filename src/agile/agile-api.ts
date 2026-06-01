@@ -176,7 +176,7 @@ export class AgileApi {
               accessToken: this.config.apiToken,
             },
           },
-      host: this.config.host,
+      host: this.config.host!,
     }
 
     this.client = new AgileClient(options)

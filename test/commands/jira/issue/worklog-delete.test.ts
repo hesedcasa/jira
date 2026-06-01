@@ -97,7 +97,7 @@ describe('issue:delete-worklog', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(deleteWorklogCalled).to.be.false
   })

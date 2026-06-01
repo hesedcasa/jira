@@ -97,7 +97,7 @@ describe('issue:assign', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(assignIssueCalled).to.be.false
   })

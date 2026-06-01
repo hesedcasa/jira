@@ -25,7 +25,7 @@ export default class BoardSprints extends Command {
     const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
     const auth = await loadAuthConfig()
     if (!auth) {
-      return
+      this.error(`Missing authentication config.`)
     }
 
     const result = await getAllSprints(auth, args.boardId, flags.max, flags.start, flags.state)

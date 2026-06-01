@@ -119,7 +119,7 @@ describe('issue:get-transitions', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(getTransitionsCalled).to.be.false
   })

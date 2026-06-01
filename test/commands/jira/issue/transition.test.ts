@@ -97,7 +97,7 @@ describe('issue:transition', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(doTransitionCalled).to.be.false
   })

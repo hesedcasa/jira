@@ -157,7 +157,7 @@ describe('board:versions', () => {
       return {data: {}, success: true}
     }
 
-    await command.run()
+    await command.run().catch(() => {})
 
     expect(getAllVersionsCalled).to.be.false
   })

@@ -23,7 +23,7 @@ export default class IssueAttachment extends Command {
     const {loadAuthConfig} = createProfileManager(this.config, flags.profile)
     const auth = await loadAuthConfig()
     if (!auth) {
-      return
+      this.error(`Missing authentication config.`)
     }
 
     action.start(`Uploading attachment "${args.file}" to issue ${args.issueId}`)
