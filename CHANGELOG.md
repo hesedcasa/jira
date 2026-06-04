@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/hesedcasa/jira/compare/v0.9.0...v0.10.0) (2026-06-04)
+
+
+### 🎉 Features
+
+* upgrade @hesed/plugin-lib to v0.9.0 and pass configFile to auth commands ([7143a2d](https://github.com/hesedcasa/jira/commit/7143a2d23d54493bfc8884a81c9bbd605135699d))
+
 ## [0.9.0](https://github.com/hesedcasa/jira/compare/v0.8.1...v0.9.0) (2026-05-27)
 
 
