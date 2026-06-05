@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/hesedcasa/jira/compare/v0.10.0...v0.10.1) (2026-06-05)
+
+
+### 🛠️ Fixes
+
+* pass jira-config.json to createProfileManager in all commands ([f9284e2](https://github.com/hesedcasa/jira/commit/f9284e2d5171f4e3861fc647c46ea31f24fa0794))
+
 ## [0.10.0](https://github.com/hesedcasa/jira/compare/v0.9.0...v0.10.0) (2026-06-04)
 
 
