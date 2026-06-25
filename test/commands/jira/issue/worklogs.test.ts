@@ -10,11 +10,9 @@ describe('issue:get-worklogs', () => {
   let mockCreateProfileManager: any
   let mockGetIssueWorklog: any
   let mockClearClients: any
-  let jsonOutput: any
   let logOutput: string[]
 
   beforeEach(async () => {
-    jsonOutput = null
     logOutput = []
 
     mockCreateProfileManager = () => ({
@@ -57,42 +55,30 @@ describe('issue:get-worklogs', () => {
   it('gets worklogs successfully', async () => {
     const command = new IssueGetWorklogs.default(['TEST-123'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
-    expect(jsonOutput.data.worklogs).to.be.an('array')
-    expect(jsonOutput.data.worklogs).to.have.lengthOf(2)
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
+    expect(result.data.worklogs).to.be.an('array')
+    expect(result.data.worklogs).to.have.lengthOf(2)
   })
 
   it('respects --max flag for pagination', async () => {
     const command = new IssueGetWorklogs.default(['TEST-123', '--max', '10'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('respects --start flag for pagination', async () => {
     const command = new IssueGetWorklogs.default(['TEST-123', '--start', '5'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('formats output as TOON when --toon flag is provided', async () => {
@@ -123,14 +109,10 @@ describe('issue:get-worklogs', () => {
 
     const command = new IssueGetWorklogs.default(['INVALID-999'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('Issue not found')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('Issue not found')
   })
 
   it('exits early when auth is not available', async () => {
@@ -173,7 +155,6 @@ describe('issue:get-worklogs', () => {
     })
 
     const command = new IssueGetWorklogs.default(['TEST-123'], createMockConfig())
-    command.logJson = () => {}
 
     await command.run()
 

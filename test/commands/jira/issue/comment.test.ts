@@ -11,11 +11,9 @@ describe('issue:add-comment', () => {
   let mockAddComment: any
   let mockAddCommentWithMedia: any
   let mockClearClients: any
-  let jsonOutput: any
   let logOutput: string[]
 
   beforeEach(async () => {
-    jsonOutput = null
     logOutput = []
 
     mockCreateProfileManager = () => ({
@@ -51,15 +49,11 @@ describe('issue:add-comment', () => {
   it('adds comment successfully', async () => {
     const command = new IssueAddComment.default(['TEST-123', 'Test comment'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
-    expect(jsonOutput.data).to.have.property('id', '10001')
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
+    expect(result.data).to.have.property('id', '10001')
   })
 
   it('formats output as TOON when --toon flag is provided', async () => {
@@ -91,14 +85,10 @@ describe('issue:add-comment', () => {
 
     const command = new IssueAddComment.default(['TEST-123', 'Test comment'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('Permission denied')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('Permission denied')
   })
 
   it('exits early when auth is not available', async () => {
@@ -143,7 +133,6 @@ describe('issue:add-comment', () => {
     })
 
     const command = new IssueAddComment.default(['TEST-123', 'Test comment'], createMockConfig())
-    command.logJson = () => {}
 
     await command.run()
 
@@ -179,16 +168,13 @@ describe('issue:add-comment', () => {
       ['TEST-123', 'See attached', '--attach', './screenshot.png'],
       createMockConfig(),
     )
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
 
-    await command.run()
+    const result = await command.run()
 
     expect(addCommentWithMediaCalled).to.be.true
     expect(addCommentCalled).to.be.false
     expect(capturedFilePaths).to.deep.equal(['./screenshot.png'])
-    expect(jsonOutput.success).to.be.true
+    expect(result.success).to.be.true
   })
 
   it('supports multiple --attach flags', async () => {
@@ -212,7 +198,6 @@ describe('issue:add-comment', () => {
       ['TEST-123', 'See attached', '--attach', './image.png', '--attach', './video.mp4'],
       createMockConfig(),
     )
-    command.logJson = () => {}
 
     await command.run()
 

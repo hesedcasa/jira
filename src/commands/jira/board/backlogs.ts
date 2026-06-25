@@ -1,9 +1,10 @@
-import {createProfileManager, formatAsToon} from '@hesed/plugin-lib'
-import {Args, Command, Flags} from '@oclif/core'
+import {type ApiResult, createProfileManager, formatAsToon} from '@hesed/plugin-lib'
+import {Args, Flags} from '@oclif/core'
 
 import {clearClients, getIssuesForBacklog} from '../../../agile/agile-client.js'
+import {BaseCommand} from '../../../base-command.js'
 
-export default class BoardBacklogs extends Command {
+export default class BoardBacklogs extends BaseCommand {
   static override args = {
     boardId: Args.integer({description: 'Board ID', required: true}),
     jql: Args.string({description: 'JQL expression', required: false}),
@@ -22,7 +23,7 @@ export default class BoardBacklogs extends Command {
     toon: Flags.boolean({description: 'Format output as toon', required: false}),
   }
 
-  public async run(): Promise<void> {
+  public async run(): Promise<ApiResult> {
     const {args, flags} = await this.parse(BoardBacklogs)
     const {loadAuthConfig} = createProfileManager(this.config, flags.profile, 'jira-config.json')
     const auth = await loadAuthConfig()
@@ -42,8 +43,8 @@ export default class BoardBacklogs extends Command {
 
     if (flags.toon) {
       this.log(formatAsToon(result))
-    } else {
-      this.logJson(result)
     }
+
+    return result
   }
 }

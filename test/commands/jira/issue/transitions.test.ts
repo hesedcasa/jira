@@ -10,11 +10,9 @@ describe('issue:get-transitions', () => {
   let mockCreateProfileManager: any
   let mockGetTransitions: any
   let mockClearClients: any
-  let jsonOutput: any
   let logOutput: string[]
 
   beforeEach(async () => {
-    jsonOutput = null
     logOutput = []
 
     mockCreateProfileManager = () => ({
@@ -50,16 +48,12 @@ describe('issue:get-transitions', () => {
   it('gets transitions successfully', async () => {
     const command = new IssueGetTransitions.default(['TEST-123'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
-    expect(jsonOutput.data.transitions).to.be.an('array')
-    expect(jsonOutput.data.transitions).to.have.lengthOf(3)
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
+    expect(result.data.transitions).to.be.an('array')
+    expect(result.data.transitions).to.have.lengthOf(3)
   })
 
   it('formats output as TOON when --toon flag is provided', async () => {
@@ -90,14 +84,10 @@ describe('issue:get-transitions', () => {
 
     const command = new IssueGetTransitions.default(['INVALID-999'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('Issue not found')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('Issue not found')
   })
 
   it('exits early when auth is not available', async () => {
@@ -140,7 +130,6 @@ describe('issue:get-transitions', () => {
     })
 
     const command = new IssueGetTransitions.default(['TEST-123'], createMockConfig())
-    command.logJson = () => {}
 
     await command.run()
 

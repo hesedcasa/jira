@@ -10,11 +10,9 @@ describe('issue:comment-update', () => {
   let mockCreateProfileManager: any
   let mockUpdateComment: any
   let mockClearClients: any
-  let jsonOutput: any
   let logOutput: string[]
 
   beforeEach(async () => {
-    jsonOutput = null
     logOutput = []
 
     mockCreateProfileManager = () => ({
@@ -47,15 +45,11 @@ describe('issue:comment-update', () => {
   it('updates comment successfully', async () => {
     const command = new IssueUpdateComment.default(['TEST-123', '10001', 'Updated text'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
-    expect(jsonOutput.data.id).to.equal('10001')
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
+    expect(result.data.id).to.equal('10001')
   })
 
   it('formats output as TOON when --toon flag is provided', async () => {
@@ -86,14 +80,10 @@ describe('issue:comment-update', () => {
 
     const command = new IssueUpdateComment.default(['TEST-123', '99999', 'Updated text'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('Comment not found')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('Comment not found')
   })
 
   it('exits early when auth is not available', async () => {
@@ -136,7 +126,6 @@ describe('issue:comment-update', () => {
     })
 
     const command = new IssueUpdateComment.default(['TEST-123', '10001', 'Updated text'], createMockConfig())
-    command.logJson = () => {}
 
     await command.run()
 

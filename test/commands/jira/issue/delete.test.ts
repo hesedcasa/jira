@@ -10,11 +10,8 @@ describe('issue:delete', () => {
   let mockCreateProfileManager: any
   let mockDeleteIssue: any
   let mockClearClients: any
-  let jsonOutput: any
 
   beforeEach(async () => {
-    jsonOutput = null
-
     mockCreateProfileManager = () => ({
       loadAuthConfig: async () => ({
         apiToken: 'test-token',
@@ -42,14 +39,10 @@ describe('issue:delete', () => {
   it('deletes issue successfully', async () => {
     const command = new IssueDelete.default(['TEST-123'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('handles API errors gracefully', async () => {
@@ -68,14 +61,10 @@ describe('issue:delete', () => {
 
     const command = new IssueDelete.default(['TEST-999'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('Issue not found')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('Issue not found')
   })
 
   it('exits early when auth is not available', async () => {
@@ -118,7 +107,6 @@ describe('issue:delete', () => {
     })
 
     const command = new IssueDelete.default(['TEST-123'], createMockConfig())
-    command.logJson = () => {}
 
     await command.run()
 

@@ -10,11 +10,8 @@ describe('issue:delete-comment', () => {
   let mockCreateProfileManager: any
   let mockDeleteComment: any
   let mockClearClients: any
-  let jsonOutput: any
 
   beforeEach(async () => {
-    jsonOutput = null
-
     mockCreateProfileManager = () => ({
       loadAuthConfig: async () => ({
         apiToken: 'test-token',
@@ -42,14 +39,10 @@ describe('issue:delete-comment', () => {
   it('deletes comment successfully', async () => {
     const command = new IssueDeleteComment.default(['TEST-123', '10001'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('handles API errors gracefully', async () => {
@@ -68,14 +61,10 @@ describe('issue:delete-comment', () => {
 
     const command = new IssueDeleteComment.default(['TEST-123', '99999'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('Comment not found')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('Comment not found')
   })
 
   it('exits early when auth is not available', async () => {
@@ -118,7 +107,6 @@ describe('issue:delete-comment', () => {
     })
 
     const command = new IssueDeleteComment.default(['TEST-123', '10001'], createMockConfig())
-    command.logJson = () => {}
 
     await command.run()
 

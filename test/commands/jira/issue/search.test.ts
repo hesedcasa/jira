@@ -11,11 +11,9 @@ describe('issue:search', () => {
   let mockCreateProfileManager: any
   let mockSearchIssues: any
   let mockClearClients: any
-  let jsonOutput: any
   let logOutput: string[]
 
   beforeEach(async () => {
-    jsonOutput = null
     logOutput = []
 
     mockCreateProfileManager = () => ({
@@ -65,16 +63,12 @@ describe('issue:search', () => {
   it('searches for issues with JQL query', async () => {
     const command = new IssueSearch.default(['project=TEST'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
-    expect(jsonOutput.data.issues).to.be.an('array')
-    expect(jsonOutput.data.issues).to.have.lengthOf(2)
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
+    expect(result.data.issues).to.be.an('array')
+    expect(result.data.issues).to.have.lengthOf(2)
   })
 
   it('passes JQL query correctly to searchIssues', async () => {
@@ -97,8 +91,6 @@ describe('issue:search', () => {
     })
 
     const command = new IssueSearch.default(['assignee="john@example.com" AND type=Bug'], createMockConfig())
-
-    command.logJson = () => {}
 
     await command.run()
 
@@ -126,8 +118,6 @@ describe('issue:search', () => {
 
     const command = new IssueSearch.default(['project=TEST', '--max', '10'], createMockConfig())
 
-    command.logJson = () => {}
-
     await command.run()
 
     expect(receivedMax).to.equal(10)
@@ -154,8 +144,6 @@ describe('issue:search', () => {
 
     const command = new IssueSearch.default(['project=TEST', '--next', 'pagination-token'], createMockConfig())
 
-    command.logJson = () => {}
-
     await command.run()
 
     expect(receivedNext).to.equal('pagination-token')
@@ -181,8 +169,6 @@ describe('issue:search', () => {
     })
 
     const command = new IssueSearch.default(['project=TEST', '--fields', 'summary,status,assignee'], createMockConfig())
-
-    command.logJson = () => {}
 
     await command.run()
 
@@ -219,14 +205,10 @@ describe('issue:search', () => {
 
     const command = new IssueSearch.default(['invalid jql'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('Invalid JQL query')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('Invalid JQL query')
   })
 
   it('exits early when auth is not available', async () => {
@@ -270,8 +252,6 @@ describe('issue:search', () => {
     })
 
     const command = new IssueSearch.default(['project=TEST'], createMockConfig())
-
-    command.logJson = () => {}
 
     await command.run()
 

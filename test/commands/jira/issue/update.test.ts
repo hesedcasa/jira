@@ -10,11 +10,8 @@ describe('issue:update', () => {
   let mockCreateProfileManager: any
   let mockUpdateIssue: any
   let mockClearClients: any
-  let jsonOutput: any
 
   beforeEach(async () => {
-    jsonOutput = null
-
     mockCreateProfileManager = () => ({
       loadAuthConfig: async () => ({
         apiToken: 'test-token',
@@ -48,15 +45,11 @@ describe('issue:update', () => {
       createMockConfig(),
     )
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
-    expect(jsonOutput.data).to.have.property('key', 'TEST-123')
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
+    expect(result.data).to.have.property('key', 'TEST-123')
   })
 
   it('parses fields with equals signs in values correctly', async () => {
@@ -83,8 +76,6 @@ describe('issue:update', () => {
       createMockConfig(),
     )
 
-    command.logJson = () => {}
-
     await command.run()
 
     expect(receivedFields).to.have.property('summary', 'Test=Summary=With=Equals')
@@ -110,8 +101,6 @@ describe('issue:update', () => {
     })
 
     const command = new IssueUpdate.default(['PROJ-456', '--fields', 'summary=Test'], createMockConfig())
-
-    command.logJson = () => {}
 
     await command.run()
 
@@ -150,8 +139,6 @@ describe('issue:update', () => {
       createMockConfig(),
     )
 
-    command.logJson = () => {}
-
     await command.run()
 
     expect(receivedFields).to.have.property('summary', 'New Summary')
@@ -175,14 +162,10 @@ describe('issue:update', () => {
 
     const command = new IssueUpdate.default(['INVALID-999', '--fields', 'summary=Test'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('Issue not found')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('Issue not found')
   })
 
   it('exits early when auth is not available', async () => {
@@ -226,8 +209,6 @@ describe('issue:update', () => {
     })
 
     const command = new IssueUpdate.default(['TEST-123', '--fields', 'summary=Test'], createMockConfig())
-
-    command.logJson = () => {}
 
     await command.run()
 

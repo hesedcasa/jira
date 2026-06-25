@@ -10,11 +10,9 @@ describe('user:list-assignable', () => {
   let mockCreateProfileManager: any
   let mockFindAssignableUsers: any
   let mockClearClients: any
-  let jsonOutput: any
   let logOutput: string[]
 
   beforeEach(async () => {
-    jsonOutput = null
     logOutput = []
 
     mockCreateProfileManager = () => ({
@@ -49,42 +47,30 @@ describe('user:list-assignable', () => {
   it('lists assignable users successfully', async () => {
     const command = new UserListAssignable.default(['TEST-123'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
-    expect(jsonOutput.data.users).to.be.an('array')
-    expect(jsonOutput.data.users).to.have.lengthOf(2)
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
+    expect(result.data.users).to.be.an('array')
+    expect(result.data.users).to.have.lengthOf(2)
   })
 
   it('respects --query flag for filtering users', async () => {
     const command = new UserListAssignable.default(['TEST-123', '--query', 'john'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('respects -q shorthand flag for query', async () => {
     const command = new UserListAssignable.default(['TEST-123', '-q', 'jane'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('formats output as TOON when --toon flag is provided', async () => {
@@ -115,14 +101,10 @@ describe('user:list-assignable', () => {
 
     const command = new UserListAssignable.default(['INVALID-999'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('Issue not found')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('Issue not found')
   })
 
   it('exits early when auth is not available', async () => {
@@ -165,7 +147,6 @@ describe('user:list-assignable', () => {
     })
 
     const command = new UserListAssignable.default(['TEST-123'], createMockConfig())
-    command.logJson = () => {}
 
     await command.run()
 

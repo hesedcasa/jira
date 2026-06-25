@@ -10,11 +10,9 @@ describe('issue:worklog', () => {
   let mockCreateProfileManager: any
   let mockWorklog: any
   let mockClearClients: any
-  let jsonOutput: any
   let logOutput: string[]
 
   beforeEach(async () => {
-    jsonOutput = null
     logOutput = []
 
     mockCreateProfileManager = () => ({
@@ -47,15 +45,11 @@ describe('issue:worklog', () => {
   it('adds worklog successfully with required args', async () => {
     const command = new IssueWorklog.default(['TEST-123', '2024-01-01T10:00:00.000+0000', '1h'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
-    expect(jsonOutput.data.id).to.equal('10001')
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
+    expect(result.data.id).to.equal('10001')
   })
 
   it('adds worklog with comment', async () => {
@@ -64,14 +58,10 @@ describe('issue:worklog', () => {
       createMockConfig(),
     )
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('formats output as TOON when --toon flag is provided', async () => {
@@ -105,14 +95,10 @@ describe('issue:worklog', () => {
 
     const command = new IssueWorklog.default(['TEST-123', 'invalid-date', '1h'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('Invalid time format')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('Invalid time format')
   })
 
   it('exits early when auth is not available', async () => {
@@ -155,7 +141,6 @@ describe('issue:worklog', () => {
     })
 
     const command = new IssueWorklog.default(['TEST-123', '2024-01-01T10:00:00.000+0000', '1h'], createMockConfig())
-    command.logJson = () => {}
 
     await command.run()
 

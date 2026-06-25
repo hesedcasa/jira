@@ -1,9 +1,10 @@
-import {createProfileManager} from '@hesed/plugin-lib'
-import {Args, Command, Flags} from '@oclif/core'
+import {type ApiResult, createProfileManager} from '@hesed/plugin-lib'
+import {Args, Flags} from '@oclif/core'
 
+import {BaseCommand} from '../../../base-command.js'
 import {clearClients, updateIssue} from '../../../jira/jira-client.js'
 
-export default class IssueUpdate extends Command {
+export default class IssueUpdate extends BaseCommand {
   static override args = {
     issueId: Args.string({description: 'Issue ID or issue key', required: true}),
   }
@@ -19,7 +20,7 @@ export default class IssueUpdate extends Command {
     profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
   }
 
-  public async run(): Promise<void> {
+  public async run(): Promise<ApiResult> {
     const {args, flags} = await this.parse(IssueUpdate)
     const {loadAuthConfig} = createProfileManager(this.config, flags.profile, 'jira-config.json')
     const auth = await loadAuthConfig()
@@ -39,6 +40,6 @@ export default class IssueUpdate extends Command {
     const result = await updateIssue(auth, args.issueId, fields)
     clearClients()
 
-    this.logJson(result)
+    return result
   }
 }
