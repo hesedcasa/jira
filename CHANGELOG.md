@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.2](https://github.com/hesedcasa/jira/compare/v0.10.1...v0.10.2) (2026-06-25)
+
+
+### ♻️ Chores
+
+* introduce BaseCommand to centralize run() return and JSON output ([#89](https://github.com/hesedcasa/jira/issues/89)) ([6ac7539](https://github.com/hesedcasa/jira/commit/6ac7539f4f0088db7ee14e36996eadea8e675fa9))
+
 ## [0.10.1](https://github.com/hesedcasa/jira/compare/v0.10.0...v0.10.1) (2026-06-05)
 
 
