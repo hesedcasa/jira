@@ -10,11 +10,9 @@ describe('board:sprint-issues', () => {
   let mockCreateProfileManager: any
   let mockGetBoardIssuesForSprint: any
   let mockClearClients: any
-  let jsonOutput: any
   let logOutput: string[]
 
   beforeEach(async () => {
-    jsonOutput = null
     logOutput = []
 
     mockCreateProfileManager = () => ({
@@ -49,68 +47,48 @@ describe('board:sprint-issues', () => {
   it('gets sprint issues successfully', async () => {
     const command = new BoardSprintIssues.default(['123', '456'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
-    expect(jsonOutput.data.issues).to.be.an('array')
-    expect(jsonOutput.data.issues).to.have.lengthOf(2)
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
+    expect(result.data.issues).to.be.an('array')
+    expect(result.data.issues).to.have.lengthOf(2)
   })
 
   it('gets sprint issues with JQL filter', async () => {
     const command = new BoardSprintIssues.default(['123', '456', 'status=Open'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('respects --max flag for pagination', async () => {
     const command = new BoardSprintIssues.default(['123', '456', '--max', '10'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('respects --start flag for pagination', async () => {
     const command = new BoardSprintIssues.default(['123', '456', '--start', '5'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('respects --fields flag', async () => {
     const command = new BoardSprintIssues.default(['123', '456', '--fields', 'comment,creator'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('formats output as TOON when --toon flag is provided', async () => {
@@ -141,14 +119,10 @@ describe('board:sprint-issues', () => {
 
     const command = new BoardSprintIssues.default(['123', '999'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('Sprint not found')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('Sprint not found')
   })
 
   it('exits early when auth is not available', async () => {
@@ -191,7 +165,6 @@ describe('board:sprint-issues', () => {
     })
 
     const command = new BoardSprintIssues.default(['123', '456'], createMockConfig())
-    command.logJson = () => {}
 
     await command.run()
 

@@ -10,11 +10,9 @@ describe('user:get', () => {
   let mockCreateProfileManager: any
   let mockGetUser: any
   let mockClearClients: any
-  let jsonOutput: any
   let logOutput: string[]
 
   beforeEach(async () => {
-    jsonOutput = null
     logOutput = []
 
     mockCreateProfileManager = () => ({
@@ -48,54 +46,38 @@ describe('user:get', () => {
   it('gets user by account ID', async () => {
     const command = new UserGet.default(['5b10ac8d82e05b22cc7d4ef5'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
-    expect(jsonOutput.data.accountId).to.equal('5b10ac8d82e05b22cc7d4ef5')
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
+    expect(result.data.accountId).to.equal('5b10ac8d82e05b22cc7d4ef5')
   })
 
   it('gets user without account ID', async () => {
     const command = new UserGet.default([], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('respects --query flag for searching users', async () => {
     const command = new UserGet.default(['--query', 'john'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('respects -q shorthand flag for query', async () => {
     const command = new UserGet.default(['-q', 'john@example.com'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('formats output as TOON when --toon flag is provided', async () => {
@@ -126,14 +108,10 @@ describe('user:get', () => {
 
     const command = new UserGet.default(['invalid-id'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('User not found')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('User not found')
   })
 
   it('exits early when auth is not available', async () => {
@@ -176,7 +154,6 @@ describe('user:get', () => {
     })
 
     const command = new UserGet.default(['5b10ac8d82e05b22cc7d4ef5'], createMockConfig())
-    command.logJson = () => {}
 
     await command.run()
 

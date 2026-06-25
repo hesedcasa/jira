@@ -10,11 +10,9 @@ describe('board:list', () => {
   let mockCreateProfileManager: any
   let mockGetAllBoards: any
   let mockClearClients: any
-  let jsonOutput: any
   let logOutput: string[]
 
   beforeEach(async () => {
-    jsonOutput = null
     logOutput = []
 
     mockCreateProfileManager = () => ({
@@ -49,55 +47,39 @@ describe('board:list', () => {
   it('lists all boards successfully', async () => {
     const command = new BoardList.default([], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
-    expect(jsonOutput.data.boards).to.be.an('array')
-    expect(jsonOutput.data.boards).to.have.lengthOf(2)
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
+    expect(result.data.boards).to.be.an('array')
+    expect(result.data.boards).to.have.lengthOf(2)
   })
 
   it('filters boards by project ID', async () => {
     const command = new BoardList.default(['PROJ'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('respects --max flag for pagination', async () => {
     const command = new BoardList.default(['--max', '10'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('respects --start flag for pagination', async () => {
     const command = new BoardList.default(['--start', '5'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('formats output as TOON when --toon flag is provided', async () => {
@@ -128,14 +110,10 @@ describe('board:list', () => {
 
     const command = new BoardList.default([], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('Failed to fetch boards')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('Failed to fetch boards')
   })
 
   it('exits early when auth is not available', async () => {
@@ -178,7 +156,6 @@ describe('board:list', () => {
     })
 
     const command = new BoardList.default([], createMockConfig())
-    command.logJson = () => {}
 
     await command.run()
 

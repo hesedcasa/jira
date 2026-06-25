@@ -10,11 +10,9 @@ describe('project:get', () => {
   let mockCreateProfileManager: any
   let mockGetProject: any
   let mockClearClients: any
-  let jsonOutput: any
   let logOutput: string[]
 
   beforeEach(async () => {
-    jsonOutput = null
     logOutput = []
 
     mockCreateProfileManager = () => ({
@@ -48,15 +46,11 @@ describe('project:get', () => {
   it('gets project successfully', async () => {
     const command = new ProjectGet.default(['PROJ'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
-    expect(jsonOutput.data.key).to.equal('PROJ')
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
+    expect(result.data.key).to.equal('PROJ')
   })
 
   it('formats output as TOON when --toon flag is provided', async () => {
@@ -87,14 +81,10 @@ describe('project:get', () => {
 
     const command = new ProjectGet.default(['INVALID'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('Project not found')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('Project not found')
   })
 
   it('exits early when auth is not available', async () => {
@@ -137,7 +127,6 @@ describe('project:get', () => {
     })
 
     const command = new ProjectGet.default(['PROJ'], createMockConfig())
-    command.logJson = () => {}
 
     await command.run()
 

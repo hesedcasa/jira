@@ -10,11 +10,9 @@ describe('issue:download-attachment', () => {
   let mockCreateProfileManager: any
   let mockDownloadAttachment: any
   let mockClearClients: any
-  let jsonOutput: any
   let logOutput: string[]
 
   beforeEach(async () => {
-    jsonOutput = null
     logOutput = []
 
     mockCreateProfileManager = () => ({
@@ -47,28 +45,20 @@ describe('issue:download-attachment', () => {
   it('downloads attachment successfully without output path', async () => {
     const command = new IssueDownloadAttachment.default(['TEST-123', '123'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
-    expect(jsonOutput.data.filename).to.equal('test.jpg')
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
+    expect(result.data.filename).to.equal('test.jpg')
   })
 
   it('downloads attachment successfully with output path', async () => {
     const command = new IssueDownloadAttachment.default(['TEST-123', '123', '/tmp/custom.jpg'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
   })
 
   it('formats output as TOON when --toon flag is provided', async () => {
@@ -99,14 +89,10 @@ describe('issue:download-attachment', () => {
 
     const command = new IssueDownloadAttachment.default(['TEST-123', '999'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('Attachment not found')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('Attachment not found')
   })
 
   it('exits early when auth is not available', async () => {
@@ -149,7 +135,6 @@ describe('issue:download-attachment', () => {
     })
 
     const command = new IssueDownloadAttachment.default(['TEST-123', '123'], createMockConfig())
-    command.logJson = () => {}
 
     await command.run()
 

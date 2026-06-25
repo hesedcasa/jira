@@ -1,9 +1,10 @@
-import {createProfileManager, formatAsToon} from '@hesed/plugin-lib'
-import {Args, Command, Flags} from '@oclif/core'
+import {type ApiResult, createProfileManager, formatAsToon} from '@hesed/plugin-lib'
+import {Args, Flags} from '@oclif/core'
 
+import {BaseCommand} from '../../../base-command.js'
 import {clearClients, getProject} from '../../../jira/jira-client.js'
 
-export default class ProjectGet extends Command {
+export default class ProjectGet extends BaseCommand {
   static override args = {
     projectId: Args.string({description: 'Project ID or project key', required: true}),
   }
@@ -14,7 +15,7 @@ export default class ProjectGet extends Command {
     toon: Flags.boolean({description: 'Format output as toon', required: false}),
   }
 
-  public async run(): Promise<void> {
+  public async run(): Promise<ApiResult> {
     const {args, flags} = await this.parse(ProjectGet)
     const {loadAuthConfig} = createProfileManager(this.config, flags.profile, 'jira-config.json')
     const auth = await loadAuthConfig()
@@ -27,8 +28,8 @@ export default class ProjectGet extends Command {
 
     if (flags.toon) {
       this.log(formatAsToon(result))
-    } else {
-      this.logJson(result)
     }
+
+    return result
   }
 }

@@ -11,11 +11,9 @@ describe('issue:dev', () => {
   let mockGetIssueDevelopment: any
   let mockClearClients: any
   let logOutput: string[]
-  let jsonOutput: any
 
   beforeEach(async () => {
     logOutput = []
-    jsonOutput = null
 
     mockCreateProfileManager = () => ({
       loadAuthConfig: async () => ({
@@ -51,15 +49,11 @@ describe('issue:dev', () => {
   it('retrieves development detail for an issue ID', async () => {
     const command = new IssueDev.default(['12345'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
-    expect(jsonOutput.data).to.have.property('detail')
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
+    expect(result.data).to.have.property('detail')
   })
 
   it('formats output as TOON when --toon flag is provided', async () => {
@@ -90,14 +84,10 @@ describe('issue:dev', () => {
 
     const command = new IssueDev.default(['99999'], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('Issue not found')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('Issue not found')
   })
 
   it('exits early when auth is not available', async () => {
@@ -140,7 +130,6 @@ describe('issue:dev', () => {
     })
 
     const command = new IssueDev.default(['12345'], createMockConfig())
-    command.logJson = () => {}
 
     await command.run()
 

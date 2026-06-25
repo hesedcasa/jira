@@ -10,11 +10,9 @@ describe('project:list', () => {
   let mockCreateProfileManager: any
   let mockListProjects: any
   let mockClearClients: any
-  let jsonOutput: any
   let logOutput: string[]
 
   beforeEach(async () => {
-    jsonOutput = null
     logOutput = []
 
     mockCreateProfileManager = () => ({
@@ -47,16 +45,12 @@ describe('project:list', () => {
   it('lists projects successfully', async () => {
     const command = new ProjectList.default([], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput).to.not.be.null
-    expect(jsonOutput.success).to.be.true
-    expect(jsonOutput.data).to.be.an('array')
-    expect(jsonOutput.data).to.have.lengthOf(2)
+    expect(result).to.not.be.null
+    expect(result.success).to.be.true
+    expect(result.data).to.be.an('array')
+    expect(result.data).to.have.lengthOf(2)
   })
 
   it('formats output as TOON when --toon flag is provided', async () => {
@@ -87,14 +81,10 @@ describe('project:list', () => {
 
     const command = new ProjectList.default([], createMockConfig())
 
-    command.logJson = (output: any) => {
-      jsonOutput = output
-    }
+    const result = await command.run()
 
-    await command.run()
-
-    expect(jsonOutput.success).to.be.false
-    expect(jsonOutput.error).to.include('Authentication failed')
+    expect(result.success).to.be.false
+    expect(result.error).to.include('Authentication failed')
   })
 
   it('exits early when auth is not available', async () => {
@@ -137,7 +127,6 @@ describe('project:list', () => {
     })
 
     const command = new ProjectList.default([], createMockConfig())
-    command.logJson = () => {}
 
     await command.run()
 
