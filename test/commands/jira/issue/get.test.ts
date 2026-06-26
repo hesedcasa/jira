@@ -37,7 +37,7 @@ describe('issue:get', () => {
 
     mockClearClients = () => {}
 
-    IssueGet = await esmock('../../../../src/commands/jira/issue/get.js', {
+    IssueGet = await esmock('../../../../src/commands/jira/issue/index.js', {
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssue: mockGetIssue,
@@ -76,7 +76,7 @@ describe('issue:get', () => {
       success: false,
     })
 
-    IssueGet = await esmock('../../../../src/commands/jira/issue/get.js', {
+    IssueGet = await esmock('../../../../src/commands/jira/issue/index.js', {
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssue: mockGetIssue,
@@ -95,7 +95,7 @@ describe('issue:get', () => {
   it('exits early when auth is not available', async () => {
     mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
-    IssueGet = await esmock('../../../../src/commands/jira/issue/get.js', {
+    IssueGet = await esmock('../../../../src/commands/jira/issue/index.js', {
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssue: mockGetIssue,
@@ -123,7 +123,7 @@ describe('issue:get', () => {
       clearClientsCalled = true
     }
 
-    IssueGet = await esmock('../../../../src/commands/jira/issue/get.js', {
+    IssueGet = await esmock('../../../../src/commands/jira/issue/index.js', {
       '../../../../src/jira/jira-client.js': {
         clearClients: mockClearClients,
         getIssue: mockGetIssue,

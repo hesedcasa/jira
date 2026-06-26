@@ -8,7 +8,7 @@ export default class BoardList extends BaseCommand {
   static override args = {
     projectId: Args.string({description: 'Project ID or project key', required: false}),
   }
-  static override description = 'Get all boards'
+  static override description = 'List all accessible boards'
   static override examples = ['<%= config.bin %> <%= command.id %>', '<%= config.bin %> <%= command.id %> PROJ']
   static override flags = {
     max: Flags.integer({description: 'Maximum number of items per page', required: false}),

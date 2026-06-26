@@ -35,7 +35,7 @@ describe('board:list', () => {
 
     mockClearClients = () => {}
 
-    BoardList = await esmock('../../../../src/commands/jira/board/list.js', {
+    BoardList = await esmock('../../../../src/commands/jira/board/index.js', {
       '../../../../src/agile/agile-client.js': {
         clearClients: mockClearClients,
         getAllBoards: mockGetAllBoards,
@@ -100,7 +100,7 @@ describe('board:list', () => {
       success: false,
     })
 
-    BoardList = await esmock('../../../../src/commands/jira/board/list.js', {
+    BoardList = await esmock('../../../../src/commands/jira/board/index.js', {
       '../../../../src/agile/agile-client.js': {
         clearClients: mockClearClients,
         getAllBoards: mockGetAllBoards,
@@ -119,7 +119,7 @@ describe('board:list', () => {
   it('exits early when auth is not available', async () => {
     mockCreateProfileManager = () => ({loadAuthConfig: async () => null})
 
-    BoardList = await esmock('../../../../src/commands/jira/board/list.js', {
+    BoardList = await esmock('../../../../src/commands/jira/board/index.js', {
       '../../../../src/agile/agile-client.js': {
         clearClients: mockClearClients,
         getAllBoards: mockGetAllBoards,
@@ -147,7 +147,7 @@ describe('board:list', () => {
       clearClientsCalled = true
     }
 
-    BoardList = await esmock('../../../../src/commands/jira/board/list.js', {
+    BoardList = await esmock('../../../../src/commands/jira/board/index.js', {
       '../../../../src/agile/agile-client.js': {
         clearClients: mockClearClients,
         getAllBoards: mockGetAllBoards,
