@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.3](https://github.com/hesedcasa/jira/compare/v0.10.2...v0.10.3) (2026-06-26)
+
+
+### ♻️ Chores
+
+* rename command files to index.ts and add topic descriptions ([#95](https://github.com/hesedcasa/jira/issues/95)) ([2a8f196](https://github.com/hesedcasa/jira/commit/2a8f196bbc8e286633f7acbaad9c14c086f85ea3))
+
 ## [0.10.2](https://github.com/hesedcasa/jira/compare/v0.10.1...v0.10.2) (2026-06-25)
 
 
