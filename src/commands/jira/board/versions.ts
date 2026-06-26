@@ -8,7 +8,7 @@ export default class BoardVersions extends BaseCommand {
   static override args = {
     boardId: Args.integer({description: 'Board ID', required: true}),
   }
-  static override description = 'Get all sprints from a board'
+  static override description = 'Get all versions from a board'
   static override examples = [
     '<%= config.bin %> <%= command.id %> 123',
     '<%= config.bin %> <%= command.id %> 123 --released false',

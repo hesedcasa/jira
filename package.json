@@ -60,10 +60,21 @@
     "dirname": "jira",
     "commands": "./dist/commands",
     "topicSeparator": " ",
-    "topics": {},
-    "update": {
-      "autoupdate": {
-        "debounce": 7
+    "topics": {
+      "jira": {
+        "description": "Commands for managing Jira workflows and operations"
+      },
+      "jira:board": {
+        "description": "Get backlogs, sprints, versions for board"
+      },
+      "jira:issue": {
+        "description": "Perform various operations on issues"
+      },
+      "jira:project": {
+        "description": "Get project details or list projects"
+      },
+      "jira:user": {
+        "description": "Get user information or list users"
       }
     }
   },
