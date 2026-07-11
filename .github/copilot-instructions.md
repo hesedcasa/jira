@@ -12,7 +12,7 @@ This file provides guidance to GitHub Copilot when working with code in this rep
 - Oclif v4 CLI framework
 - jira.js v5 for Jira API interaction
 - Mocha + Chai for testing
-- Node.js >=18.0.0
+- Node.js >=20.0.0
 
 ## Development Commands
 
@@ -168,7 +168,7 @@ export default class IssueGet extends Command {
 - All command files use ES modules (`.js` extensions in imports)
 - Pre-commit hook runs format and dead code detection
 - Uses `shx` for cross-platform shell commands
-- Node.js >=18.0.0 required
+- Node.js >=20.0.0 required
 - Published as npm package `jira`
 
 ## Configuration

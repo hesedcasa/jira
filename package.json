@@ -12,7 +12,7 @@
     "@inquirer/prompts": "^8.2.0",
     "@oclif/core": "^4",
     "fs-extra": "^11.3.3",
-    "jira.js": "^5.3.0",
+    "jira.js": "^5.4.0",
     "marklassian": "^1.1.0",
     "turndown": "^7.2.2"
   },
@@ -41,7 +41,7 @@
     "typescript": "^5"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "files": [
     "./bin",
