@@ -420,21 +420,24 @@ export class JiraApi {
       return this.client
     }
 
-    const options = {
-      authentication: this.config.email
-        ? {
+    const options = this.config.email
+      ? {
+          authentication: {
             basic: {
               apiToken: this.config.apiToken,
               email: this.config.email,
             },
-          }
-        : {
+          },
+          host: this.config.host!,
+        }
+      : {
+          authentication: {
             oauth2: {
               accessToken: this.config.apiToken,
             },
           },
-      host: this.config.host!,
-    }
+          host: this.config.host!,
+        }
 
     this.client = new Version3Client(options)
 
