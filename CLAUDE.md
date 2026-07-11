@@ -186,7 +186,7 @@ Authentication config is stored in JSON at `~/.config/jira/jira-config.json` (pl
 - All command files use ES modules (`.js` extensions in imports)
 - Pre-commit hook runs format and dead code detection
 - Uses `shx` for cross-platform shell commands
-- Node.js >=18.0.0 required
+- Node.js >=20.0.0 required
 - Published as npm package `jira`
 
 ## Commit Message Convention
