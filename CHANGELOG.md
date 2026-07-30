@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.11.0](https://github.com/hesedcasa/jira/compare/v0.10.3...v0.11.0) (2026-07-30)
+
+
+### 🎉 Features
+
+* add HTTP/HTTPS proxy support for Jira and Agile API clients ([#108](https://github.com/hesedcasa/jira/issues/108)) ([d8fb6f5](https://github.com/hesedcasa/jira/commit/d8fb6f58e5bb64b5c7f1c67be4bd721c120985f7))
+* upgrade @hesed/plugin-lib to 0.11.0 ([18a22df](https://github.com/hesedcasa/jira/commit/18a22df0f7954b0d68a83a2317687a49739c6e32))
+* upgrade @hesed/plugin-lib to 0.12.0 ([d05cf3d](https://github.com/hesedcasa/jira/commit/d05cf3dab8769d9ed565a199a7c9fb9f94617d73))
+
 ## [0.10.3](https://github.com/hesedcasa/jira/compare/v0.10.2...v0.10.3) (2026-06-26)
 
 
