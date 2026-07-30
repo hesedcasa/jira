@@ -4,6 +4,7 @@ import {Version3Client} from 'jira.js'
 import {markdownToAdf} from 'marklassian'
 import path from 'node:path'
 
+import {buildProxyRequestConfig} from '../proxy.js'
 import {defaultFields, processIssueRenderedAndFields} from '../utils.js'
 
 /**
@@ -420,6 +421,7 @@ export class JiraApi {
       return this.client
     }
 
+    const baseRequestConfig = buildProxyRequestConfig(this.config.host!)
     const options = this.config.email
       ? {
           authentication: {
@@ -428,6 +430,7 @@ export class JiraApi {
               email: this.config.email,
             },
           },
+          ...(baseRequestConfig && {baseRequestConfig}),
           host: this.config.host!,
         }
       : {
@@ -436,6 +439,7 @@ export class JiraApi {
               accessToken: this.config.apiToken,
             },
           },
+          ...(baseRequestConfig && {baseRequestConfig}),
           host: this.config.host!,
         }
 
