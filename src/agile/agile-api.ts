@@ -2,6 +2,7 @@ import {type ApiResult, type AuthConfig} from '@hesed/plugin-lib'
 import {AgileClient} from 'jira.js'
 import {Issue} from 'jira.js/version3/models/issue'
 
+import {buildProxyRequestConfig} from '../proxy.js'
 import {defaultFields, processIssueRenderedAndFields} from '../utils.js'
 
 interface PaginateResult {
@@ -163,6 +164,7 @@ export class AgileApi {
       return this.client
     }
 
+    const baseRequestConfig = buildProxyRequestConfig(this.config.host!)
     const options = this.config.email
       ? {
           authentication: {
@@ -171,6 +173,7 @@ export class AgileApi {
               email: this.config.email,
             },
           },
+          ...(baseRequestConfig && {baseRequestConfig}),
           host: this.config.host!,
         }
       : {
@@ -179,6 +182,7 @@ export class AgileApi {
               accessToken: this.config.apiToken,
             },
           },
+          ...(baseRequestConfig && {baseRequestConfig}),
           host: this.config.host!,
         }
 

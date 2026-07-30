@@ -12,8 +12,10 @@
     "@inquirer/prompts": "^8.2.0",
     "@oclif/core": "^4",
     "fs-extra": "^11.3.3",
+    "https-proxy-agent": "^7.0.6",
     "jira.js": "^5.4.0",
     "marklassian": "^1.1.0",
+    "proxy-from-env": "^1.1.0",
     "turndown": "^7.2.2"
   },
   "devDependencies": {
@@ -24,6 +26,7 @@
     "@types/fs-extra": "^11.0.4",
     "@types/mocha": "^10",
     "@types/node": "^25",
+    "@types/proxy-from-env": "^1.0.4",
     "@types/sinon": "^21.0.0",
     "@types/turndown": "^5.0.6",
     "c8": "^11.0.0",
