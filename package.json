@@ -27,7 +27,7 @@
     "@types/mocha": "^10",
     "@types/node": "^25",
     "@types/proxy-from-env": "^1.0.4",
-    "@types/sinon": "^21.0.0",
+    "@types/sinon": "^22.0.0",
     "@types/turndown": "^5.0.6",
     "c8": "^11.0.0",
     "chai": "^6",
