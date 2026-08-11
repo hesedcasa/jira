@@ -354,7 +354,6 @@ export class JiraApi {
       const authHeader = buildAuthHeader(this.config)
 
       // Download the attachment content
-      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- fetch is available in Node 18+
       const response = await fetch(attachment.content, {
         headers: {
           Authorization: authHeader,
@@ -481,7 +480,6 @@ export class JiraApi {
     try {
       const authHeader = buildAuthHeader(this.config)
       const url = `${this.config.host}/rest/dev-status/latest/issue/detail?issueId=${issueId}&applicationType=${applicationType}&dataType=${dataType}`
-      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- fetch is available in Node 18+
       const res = await fetch(url, {
         headers: {
           Authorization: authHeader,
@@ -870,7 +868,6 @@ export class JiraApi {
     const tryUrl = async (proxyUrl: string): Promise<string | undefined> => {
       try {
         const authHeader = buildAuthHeader(this.config)
-        // eslint-disable-next-line n/no-unsupported-features/node-builtins -- fetch is available in Node 18+
         const res = await fetch(proxyUrl, {
           headers: {Authorization: authHeader},
         })

@@ -54,10 +54,8 @@ describe('utils', () => {
       const issue = {
         fields: {},
         renderedFields: {
-          /* eslint-disable camelcase */
           customfield_10000: '',
           customfield_10001: null,
-          /* eslint-enable camelcase */
           description: '<p>Test</p>',
         },
       } as Issue
@@ -71,10 +69,8 @@ describe('utils', () => {
     it('filters empty custom fields from fields', () => {
       const issue = {
         fields: {
-          /* eslint-disable camelcase */
           customfield_10000: '',
           customfield_10001: null,
-          /* eslint-enable camelcase */
           summary: 'Test summary',
         },
         renderedFields: {},
@@ -89,9 +85,7 @@ describe('utils', () => {
     it('keeps non-empty custom fields', () => {
       const issue = {
         fields: {
-          /* eslint-disable camelcase */
           customfield_10000: 'value',
-          /* eslint-enable camelcase */
           summary: 'Test summary',
         },
         renderedFields: {},
