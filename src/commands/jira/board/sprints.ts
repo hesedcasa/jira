@@ -8,11 +8,13 @@ export default class BoardSprints extends BaseCommand {
   static override args = {
     boardId: Args.integer({description: 'Board ID', required: true}),
   }
+
   static override description = 'Get all sprints from a board'
   static override examples = [
     '<%= config.bin %> <%= command.id %> 123',
     '<%= config.bin %> <%= command.id %> 123 --state active',
   ]
+
   static override flags = {
     max: Flags.integer({description: 'Maximum number of items per page', required: false}),
     profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),

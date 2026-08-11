@@ -2,6 +2,7 @@ import {type ApiResult, type AuthConfig, buildAuthHeader} from '@hesed/plugin-li
 import fs from 'fs-extra'
 import {Version3Client} from 'jira.js'
 import {markdownToAdf} from 'marklassian'
+import {Buffer} from 'node:buffer'
 import path from 'node:path'
 
 import {buildProxyRequestConfig} from '../proxy.js'
@@ -13,7 +14,7 @@ import {defaultFields, processIssueRenderedAndFields} from '../utils.js'
  */
 export class JiraApi {
   private client?: Version3Client
-  private config: AuthConfig
+  private readonly config: AuthConfig
 
   constructor(config: AuthConfig) {
     this.config = config
@@ -78,7 +79,7 @@ export class JiraApi {
       const bodyContent = markdownToAdf(body.replace(/\\n/g, '\n'))
 
       const response = await client.issueComments.addComment({
-        comment: bodyContent as Parameters<typeof client.issueComments.addComment>[0]['comment'],
+        comment: bodyContent,
         issueIdOrKey,
         ...(parentId && {parentId}),
       })
@@ -119,12 +120,14 @@ export class JiraApi {
       const trailingPaths = filePaths.filter((f) => !externalMediaByBasename.has(path.basename(f)))
 
       // Upload all files in parallel.
-      const uploadResults = await Promise.all(filePaths.map((filePath) => this.addAttachment(issueIdOrKey, filePath)))
+      const uploadResults = await Promise.all(
+        filePaths.map(async (filePath) => this.addAttachment(issueIdOrKey, filePath)),
+      )
       const firstFailure = uploadResults.find((r) => !r.success)
       if (firstFailure) return firstFailure
 
       // Resolve media UUID for each uploaded file.
-      const uuidByPath = new Map<string, null | string>()
+      const uuidByPath = new Map<string, string | undefined>()
       await Promise.all(
         filePaths.map(async (filePath, i) => {
           const attachments = uploadResults[i].data as Array<{content?: string; thumbnail?: string}>
@@ -159,7 +162,7 @@ export class JiraApi {
 
       const client = this.getClient()
       const response = await client.issueComments.addComment({
-        comment: bodyContent as Parameters<typeof client.issueComments.addComment>[0]['comment'],
+        comment: bodyContent,
         issueIdOrKey,
         ...(parentId && {parentId}),
       })
@@ -351,7 +354,6 @@ export class JiraApi {
       const authHeader = buildAuthHeader(this.config)
 
       // Download the attachment content
-      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- fetch is available in Node 18+
       const response = await fetch(attachment.content, {
         headers: {
           Authorization: authHeader,
@@ -366,8 +368,8 @@ export class JiraApi {
       }
 
       // Determine output filename
-      const filename = attachment.filename || `${issueIdOrKey}-${attachmentId}`
-      const finalPath = outputPath || path.join(process.cwd(), filename)
+      const filename = attachment.filename ?? `${issueIdOrKey}-${attachmentId}`
+      const finalPath = outputPath ?? path.join(process.cwd(), filename)
 
       // Save to file
       const buffer = Buffer.from(await response.arrayBuffer())
@@ -478,7 +480,6 @@ export class JiraApi {
     try {
       const authHeader = buildAuthHeader(this.config)
       const url = `${this.config.host}/rest/dev-status/latest/issue/detail?issueId=${issueId}&applicationType=${applicationType}&dataType=${dataType}`
-      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- fetch is available in Node 18+
       const res = await fetch(url, {
         headers: {
           Authorization: authHeader,
@@ -715,7 +716,7 @@ export class JiraApi {
       const bodyContent = markdownToAdf(body.replace(/\\n/g, '\n'))
 
       const response = await client.issueComments.updateComment({
-        body: bodyContent as Parameters<typeof client.issueComments.updateComment>[0]['body'],
+        body: bodyContent,
         id,
         issueIdOrKey,
       })
@@ -747,12 +748,13 @@ export class JiraApi {
       if (customFieldIds.length > 0) {
         try {
           const page = await client.issueFields.getFieldsPaginated({id: customFieldIds, type: ['custom']})
-          for (const f of (page.values ?? []).filter(
+          const adfFields = (page.values ?? []).filter(
             (f) =>
               f.schema?.type === 'any' ||
               f.schema?.custom?.includes('textarea') ||
               f.schema?.custom?.includes('multilinetexteditor'),
-          )) {
+          )
+          for (const f of adfFields) {
             adfFieldIds.add(f.id)
           }
         } catch {
@@ -801,36 +803,6 @@ export class JiraApi {
   }
 
   /**
-   * Add a worklog to an issue
-   */
-  async worklog(issueIdOrKey: string, started: string, timeSpent: string, body?: string): Promise<ApiResult> {
-    try {
-      const client = this.getClient()
-      // Convert Markdown body to Jira ADF
-      // eslint-disable-next-line unicorn/prefer-string-replace-all
-      const bodyContent = body ? markdownToAdf(body.replace(/\\n/g, '\n')) : undefined
-
-      const response = await client.issueWorklogs.addWorklog({
-        comment: bodyContent as Parameters<typeof client.issueWorklogs.addWorklog>[0]['comment'],
-        issueIdOrKey,
-        started,
-        timeSpent,
-      })
-
-      return {
-        data: response,
-        success: true,
-      }
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
-    }
-  }
-
-  /**
    * Walk ADF nodes and collect external mediaSingle nodes
    * (from ![alt](url) markdown images)
    */
@@ -856,29 +828,57 @@ export class JiraApi {
   }
 
   /**
+   * Add a worklog to an issue
+   */
+  async worklog(issueIdOrKey: string, started: string, timeSpent: string, body?: string): Promise<ApiResult> {
+    try {
+      const client = this.getClient()
+      // Convert Markdown body to Jira ADF
+      // eslint-disable-next-line unicorn/prefer-string-replace-all
+      const bodyContent = body ? markdownToAdf(body.replace(/\\n/g, '\n')) : undefined
+
+      const response = await client.issueWorklogs.addWorklog({
+        comment: bodyContent,
+        issueIdOrKey,
+        started,
+        timeSpent,
+      })
+
+      return {
+        data: response,
+        success: true,
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      return {
+        error: errorMessage,
+        success: false,
+      }
+    }
+  }
+
+  /**
    * Resolve Media UUID for an attachment by following
    * the proxy redirect to api.media.atlassian.com
    *
    * Returns null if the UUID cannot be determined
    * (e.g. non-media files with no thumbnail)
    */
-  private async resolveMediaUUID(thumbnailUrl?: string, contentUrl?: string): Promise<null | string> {
-    const tryUrl = async (proxyUrl: string): Promise<null | string> => {
+  private async resolveMediaUUID(thumbnailUrl?: string, contentUrl?: string): Promise<string | undefined> {
+    const tryUrl = async (proxyUrl: string): Promise<string | undefined> => {
       try {
         const authHeader = buildAuthHeader(this.config)
-        // eslint-disable-next-line n/no-unsupported-features/node-builtins -- fetch is available in Node 18+
         const res = await fetch(proxyUrl, {
           headers: {Authorization: authHeader},
-          redirect: 'follow',
         })
         // Final URL after redirect: https://api.media.atlassian.com/file/{UUID}/...
-        const match = res.url.match(/\/file\/([0-9a-f-]{36})\//i)
-        return match ? match[1] : null
+        const match = /\/file\/([0-9a-f-]{36})\//i.exec(res.url)
+        return match ? match[1] : undefined
       } catch {
-        return null
+        return undefined
       }
     }
 
-    return (thumbnailUrl && (await tryUrl(thumbnailUrl))) || (contentUrl && (await tryUrl(contentUrl))) || null
+    return (thumbnailUrl && (await tryUrl(thumbnailUrl))) || (contentUrl && (await tryUrl(contentUrl))) || undefined
   }
 }

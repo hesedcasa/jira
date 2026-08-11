@@ -5,18 +5,20 @@ import {BaseCommand} from '../../../base-command.js'
 import {clearClients, updateComment} from '../../../jira/jira-client.js'
 
 export default class IssueUpdateComment extends BaseCommand {
-  /* eslint-disable perfectionist/sort-objects */
+  /* eslint-disable perfectionist/sort-objects -- issueId must be first arg per CLAUDE.md convention */
   static override args = {
     issueId: Args.string({description: 'Issue ID or issue key', required: true}),
     id: Args.string({description: 'Comment ID to delete', required: true}),
     body: Args.string({description: 'Comment text content', required: true}),
   }
+
   /* eslint-enable perfectionist/sort-objects */
   static override description = 'Update a comment'
   static override examples = [
     '<%= config.bin %> <%= command.id %> PROJ-123 123 "\n# Header\n## Sub-header\n- Item 1\n- Item 2\n```bash\nls -a\n```"',
     '<%= config.bin %> <%= command.id %> PROJ-123 123 "$(cat content.md)"',
   ]
+
   static override flags = {
     profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
     toon: Flags.boolean({description: 'Format output as toon', required: false}),

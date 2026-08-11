@@ -8,6 +8,7 @@ export default class IssueUpdate extends BaseCommand {
   static override args = {
     issueId: Args.string({description: 'Issue ID or issue key', required: true}),
   }
+
   static override description = 'Update an existing issue'
   static override examples = [
     "<%= config.bin %> <%= command.id %> PROJ-123 --fields summary='New summary' description='New description'",
@@ -15,6 +16,7 @@ export default class IssueUpdate extends BaseCommand {
     '<%= config.bin %> <%= command.id %> PROJ-123 --fields description="$(cat content.md)"',
     '<%= config.bin %> <%= command.id %> PROJ-123 --fields timetracking=\'{"originalEstimate": "5h"}\'',
   ]
+
   static override flags = {
     fields: Flags.string({description: 'Issue fields to update in key=value format', multiple: true, required: true}),
     profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),

@@ -1,4 +1,4 @@
-import {Issue} from 'jira.js/version3/models/issue'
+import {type Issue} from 'jira.js/version3/models/issue'
 import TurndownService from 'turndown'
 
 export const defaultFields = [
@@ -16,13 +16,11 @@ export const processIssueRenderedAndFields = (issue: Issue): void => {
   const turndownService = new TurndownService()
 
   // Filter renderedFields first
-  if (issue.renderedFields) {
-    issue.renderedFields = Object.fromEntries(
-      Object.entries(issue.renderedFields).filter(
-        ([key, value]) => !key.startsWith('customfield_') || (value !== null && value !== ''),
-      ),
-    ) as typeof issue.renderedFields
-  }
+  issue.renderedFields &&= Object.fromEntries(
+    Object.entries(issue.renderedFields).filter(
+      ([key, value]) => !key.startsWith('customfield_') || (value !== null && value !== ''),
+    ),
+  ) as typeof issue.renderedFields
 
   // Replace description in renderedFields
   if (issue.renderedFields) {
@@ -34,14 +32,14 @@ export const processIssueRenderedAndFields = (issue: Issue): void => {
       const commentObj = rf.comment as {comments: Array<{body?: string}>}
       if (Array.isArray(commentObj.comments)) {
         commentObj.comments = commentObj.comments.map((c) =>
-          c.body ? {...c, body: turndownService.turndown(String(c.body))} : c,
+          c.body ? {...c, body: turndownService.turndown(c.body)} : c,
         )
       }
     }
   }
 
   // Merge non-empty issue fields and renderedFields into a unified fields object
-  const renderedFields = (issue.renderedFields || {}) as Record<string, unknown>
+  const renderedFields = (issue.renderedFields ?? {}) as Record<string, unknown>
   const fieldsObj = (issue.fields || {}) as Record<string, unknown>
   const merged: Record<string, unknown> = {}
 
@@ -53,10 +51,10 @@ export const processIssueRenderedAndFields = (issue: Issue): void => {
 
   for (const [key, value] of Object.entries(renderedFields)) {
     if (!key.startsWith('customfield_') || (value !== null && value !== '')) {
-      merged[key] = value || merged[key]
+      merged[key] = value ?? merged[key]
     }
   }
 
   issue.fields = merged as typeof issue.fields
-  issue.renderedFields = {} as typeof issue.renderedFields
+  issue.renderedFields = {}
 }

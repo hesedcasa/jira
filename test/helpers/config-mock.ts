@@ -1,4 +1,4 @@
-import {Config} from '@oclif/core'
+import type {Config} from '@oclif/core'
 
 export function createMockConfig(): Config {
   return {

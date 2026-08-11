@@ -5,11 +5,12 @@ import {BaseCommand} from '../../../base-command.js'
 import {clearClients, deleteComment} from '../../../jira/jira-client.js'
 
 export default class IssueDeleteComment extends BaseCommand {
-  /* eslint-disable perfectionist/sort-objects */
+  /* eslint-disable perfectionist/sort-objects -- issueId must be first arg per CLAUDE.md convention */
   static override args = {
     issueId: Args.string({description: 'Issue ID or issue key', required: true}),
     id: Args.string({description: 'Comment ID to delete', required: true}),
   }
+
   /* eslint-enable perfectionist/sort-objects */
   static override description = 'Delete a comment'
   static override examples = ['<%= config.bin %> <%= command.id %> PROJ-123 123']

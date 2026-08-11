@@ -9,6 +9,7 @@ export default class IssueTransition extends BaseCommand {
     issueId: Args.string({description: 'Issue ID or issue key', required: true}),
     transitionId: Args.string({description: 'Issue transition ID', required: true}),
   }
+
   static override description = 'Performs an issue transition'
   static override examples = ['<%= config.bin %> <%= command.id %> PROJ-123 123']
   static override flags = {

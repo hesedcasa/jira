@@ -8,6 +8,7 @@ export default class IssueGet extends BaseCommand {
   static override args = {
     issueId: Args.string({description: 'Issue ID or issue key', required: true}),
   }
+
   static override description = 'Get details of a specific issue'
   static override examples = ['<%= config.bin %> <%= command.id %> PROJ-123']
   static override flags = {

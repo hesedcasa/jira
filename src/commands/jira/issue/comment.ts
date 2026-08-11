@@ -5,11 +5,12 @@ import {BaseCommand} from '../../../base-command.js'
 import {addComment, addCommentWithMedia, clearClients} from '../../../jira/jira-client.js'
 
 export default class IssueAddComment extends BaseCommand {
-  /* eslint-disable perfectionist/sort-objects */
+  /* eslint-disable perfectionist/sort-objects -- issueId must be first arg per CLAUDE.md convention */
   static override args = {
     issueId: Args.string({description: 'Issue ID or issue key', required: true}),
     body: Args.string({description: 'Comment text content', required: true}),
   }
+
   /* eslint-enable perfectionist/sort-objects */
   static override description = 'Add a comment to an issue'
   static override examples = [
@@ -19,6 +20,7 @@ export default class IssueAddComment extends BaseCommand {
     '<%= config.bin %> <%= command.id %> PROJ-123 "Step 1:\n\n![step1](./step1.png)\n\nStep 2:\n\n![step2](./step2.png)" --attach ./step1.png --attach ./step2.mp4',
     '<%= config.bin %> <%= command.id %> PROJ-123 "See also" --attach ./extra.png',
   ]
+
   static override flags = {
     attach: Flags.string({
       description: 'Path to a file to upload and embed inline (can be used multiple times)',

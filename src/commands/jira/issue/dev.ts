@@ -8,10 +8,12 @@ export default class IssueDev extends BaseCommand {
   static override args = {
     issueId: Args.string({description: 'Issue ID', required: true}),
   }
+
   static override description = 'Get development detail for an issue'
   static override examples = [
     '<%= config.bin %> <%= command.id %> 12345 --application-type bitbucket --data-type repository',
   ]
+
   static override flags = {
     'application-type': Flags.string({
       default: 'bitbucket',
