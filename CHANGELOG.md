@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/hesedcasa/jira/compare/v0.11.0...v0.11.1) (2026-08-11)
+
+
+### ♻️ Chores
+
+* upgrade ESLint and fix TypeScript compilation errors ([#116](https://github.com/hesedcasa/jira/issues/116)) ([20056e3](https://github.com/hesedcasa/jira/commit/20056e395a9fb3059720e8a96b8fdbadf385ba35))
+
 ## [0.11.0](https://github.com/hesedcasa/jira/compare/v0.10.3...v0.11.0) (2026-07-30)
 
 
