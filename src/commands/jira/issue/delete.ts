@@ -8,6 +8,7 @@ export default class IssueDelete extends BaseCommand {
   static override args = {
     issueId: Args.string({description: 'Issue ID or issue key to delete', required: true}),
   }
+
   static override description = 'Delete an issue'
   static override examples = ['<%= config.bin %> <%= command.id %> PROJ-123']
   static override flags = {

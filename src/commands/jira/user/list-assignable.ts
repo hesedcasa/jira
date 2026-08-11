@@ -8,11 +8,13 @@ export default class UserListAssignable extends BaseCommand {
   static override args = {
     issueId: Args.string({description: 'Issue ID or issue key', required: true}),
   }
+
   static override description = 'List users that can be assigned to an issue'
   static override examples = [
     '<%= config.bin %> <%= command.id %> PROJ-123',
     '<%= config.bin %> <%= command.id %> PROJ-123 -q john',
   ]
+
   static override flags = {
     profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
     query: Flags.string({char: 'q', description: 'Query string that matches user attributes', required: false}),

@@ -1,11 +1,11 @@
 import {type ApiResult, type AuthConfig} from '@hesed/plugin-lib'
 import {AgileClient} from 'jira.js'
-import {Issue} from 'jira.js/version3/models/issue'
+import {type Issue} from 'jira.js/version3/models/issue'
 
 import {buildProxyRequestConfig} from '../proxy.js'
 import {defaultFields, processIssueRenderedAndFields} from '../utils.js'
 
-interface PaginateResult {
+type PaginateResult = {
   expand?: string
   issues?: Issue[]
   maxResults?: number
@@ -19,7 +19,7 @@ interface PaginateResult {
  */
 export class AgileApi {
   private client?: AgileClient
-  private config: AuthConfig
+  private readonly config: AuthConfig
 
   constructor(config: AuthConfig) {
     this.config = config

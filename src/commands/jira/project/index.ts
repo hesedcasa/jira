@@ -8,6 +8,7 @@ export default class ProjectGet extends BaseCommand {
   static override args = {
     projectId: Args.string({description: 'Project ID or project key', required: true}),
   }
+
   static override description = 'Get details of a specific project'
   static override examples = ['<%= config.bin %> <%= command.id %> PROJ']
   static override flags = {

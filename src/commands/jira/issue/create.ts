@@ -11,6 +11,7 @@ export default class IssueCreate extends BaseCommand {
     '<%= config.bin %> <%= command.id %> --fields project=\'{"key":"PROJ"}\' summary="New summary" description="New description" issuetype=\'{"name":"Dev Task"}\'',
     '<%= config.bin %> <%= command.id %> --fields project=\'{"key":"PROJ"}\' summary="New summary" timetracking=\'{"originalEstimate": "5h"}\' issuetype=\'{"name":"Task"}\' description=\'\n# Header\n## Sub-header\n- Item 1\n- Item 2\n```bash\nls -a\n```\'',
   ]
+
   static override flags = {
     fields: Flags.string({
       description: 'Minimum fields required: project, summary, description & issuetype',
@@ -41,7 +42,7 @@ export default class IssueCreate extends BaseCommand {
 
     const requiredFields = ['project', 'summary', 'description', 'issuetype']
     for (const required of requiredFields) {
-      if (!fields[required]) {
+      if (!(required in fields)) {
         this.error(`Required field "${required}" is missing`)
       }
     }

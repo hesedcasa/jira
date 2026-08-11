@@ -8,6 +8,7 @@ export default class UserGet extends BaseCommand {
   static override args = {
     accountId: Args.string({description: 'User account ID', required: false}),
   }
+
   static override description = 'Get user information'
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
@@ -15,6 +16,7 @@ export default class UserGet extends BaseCommand {
     '<%= config.bin %> <%= command.id %> --query john',
     '<%= config.bin %> <%= command.id %> -q john@email.com',
   ]
+
   static override flags = {
     profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
     query: Flags.string({char: 'q', description: 'Query string that matches user attributes', required: false}),

@@ -5,18 +5,20 @@ import {BaseCommand} from '../../../base-command.js'
 import {clearClients, downloadAttachment} from '../../../jira/jira-client.js'
 
 export default class IssueDownloadAttachment extends BaseCommand {
-  /* eslint-disable perfectionist/sort-objects */
+  /* eslint-disable perfectionist/sort-objects -- issueId must be first arg per CLAUDE.md convention */
   static override args = {
     issueId: Args.string({description: 'Issue ID or issue key', required: true}),
     attachmentId: Args.string({description: 'Attachment ID', required: true}),
     outputPath: Args.string({description: 'Output file path', required: false}),
   }
+
   /* eslint-enable perfectionist/sort-objects */
   static override description = 'Download attachment from an issue'
   static override examples = [
     '<%= config.bin %> <%= command.id %> PROJ-123 123',
     '<%= config.bin %> <%= command.id %> PROJ-123 123 ~/Desktop/test.jpg',
   ]
+
   static override flags = {
     profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
     toon: Flags.boolean({description: 'Format output as toon', required: false}),

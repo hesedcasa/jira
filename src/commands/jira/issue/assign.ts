@@ -5,11 +5,12 @@ import {BaseCommand} from '../../../base-command.js'
 import {assignIssue, clearClients} from '../../../jira/jira-client.js'
 
 export default class IssueAssign extends BaseCommand {
-  /* eslint-disable perfectionist/sort-objects */
+  /* eslint-disable perfectionist/sort-objects -- issueId must be first arg per CLAUDE.md convention */
   static override args = {
     issueId: Args.string({description: 'Issue ID or issue key', required: true}),
     accountId: Args.string({description: 'Account ID of the user', required: true}),
   }
+
   /* eslint-enable perfectionist/sort-objects */
   static override description = 'Assigns an issue to a user'
   static override examples = ['<%= config.bin %> <%= command.id %> PROJ-123 5b10ac8d82e05b22cc7d4ef5']
