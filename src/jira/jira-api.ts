@@ -1,10 +1,10 @@
 import {type ApiResult, type AuthConfig, buildAuthHeader} from '@hesed/plugin-lib'
 import fs from 'fs-extra'
 import {Version3Client} from 'jira.js'
-import {markdownToAdf} from 'marklassian'
 import {Buffer} from 'node:buffer'
 import path from 'node:path'
 
+import {markdownToAdfDocument} from '../markdown.js'
 import {buildProxyRequestConfig} from '../proxy.js'
 import {defaultFields, processIssueRenderedAndFields} from '../utils.js'
 
@@ -75,8 +75,7 @@ export class JiraApi {
     try {
       const client = this.getClient()
       // Convert Markdown body to Jira ADF
-      // eslint-disable-next-line unicorn/prefer-string-replace-all
-      const bodyContent = markdownToAdf(body.replace(/\\n/g, '\n'))
+      const bodyContent = markdownToAdfDocument(body)
 
       const response = await client.issueComments.addComment({
         comment: bodyContent,
@@ -108,12 +107,11 @@ export class JiraApi {
   ): Promise<ApiResult> {
     try {
       // Convert Markdown body to ADF first so we can locate inline image references.
-      // eslint-disable-next-line unicorn/prefer-string-replace-all
-      const bodyContent = markdownToAdf(body.replace(/\\n/g, '\n'))
+      const bodyContent = markdownToAdfDocument(body)
 
       // Collect external mediaSingle nodes keyed by basename (produced by ![alt](path) in markdown).
       const externalMediaByBasename = new Map<string, Array<Record<string, unknown>>>()
-      this.collectExternalMedia(bodyContent.content, externalMediaByBasename)
+      this.collectExternalMedia(bodyContent.content ?? [], externalMediaByBasename)
 
       // Split attach paths: those referenced inline vs. those to append at the end.
       const inlinePaths = filePaths.filter((f) => externalMediaByBasename.has(path.basename(f)))
@@ -150,10 +148,12 @@ export class JiraApi {
       }
 
       // Append trailing files (not referenced inline) as mediaSingle blocks at the end.
+      bodyContent.content ??= []
+      const trailingNodes = bodyContent.content
       for (const filePath of trailingPaths) {
         const uuid = uuidByPath.get(filePath)
         if (!uuid) continue
-        bodyContent.content.push({
+        trailingNodes.push({
           attrs: {layout: 'center'},
           content: [{attrs: {collection: '', id: uuid, type: 'file'}, type: 'media'}],
           type: 'mediaSingle',
@@ -229,8 +229,7 @@ export class JiraApi {
       ) as typeof fields
       // Convert Markdown description to Jira ADF
       if (typeof fields.description === 'string') {
-        // eslint-disable-next-line unicorn/prefer-string-replace-all
-        processedFields.description = markdownToAdf(fields.description.replace(/\\n/g, '\n'))
+        processedFields.description = markdownToAdfDocument(fields.description)
       }
 
       const response = await client.issues.createIssue({
@@ -712,8 +711,7 @@ export class JiraApi {
     try {
       const client = this.getClient()
       // Convert Markdown body to Jira ADF
-      // eslint-disable-next-line unicorn/prefer-string-replace-all
-      const bodyContent = markdownToAdf(body.replace(/\\n/g, '\n'))
+      const bodyContent = markdownToAdfDocument(body)
 
       const response = await client.issueComments.updateComment({
         body: bodyContent,
@@ -775,8 +773,7 @@ export class JiraApi {
             }
 
             if (adfFieldIds.has(key)) {
-              // eslint-disable-next-line unicorn/prefer-string-replace-all
-              return [key, markdownToAdf(value.replace(/\\n/g, '\n'))]
+              return [key, markdownToAdfDocument(value)]
             }
           }
 
@@ -834,8 +831,7 @@ export class JiraApi {
     try {
       const client = this.getClient()
       // Convert Markdown body to Jira ADF
-      // eslint-disable-next-line unicorn/prefer-string-replace-all
-      const bodyContent = body ? markdownToAdf(body.replace(/\\n/g, '\n')) : undefined
+      const bodyContent = body ? markdownToAdfDocument(body) : undefined
 
       const response = await client.issueWorklogs.addWorklog({
         comment: bodyContent,
