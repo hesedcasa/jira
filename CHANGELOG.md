@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.2](https://github.com/hesedcasa/jira/compare/v0.11.1...v0.11.2) (2026-08-12)
+
+
+### 🛠️ Fixes
+
+* preserve single newlines as line breaks in markdown to ADF conversion ([#118](https://github.com/hesedcasa/jira/issues/118)) ([d653c0b](https://github.com/hesedcasa/jira/commit/d653c0bc895322b30f6715749970e653261058c7))
+
 ## [0.11.1](https://github.com/hesedcasa/jira/compare/v0.11.0...v0.11.1) (2026-08-11)
 
 
