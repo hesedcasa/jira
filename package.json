@@ -13,7 +13,7 @@
     "@oclif/core": "^4",
     "fs-extra": "^11.3.3",
     "https-proxy-agent": "^7.0.6",
-    "jira.js": "^5.4.0",
+    "jira.js": "^6.1.0",
     "marked": "^18.0.10",
     "marklassian": "^1.1.0",
     "proxy-from-env": "^2.1.0",
