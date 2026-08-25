@@ -12,12 +12,12 @@
     "@inquirer/prompts": "^8.2.0",
     "@oclif/core": "^4",
     "fs-extra": "^11.3.3",
-    "https-proxy-agent": "^7.0.6",
-    "jira.js": "^5.4.0",
+    "jira.js": "^6.1.0",
     "marked": "^18.0.10",
     "marklassian": "^1.1.0",
     "proxy-from-env": "^2.1.0",
-    "turndown": "^7.2.2"
+    "turndown": "^7.2.2",
+    "undici": "^8.10.0"
   },
   "devDependencies": {
     "@eslint/compat": "^2",
@@ -45,7 +45,7 @@
     "typescript": "^5"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.19.0"
   },
   "files": [
     "./bin",

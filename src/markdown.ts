@@ -1,4 +1,4 @@
-import {type Document} from 'jira.js/version3/models/document'
+import {type Document} from 'jira.js/cloud'
 import {lexer} from 'marked'
 import {markdownToAdf} from 'marklassian'
 

@@ -1,17 +1,18 @@
 import {type ApiResult, type AuthConfig} from '@hesed/plugin-lib'
-import {AgileClient} from 'jira.js'
-import {type Issue} from 'jira.js/version3/models/issue'
+import {type AgileClient, createAgileClient} from 'jira.js'
+import {createClient} from 'jira.js/core'
 
-import {buildProxyRequestConfig} from '../proxy.js'
+import {configureFetchProxy} from '../proxy.js'
 import {defaultFields, processIssueRenderedAndFields} from '../utils.js'
 
-type PaginateResult = {
-  expand?: string
-  issues?: Issue[]
-  maxResults?: number
-  startAt?: number
-  total?: number
-}
+/**
+ * The `fields` query parameter of the board issue endpoints. The generator types it as
+ * an array of objects, which is an artefact of Atlassian's specification — the endpoints
+ * take a list of field names, and the value is serialised straight into the query string
+ * as repeated `fields=` entries. The cast below is to the declared type, not around a
+ * real mismatch.
+ */
+type FieldsParameter = NonNullable<Parameters<AgileClient['board']['getIssuesForBacklog']>[0]['fields']>
 
 /**
  * Agile API Utility Module
@@ -118,19 +119,19 @@ export class AgileApi {
     sprintId: number,
     jql?: string,
     maxResults = 10,
-    startAt?: number,
+    nextPageToken?: string,
     fields?: string[],
   ): Promise<ApiResult> {
     try {
       const client = this.getClient()
       const finalFields = [...new Set<string>([...(fields ?? []), ...defaultFields])]
-      const result = await client.board.getBoardIssuesForSprint<PaginateResult>({
+      const result = await client.board.getBoardIssuesForSprint({
         boardId,
-        fields: finalFields,
+        fields: finalFields as unknown as FieldsParameter,
         jql,
         maxResults,
+        nextPageToken,
         sprintId,
-        startAt,
       })
 
       if (result.issues) {
@@ -144,7 +145,7 @@ export class AgileApi {
       }
 
       return {
-        data: result.issues,
+        data: {issues: result.issues, nextPageToken: result.nextPageToken},
         success: true,
       }
     } catch (error: unknown) {
@@ -164,29 +165,16 @@ export class AgileApi {
       return this.client
     }
 
-    const baseRequestConfig = buildProxyRequestConfig(this.config.host!)
-    const options = this.config.email
-      ? {
-          authentication: {
-            basic: {
-              apiToken: this.config.apiToken,
-              email: this.config.email,
-            },
-          },
-          ...(baseRequestConfig && {baseRequestConfig}),
-          host: this.config.host!,
-        }
-      : {
-          authentication: {
-            oauth2: {
-              accessToken: this.config.apiToken,
-            },
-          },
-          ...(baseRequestConfig && {baseRequestConfig}),
-          host: this.config.host!,
-        }
+    configureFetchProxy(this.config.host!)
 
-    this.client = new AgileClient(options)
+    this.client = createAgileClient(
+      createClient({
+        auth: this.config.email
+          ? {apiToken: this.config.apiToken, email: this.config.email, type: 'basic'}
+          : {token: this.config.apiToken, type: 'bearer'},
+        host: this.config.host!,
+      }),
+    )
 
     return this.client
   }
@@ -199,18 +187,18 @@ export class AgileApi {
     boardId: number,
     jql?: string,
     maxResults = 10,
-    startAt?: number,
+    nextPageToken?: string,
     fields?: string[],
   ): Promise<ApiResult> {
     try {
       const client = this.getClient()
       const finalFields = [...new Set<string>([...(fields ?? []), ...defaultFields])]
-      const result = await client.board.getIssuesForBacklog<PaginateResult>({
+      const result = await client.board.getIssuesForBacklog({
         boardId,
-        fields: finalFields,
+        fields: finalFields as unknown as FieldsParameter,
         jql,
         maxResults,
-        startAt,
+        nextPageToken,
       })
 
       if (result.issues) {
@@ -224,7 +212,7 @@ export class AgileApi {
       }
 
       return {
-        data: result.issues,
+        data: {issues: result.issues, nextPageToken: result.nextPageToken},
         success: true,
       }
     } catch (error: unknown) {

@@ -1,35 +1,23 @@
-import {HttpsProxyAgent} from 'https-proxy-agent'
 import {getProxyForUrl} from 'proxy-from-env'
+import {EnvHttpProxyAgent, setGlobalDispatcher} from 'undici'
 
 /**
- * axios (jira.js's HTTP client) resolves HTTP(S)_PROXY env vars itself, but for
- * https:// targets it forwards a plain absolute-URI request instead of opening an
- * HTTP CONNECT tunnel — unlike fetch/undici. MITM-style proxies that require CONNECT
- * for https:// upstreams (e.g. Agent Vault) reject that with a 400. Building an
- * explicit httpsAgent that tunnels correctly, and disabling axios's own proxy
- * handling for the request, works around it.
+ * jira.js 6 dropped axios for `fetch`, and with it `baseRequestConfig` — there is no
+ * per-client agent to hand a proxy to any more. Node's `fetch` also ignores the
+ * HTTP(S)_PROXY environment variables outright; what it does honour is undici's global
+ * dispatcher, so route through an `EnvHttpProxyAgent`.
  *
- * The workaround only applies to https:// targets. For http:// targets axios already
- * does the right thing (an absolute-URI request to the proxy), and it would consult
- * `httpAgent` rather than `httpsAgent` — so returning `proxy: false` there would
- * silently bypass the proxy instead of routing through it.
+ * The agent reads the same variables per request and honours NO_PROXY, and it opens an
+ * HTTP CONNECT tunnel for https:// targets — which is what MITM-style proxies that
+ * require CONNECT (e.g. Agent Vault) rejected axios's absolute-URI requests for.
+ *
+ * Unlike the axios workaround this covers http:// targets too, and it applies to the
+ * plain `fetch` calls this CLI makes alongside jira.js (attachment downloads, the
+ * dev-status endpoint), which previously bypassed the proxy entirely.
  */
-export function buildProxyRequestConfig(host: string): undefined | {httpsAgent: HttpsProxyAgent<string>; proxy: false} {
-  if (!isHttpsTarget(host)) return undefined
+export function configureFetchProxy(host: string): void {
+  // Nothing to install when this host has no proxy configured, or NO_PROXY excludes it.
+  if (!getProxyForUrl(host)) return
 
-  const proxyUrl = getProxyForUrl(host)
-  if (!proxyUrl) return undefined
-
-  return {
-    httpsAgent: new HttpsProxyAgent(proxyUrl),
-    proxy: false,
-  }
-}
-
-function isHttpsTarget(host: string): boolean {
-  try {
-    return new URL(host).protocol === 'https:'
-  } catch {
-    return false
-  }
+  setGlobalDispatcher(new EnvHttpProxyAgent())
 }

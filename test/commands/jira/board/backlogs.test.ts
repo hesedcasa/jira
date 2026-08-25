@@ -73,8 +73,8 @@ describe('board:backlogs', () => {
     expect(result.success).to.be.true
   })
 
-  it('respects --start flag for pagination', async () => {
-    const command = new BoardBacklogs.default(['123', '--start', '5'], createMockConfig())
+  it('respects --next flag for pagination', async () => {
+    const command = new BoardBacklogs.default(['123', '--next', 'page-token'], createMockConfig())
 
     const result = await command.run()
 

@@ -16,15 +16,15 @@ export default class BoardSprintIssues extends BaseCommand {
   static override description = 'Get all issues belong to the sprint from the board'
   static override examples = [
     '<%= config.bin %> <%= command.id %> 123 3068 \'summary ~ "Error saving file" AND status IN ("ready", "in progress")\'',
-    '<%= config.bin %> <%= command.id %> 123 3068 \'assignee="john@email.com" AND type=Bug\' --max 5 --start 2',
+    '<%= config.bin %> <%= command.id %> 123 3068 \'assignee="john@email.com" AND type=Bug\' --max 5 --next CiEjU3RyaW5nJlUwRlVTRkpGUlE9PQ',
     "<%= config.bin %> <%= command.id %> 123 3068 'timeestimate > 4h' --fields comment,creator,timeestimate",
   ]
 
   static override flags = {
     fields: Flags.string({description: 'Extra list of fields to return', required: false}),
     max: Flags.integer({description: 'Maximum number of items per page', required: false}),
+    next: Flags.string({description: 'Token for next page', required: false}),
     profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
-    start: Flags.integer({description: 'Index of the first item to return', required: false}),
     toon: Flags.boolean({description: 'Format output as toon', required: false}),
   }
 
@@ -42,7 +42,7 @@ export default class BoardSprintIssues extends BaseCommand {
       args.sprintId,
       args.jql,
       flags.max,
-      flags.start,
+      flags.next,
       flags.fields ? flags.fields.split(',') : undefined,
     )
     clearClients()

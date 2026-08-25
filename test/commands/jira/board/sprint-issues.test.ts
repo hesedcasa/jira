@@ -73,8 +73,8 @@ describe('board:sprint-issues', () => {
     expect(result.success).to.be.true
   })
 
-  it('respects --start flag for pagination', async () => {
-    const command = new BoardSprintIssues.default(['123', '456', '--start', '5'], createMockConfig())
+  it('respects --next flag for pagination', async () => {
+    const command = new BoardSprintIssues.default(['123', '456', '--next', 'page-token'], createMockConfig())
 
     const result = await command.run()
 

@@ -1,4 +1,4 @@
-import {type Issue} from 'jira.js/version3/models/issue'
+import {type Issue} from 'jira.js/cloud'
 import TurndownService from 'turndown'
 
 export const defaultFields = [
