@@ -14,40 +14,64 @@ const HARD_BREAK_END = /( {2,}|\\)$/
 /** Blank, or blank apart from blockquote markers — ends the block, no break needed. */
 const BLANK = /^[\s>]*$/
 
+/** Leading blockquote markers, so a quoted line's own indentation can be measured. */
+const QUOTE_MARKERS = /^(?:\s*>)+/
+
+/** Indentation, in spaces, that starts an indented code block. */
+const INDENTED_CODE = 4
+
 /**
  * Starts a new block — list item, heading, fence, table row, setext underline or
  * thematic break. The newline before it is markdown syntax, not a line break.
  */
 const NEW_BLOCK = /^[\s>]*(?:[*+-]\s|\d+[).]\s|#{1,6}\s|```|~~~|\||={2,}\s*$|-{3,}\s*$)/
 
+/** Indentation of a line's own content, ignoring any blockquote markers. */
+function indentOf(line: string): number {
+  const [indent = ''] = /^[\t ]*/.exec(line.replace(QUOTE_MARKERS, '')) ?? []
+  return [...indent].reduce((total, character) => total + (character === '\t' ? INDENTED_CODE : 1), 0)
+}
+
 /**
  * Mark every newline that continues the same block of text as an explicit
  * markdown hard break: two trailing spaces before the newline.
  *
- * Lines inside a fenced code block are left untouched, as is any line the next
- * line does not continue: the last line of the block, and lines followed by a
- * blank line or by the start of a new block such as the next list item.
+ * Code is never touched — a break inside it would end up in the code the user
+ * submits — so lines are skipped while inside a fenced block, and while inside
+ * an indented block, which a blockquote or list item can nest. Prose lines are
+ * skipped too whenever the next line does not continue them: the last line of
+ * the block, and lines followed by a blank line or by the start of a new block
+ * such as the next list item.
  */
 function markHardBreaks(raw: string): string {
   const lines = raw.split('\n')
   let isInFence = false
+  let isInIndentedCode = false
+  let isAfterBlank = false
 
   return lines
     .map((line, index) => {
       if (FENCE.test(line)) {
         isInFence = !isInFence
+        isAfterBlank = false
         return line
       }
 
+      if (isInFence) return line
+
+      if (BLANK.test(line)) {
+        isAfterBlank = true
+        return line
+      }
+
+      // An indented code block opens after a blank line and runs until the
+      // indentation drops back out of it.
+      isInIndentedCode = indentOf(line) >= INDENTED_CODE && (isInIndentedCode || isAfterBlank)
+      isAfterBlank = false
+      if (isInIndentedCode) return line
+
       const next = lines[index + 1]
-      if (
-        isInFence ||
-        next === undefined ||
-        BLANK.test(next) ||
-        NEW_BLOCK.test(next) ||
-        HARD_BREAK_END.test(line) ||
-        BLANK.test(line)
-      ) {
+      if (next === undefined || BLANK.test(next) || NEW_BLOCK.test(next) || HARD_BREAK_END.test(line)) {
         return line
       }
 

@@ -95,6 +95,31 @@ describe('markdownToAdfDocument', () => {
     expect(hasHardBreak(adf.content)).to.equal(false)
   })
 
+  it('leaves an indented code block nested in a list item intact', () => {
+    const adf = markdownToAdfDocument('- item\n\n      code a\n      code b') as {content?: AdfNode[]}
+    const code = adf.content?.[0]?.content?.[0]?.content?.[1]
+
+    expect(code?.type).to.equal('codeBlock')
+    expect(code?.content?.[0]?.text).to.equal('code a\ncode b')
+  })
+
+  it('leaves an indented code block nested in a blockquote intact', () => {
+    const adf = markdownToAdfDocument('> intro\n>\n>     code a\n>     code b') as {content?: AdfNode[]}
+    const code = adf.content?.[0]?.content?.[1]
+
+    expect(code?.type).to.equal('codeBlock')
+    expect(code?.content?.[0]?.text).to.equal('code a\ncode b')
+  })
+
+  it('resumes breaking lines after a nested indented code block', () => {
+    const body = '- item\n\n      code a\n      code b\n\n  tail one\n  tail two'
+    const adf = markdownToAdfDocument(body) as {content?: AdfNode[]}
+    const item = adf.content?.[0]?.content?.[0]?.content
+
+    expect(item?.[1]?.content?.[0]?.text).to.equal('code a\ncode b')
+    expect(hasHardBreak(item?.[2]?.content)).to.equal(true)
+  })
+
   it('keeps paragraphs and code blocks intact in a mixed body', () => {
     const adf = markdownToAdfDocument('intro one\nintro two\n\n```\ncode a\ncode b\n```\n\ntail one\ntail two') as {
       content?: AdfNode[]
