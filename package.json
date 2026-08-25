@@ -16,7 +16,7 @@
     "jira.js": "^5.4.0",
     "marked": "^16.0.0",
     "marklassian": "^1.1.0",
-    "proxy-from-env": "^1.1.0",
+    "proxy-from-env": "^2.1.0",
     "turndown": "^7.2.2"
   },
   "devDependencies": {
