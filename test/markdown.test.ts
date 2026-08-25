@@ -61,4 +61,16 @@ describe('markdownToAdfDocument', () => {
     expect(adf.content?.[0].type).to.equal('bulletList')
     expect(hasHardBreak(adf.content)).to.equal(false)
   })
+
+  it('keeps paragraphs and code blocks intact in a mixed body', () => {
+    const adf = markdownToAdfDocument('intro one\nintro two\n\n```\ncode a\ncode b\n```\n\ntail one\ntail two') as {
+      content?: AdfNode[]
+    }
+
+    expect(adf.content?.map((n) => n.type)).to.deep.equal(['paragraph', 'codeBlock', 'paragraph'])
+    expect(hasHardBreak(adf.content?.[0]?.content)).to.equal(true)
+    expect(hasHardBreak(adf.content?.[1]?.content)).to.equal(false)
+    expect(adf.content?.[1]?.content?.[0]?.text).to.equal('code a\ncode b')
+    expect(hasHardBreak(adf.content?.[2]?.content)).to.equal(true)
+  })
 })
