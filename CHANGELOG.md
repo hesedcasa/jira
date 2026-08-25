@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0](https://github.com/hesedcasa/jira/compare/v0.11.2...v1.0.0) (2026-08-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* migrate to jira.js 6 ([#125](https://github.com/hesedcasa/jira/issues/125))
+
+### 🎉 Features
+
+* migrate to jira.js 6 ([#125](https://github.com/hesedcasa/jira/issues/125)) ([d65f676](https://github.com/hesedcasa/jira/commit/d65f676ba929ba1f5a272de3149aa3e168a381d1))
+
 ## [0.11.2](https://github.com/hesedcasa/jira/compare/v0.11.1...v0.11.2) (2026-08-12)
 
 
