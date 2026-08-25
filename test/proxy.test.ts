@@ -1,8 +1,9 @@
 import {expect} from 'chai'
+import {type Dispatcher, EnvHttpProxyAgent, getGlobalDispatcher, setGlobalDispatcher} from 'undici'
 
-import {buildProxyRequestConfig} from '../src/proxy.js'
+import {configureFetchProxy} from '../src/proxy.js'
 
-describe('buildProxyRequestConfig', () => {
+describe('configureFetchProxy', () => {
   const originalEnv = {...process.env}
 
   // proxy-from-env consults each of these (preferring the lowercase form), so any
@@ -18,7 +19,11 @@ describe('buildProxyRequestConfig', () => {
     'npm_config_https_proxy',
   ]
 
+  let originalDispatcher: Dispatcher
+
   beforeEach(() => {
+    originalDispatcher = getGlobalDispatcher()
+
     for (const key of proxyEnvKeys) {
       delete process.env[key]
       delete process.env[key.toLowerCase()]
@@ -26,6 +31,9 @@ describe('buildProxyRequestConfig', () => {
   })
 
   afterEach(() => {
+    // Installing a dispatcher is global, so put the original one back.
+    setGlobalDispatcher(originalDispatcher)
+
     for (const key of Object.keys(process.env)) {
       if (!(key in originalEnv)) delete process.env[key]
     }
@@ -33,36 +41,42 @@ describe('buildProxyRequestConfig', () => {
     Object.assign(process.env, originalEnv)
   })
 
-  it('returns undefined when no proxy env var is set', () => {
-    expect(buildProxyRequestConfig('https://test.atlassian.net')).to.equal(undefined)
+  it('leaves the global dispatcher alone when no proxy env var is set', () => {
+    configureFetchProxy('https://test.atlassian.net')
+
+    expect(getGlobalDispatcher()).to.equal(originalDispatcher)
   })
 
-  it('returns an httpsAgent and disables axios proxy handling when HTTPS_PROXY is set', () => {
+  it('installs a proxy dispatcher when HTTPS_PROXY is set', () => {
     process.env.HTTPS_PROXY = 'http://user:pass@proxy.example.com:8080'
 
-    const config = buildProxyRequestConfig('https://test.atlassian.net')
+    configureFetchProxy('https://test.atlassian.net')
 
-    expect(config).to.not.equal(undefined)
-    expect(config?.proxy).to.equal(false)
-    expect(config?.httpsAgent).to.be.an('object')
+    expect(getGlobalDispatcher()).to.be.an.instanceOf(EnvHttpProxyAgent)
   })
 
-  it('returns undefined when the host is excluded via NO_PROXY', () => {
+  it('installs a proxy dispatcher for an http:// host too', () => {
+    process.env.HTTP_PROXY = 'http://proxy.example.com:8080'
+
+    configureFetchProxy('http://jira.internal.example.com')
+
+    expect(getGlobalDispatcher()).to.be.an.instanceOf(EnvHttpProxyAgent)
+  })
+
+  it('leaves the global dispatcher alone when the host is excluded via NO_PROXY', () => {
     process.env.HTTPS_PROXY = 'http://proxy.example.com:8080'
     process.env.NO_PROXY = 'test.atlassian.net'
 
-    expect(buildProxyRequestConfig('https://test.atlassian.net')).to.equal(undefined)
+    configureFetchProxy('https://test.atlassian.net')
+
+    expect(getGlobalDispatcher()).to.equal(originalDispatcher)
   })
 
-  it('returns undefined for an http:// host so axios keeps its own proxy handling', () => {
-    process.env.HTTP_PROXY = 'http://proxy.example.com:8080'
-
-    expect(buildProxyRequestConfig('http://jira.internal.example.com')).to.equal(undefined)
-  })
-
-  it('returns undefined for a host without a parseable URL', () => {
+  it('leaves the global dispatcher alone for a host without a parseable URL', () => {
     process.env.HTTPS_PROXY = 'http://proxy.example.com:8080'
 
-    expect(buildProxyRequestConfig('test.atlassian.net')).to.equal(undefined)
+    configureFetchProxy('test.atlassian.net')
+
+    expect(getGlobalDispatcher()).to.equal(originalDispatcher)
   })
 })

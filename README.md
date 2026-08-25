@@ -255,7 +255,7 @@ Get all issues from the board's backlog
 
 ```
 USAGE
-  $ jira jira board backlogs BOARDID [JQL] [--fields <value>] [--max <value>] [-p <value>] [--start <value>] [--toon]
+  $ jira jira board backlogs BOARDID [JQL] [--fields <value>] [--max <value>] [--next <value>] [-p <value>] [--toon]
 
 ARGUMENTS
   BOARDID  Board ID
@@ -265,7 +265,7 @@ FLAGS
   -p, --profile=<value>  Authentication profile name
       --fields=<value>   Extra list of fields to return
       --max=<value>      Maximum number of items per page
-      --start=<value>    Index of the first item to return
+      --next=<value>     Token for next page
       --toon             Format output as toon
 
 DESCRIPTION
@@ -274,7 +274,7 @@ DESCRIPTION
 EXAMPLES
   $ jira jira board backlogs 123 'summary ~ "Error saving file" AND status IN ("ready", "in progress")'
 
-  $ jira jira board backlogs 123 'assignee="john@email.com" AND type=Bug' --max 5 --start 2
+  $ jira jira board backlogs 123 'assignee="john@email.com" AND type=Bug' --max 5 --next CiEjU3RyaW5nJlUwRlVTRkpGUlE9PQ
 
   $ jira jira board backlogs 123 'timeestimate > 4h' --fields comment,creator,timeestimate
 ```
@@ -287,7 +287,7 @@ Get all issues belong to the sprint from the board
 
 ```
 USAGE
-  $ jira jira board sprint-issues BOARDID SPRINTID [JQL] [--fields <value>] [--max <value>] [-p <value>] [--start <value>]
+  $ jira jira board sprint-issues BOARDID SPRINTID [JQL] [--fields <value>] [--max <value>] [--next <value>] [-p <value>]
     [--toon]
 
 ARGUMENTS
@@ -299,7 +299,7 @@ FLAGS
   -p, --profile=<value>  Authentication profile name
       --fields=<value>   Extra list of fields to return
       --max=<value>      Maximum number of items per page
-      --start=<value>    Index of the first item to return
+      --next=<value>     Token for next page
       --toon             Format output as toon
 
 DESCRIPTION
@@ -308,7 +308,7 @@ DESCRIPTION
 EXAMPLES
   $ jira jira board sprint-issues 123 3068 'summary ~ "Error saving file" AND status IN ("ready", "in progress")'
 
-  $ jira jira board sprint-issues 123 3068 'assignee="john@email.com" AND type=Bug' --max 5 --start 2
+  $ jira jira board sprint-issues 123 3068 'assignee="john@email.com" AND type=Bug' --max 5 --next CiEjU3RyaW5nJlUwRlVTRkpGUlE9PQ
 
   $ jira jira board sprint-issues 123 3068 'timeestimate > 4h' --fields comment,creator,timeestimate
 ```

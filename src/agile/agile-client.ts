@@ -47,11 +47,11 @@ export async function getBoardIssuesForSprint(
   sprintId: number,
   jql?: string,
   maxResults = 10,
-  startAt?: number,
+  nextPageToken?: string,
   fields?: string[],
 ): Promise<ApiResult> {
   const agile = await getClient(config)
-  return agile.getBoardIssuesForSprint(boardId, sprintId, jql, maxResults, startAt, fields)
+  return agile.getBoardIssuesForSprint(boardId, sprintId, jql, maxResults, nextPageToken, fields)
 }
 
 // eslint-disable-next-line max-params
@@ -60,9 +60,9 @@ export async function getIssuesForBacklog(
   boardId: number,
   jql?: string,
   maxResults = 10,
-  startAt?: number,
+  nextPageToken?: string,
   fields?: string[],
 ): Promise<ApiResult> {
   const agile = await getClient(config)
-  return agile.getIssuesForBacklog(boardId, jql, maxResults, startAt, fields)
+  return agile.getIssuesForBacklog(boardId, jql, maxResults, nextPageToken, fields)
 }

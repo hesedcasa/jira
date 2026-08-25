@@ -2,6 +2,36 @@ import {expect} from 'chai'
 
 import {JiraApi} from '../../src/jira/jira-api.js'
 
+/** One intercepted request: where it went and what was sent. */
+type SentRequest = {body: unknown; method?: string; url: string}
+
+/**
+ * Replace global fetch — the transport jira.js 6 builds on — with one that records the
+ * request and answers with `payload`. Returns the recorded requests and a restore hook.
+ */
+function interceptFetch(payload: unknown): {requests: SentRequest[]; restore: () => void} {
+  const requests: SentRequest[] = []
+  const original = fetch
+
+  Reflect.set(globalThis, 'fetch', (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const raw = init?.body
+    requests.push({
+      body: typeof raw === 'string' ? JSON.parse(raw) : raw,
+      method: init?.method,
+      url: String(input),
+    })
+
+    return Response.json(payload)
+  }) as typeof fetch)
+
+  return {
+    requests,
+    restore() {
+      Reflect.set(globalThis, 'fetch', original)
+    },
+  }
+}
+
 describe('JiraApi', () => {
   const mockConfig = {
     apiToken: 'test-token',
@@ -26,7 +56,7 @@ describe('JiraApi', () => {
   })
 
   describe('getClient', () => {
-    it('returns a Version3Client instance', () => {
+    it('returns a Jira Cloud client instance', () => {
       const client = jiraApi.getClient()
       expect(client).to.have.property('issues')
       expect(client).to.have.property('projects')
@@ -162,6 +192,39 @@ describe('JiraApi', () => {
         expect(result).to.have.property('success')
       } catch {
         // Expected to fail without actual connection
+      }
+    })
+
+    it('posts the comment to the issue', async () => {
+      const fetched = interceptFetch({id: '10000'})
+
+      try {
+        const result = await jiraApi.addComment('TEST-1', 'Test comment')
+
+        expect(result.success).to.equal(true)
+        expect(fetched.requests).to.have.lengthOf(1)
+        expect(fetched.requests[0].url).to.equal('https://test.atlassian.net/rest/api/3/issue/TEST-1/comment')
+        expect(fetched.requests[0].method).to.equal('POST')
+        expect(fetched.requests[0].body).to.not.have.property('parentId')
+      } finally {
+        fetched.restore()
+      }
+    })
+
+    it('keeps parentId on the wire when replying to a comment', async () => {
+      // jira.js builds its comment request body from the fields it declares, and parentId
+      // is not one of them — a reply must not silently become a top-level comment.
+      const fetched = interceptFetch({id: '10001'})
+
+      try {
+        const result = await jiraApi.addComment('TEST-1', 'A reply', '10000')
+
+        expect(result.success).to.equal(true)
+        expect(fetched.requests).to.have.lengthOf(1)
+        expect(fetched.requests[0].url).to.equal('https://test.atlassian.net/rest/api/3/issue/TEST-1/comment')
+        expect(fetched.requests[0].body).to.have.property('parentId', '10000')
+      } finally {
+        fetched.restore()
       }
     })
   })

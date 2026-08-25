@@ -175,11 +175,12 @@ Authentication config is stored in JSON at `~/.config/jira/jira-config.json` (pl
 
 ## Dependencies
 
-- **jira.js** v5 - Jira API client library
+- **jira.js** v6 - Jira API client library (`createCloudClient` / `createAgileClient` over a shared `createClient` transport, `fetch`-based)
 - **@oclif/core** - CLI framework
 - **marklassian** - Markdown to ADF conversion
 - **@toon-format/toon** - TOON output format
 - **@inquirer/prompts** - Interactive prompts
+- **undici** - Proxy dispatcher for `fetch` (see `src/proxy.ts`)
 
 ## Important Notes
 

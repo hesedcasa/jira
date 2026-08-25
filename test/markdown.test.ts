@@ -1,4 +1,5 @@
 import {expect} from 'chai'
+import {type Document} from 'jira.js/cloud'
 
 import {markdownToAdfDocument} from '../src/markdown.js'
 
@@ -10,6 +11,15 @@ type AdfNode = {
   type: string
 }
 
+/**
+ * The converted document, narrowed to the node shape above. jira.js types a document's
+ * content as `Record<string, any>[]`, which an index signature alone cannot satisfy
+ * `AdfNode` with, so the narrowing goes through `unknown`.
+ */
+function asAdf(document: Document): {content?: AdfNode[]} {
+  return document as unknown as {content?: AdfNode[]}
+}
+
 /** True if any node in the tree is a hardBreak. */
 function hasHardBreak(node?: AdfNode[]): boolean {
   return (node ?? []).some((n) => n.type === 'hardBreak' || (n.content && hasHardBreak(n.content)))
@@ -17,7 +27,7 @@ function hasHardBreak(node?: AdfNode[]): boolean {
 
 describe('markdownToAdfDocument', () => {
   it('converts single newlines into hardBreak nodes (not a collapsed paragraph)', () => {
-    const adf = markdownToAdfDocument('**A:** 1\n**B:** 2\n**C:** 3') as {content?: AdfNode[]}
+    const adf = asAdf(markdownToAdfDocument('**A:** 1\n**B:** 2\n**C:** 3'))
 
     // The three bold lines must stay on separate lines, i.e. the paragraph
     // must contain hardBreak nodes. Without the fix they collapse into one run.
@@ -26,20 +36,20 @@ describe('markdownToAdfDocument', () => {
 
   it('keeps the five bold fields on separate lines (the reported regression)', () => {
     const body = '**Field1:** a\n**Field2:** b\n**Field3:** c\n**Field4:** d\n**Field5:** e'
-    const adf = markdownToAdfDocument(body) as {content?: AdfNode[]}
+    const adf = asAdf(markdownToAdfDocument(body))
 
     expect(hasHardBreak(adf.content?.[0]?.content)).to.equal(true)
   })
 
   it('unescapes literal backslash-n sequences into real line breaks', () => {
     // How a shell user typically passes multi-line bodies: a single arg with \n.
-    const adf = markdownToAdfDocument(String.raw`**A:** 1\n**B:** 2`) as {content?: AdfNode[]}
+    const adf = asAdf(markdownToAdfDocument(String.raw`**A:** 1\n**B:** 2`))
 
     expect(hasHardBreak(adf.content?.[0]?.content)).to.equal(true)
   })
 
   it('still separates paragraphs on blank lines', () => {
-    const adf = markdownToAdfDocument('para one\n\npara two') as {content?: AdfNode[]}
+    const adf = asAdf(markdownToAdfDocument('para one\n\npara two'))
 
     expect(adf.content?.length).to.equal(2)
     expect(adf.content?.[0].type).to.equal('paragraph')
@@ -47,7 +57,7 @@ describe('markdownToAdfDocument', () => {
   })
 
   it('leaves fenced code block newlines intact (no hardBreak injected)', () => {
-    const adf = markdownToAdfDocument('```\nline one\nline two\n```') as {content?: AdfNode[]}
+    const adf = asAdf(markdownToAdfDocument('```\nline one\nline two\n```'))
     const code = adf.content?.[0]
 
     expect(code?.type).to.equal('codeBlock')
@@ -56,21 +66,21 @@ describe('markdownToAdfDocument', () => {
   })
 
   it('leaves list items intact (no hardBreak injected between items)', () => {
-    const adf = markdownToAdfDocument('- item one\n- item two\n- item three') as {content?: AdfNode[]}
+    const adf = asAdf(markdownToAdfDocument('- item one\n- item two\n- item three'))
 
     expect(adf.content?.[0].type).to.equal('bulletList')
     expect(hasHardBreak(adf.content)).to.equal(false)
   })
 
   it('breaks continuation lines inside a blockquote', () => {
-    const adf = markdownToAdfDocument('> first line\n> second line') as {content?: AdfNode[]}
+    const adf = asAdf(markdownToAdfDocument('> first line\n> second line'))
 
     expect(adf.content?.[0].type).to.equal('blockquote')
     expect(hasHardBreak(adf.content)).to.equal(true)
   })
 
   it('breaks continuation lines inside a list item, without touching item boundaries', () => {
-    const adf = markdownToAdfDocument('- one a\n  one b\n- two a\n  two b') as {content?: AdfNode[]}
+    const adf = asAdf(markdownToAdfDocument('- one a\n  one b\n- two a\n  two b'))
     const items = adf.content?.[0]?.content
 
     expect(adf.content?.[0].type).to.equal('bulletList')
@@ -80,14 +90,14 @@ describe('markdownToAdfDocument', () => {
   })
 
   it('leaves list item text untouched when the next line starts a new item', () => {
-    const adf = markdownToAdfDocument('- item one\n- item two') as {content?: AdfNode[]}
+    const adf = asAdf(markdownToAdfDocument('- item one\n- item two'))
     const texts = (adf.content?.[0]?.content ?? []).map((item) => item.content?.[0]?.content?.[0]?.text)
 
     expect(texts).to.deep.equal(['item one', 'item two'])
   })
 
   it('leaves a fenced code block nested in a list item intact', () => {
-    const adf = markdownToAdfDocument('- item\n\n  ```\n  code a\n  code b\n  ```') as {content?: AdfNode[]}
+    const adf = asAdf(markdownToAdfDocument('- item\n\n  ```\n  code a\n  code b\n  ```'))
     const code = adf.content?.[0]?.content?.[0]?.content?.[1]
 
     expect(code?.type).to.equal('codeBlock')
@@ -96,7 +106,7 @@ describe('markdownToAdfDocument', () => {
   })
 
   it('leaves an indented code block nested in a list item intact', () => {
-    const adf = markdownToAdfDocument('- item\n\n      code a\n      code b') as {content?: AdfNode[]}
+    const adf = asAdf(markdownToAdfDocument('- item\n\n      code a\n      code b'))
     const code = adf.content?.[0]?.content?.[0]?.content?.[1]
 
     expect(code?.type).to.equal('codeBlock')
@@ -104,7 +114,7 @@ describe('markdownToAdfDocument', () => {
   })
 
   it('leaves an indented code block nested in a blockquote intact', () => {
-    const adf = markdownToAdfDocument('> intro\n>\n>     code a\n>     code b') as {content?: AdfNode[]}
+    const adf = asAdf(markdownToAdfDocument('> intro\n>\n>     code a\n>     code b'))
     const code = adf.content?.[0]?.content?.[1]
 
     expect(code?.type).to.equal('codeBlock')
@@ -113,7 +123,7 @@ describe('markdownToAdfDocument', () => {
 
   it('resumes breaking lines after a nested indented code block', () => {
     const body = '- item\n\n      code a\n      code b\n\n  tail one\n  tail two'
-    const adf = markdownToAdfDocument(body) as {content?: AdfNode[]}
+    const adf = asAdf(markdownToAdfDocument(body))
     const item = adf.content?.[0]?.content?.[0]?.content
 
     expect(item?.[1]?.content?.[0]?.text).to.equal('code a\ncode b')
@@ -121,7 +131,7 @@ describe('markdownToAdfDocument', () => {
   })
 
   it('breaks indented prose in a list item that is not deep enough to be code', () => {
-    const adf = markdownToAdfDocument('- item\n\n    prose line one\n    prose line two') as {content?: AdfNode[]}
+    const adf = asAdf(markdownToAdfDocument('- item\n\n    prose line one\n    prose line two'))
 
     expect(adf.content?.[0].type).to.equal('bulletList')
     expect(hasHardBreak(adf.content)).to.equal(true)
@@ -129,17 +139,15 @@ describe('markdownToAdfDocument', () => {
 
   it('measures code indentation against the enclosing list item, not the document', () => {
     // Four columns past `1. ` content indent is code; three is still prose.
-    const code = markdownToAdfDocument('1. item\n\n       code a\n       code b') as {content?: AdfNode[]}
-    const prose = markdownToAdfDocument('1. item\n\n   prose one\n   prose two') as {content?: AdfNode[]}
+    const code = asAdf(markdownToAdfDocument('1. item\n\n       code a\n       code b'))
+    const prose = asAdf(markdownToAdfDocument('1. item\n\n   prose one\n   prose two'))
 
     expect(code.content?.[0]?.content?.[0]?.content?.[1]?.content?.[0]?.text).to.equal('code a\ncode b')
     expect(hasHardBreak(prose.content)).to.equal(true)
   })
 
   it('keeps paragraphs and code blocks intact in a mixed body', () => {
-    const adf = markdownToAdfDocument('intro one\nintro two\n\n```\ncode a\ncode b\n```\n\ntail one\ntail two') as {
-      content?: AdfNode[]
-    }
+    const adf = asAdf(markdownToAdfDocument('intro one\nintro two\n\n```\ncode a\ncode b\n```\n\ntail one\ntail two'))
 
     expect(adf.content?.map((n) => n.type)).to.deep.equal(['paragraph', 'codeBlock', 'paragraph'])
     expect(hasHardBreak(adf.content?.[0]?.content)).to.equal(true)

@@ -1,11 +1,13 @@
 import {type ApiResult, type AuthConfig, buildAuthHeader} from '@hesed/plugin-lib'
 import fs from 'fs-extra'
-import {Version3Client} from 'jira.js'
+import {type CloudClient, createCloudClient} from 'jira.js'
+import {type Document} from 'jira.js/cloud'
+import {type Client, createClient} from 'jira.js/core'
 import {Buffer} from 'node:buffer'
 import path from 'node:path'
 
 import {markdownToAdfDocument} from '../markdown.js'
-import {buildProxyRequestConfig} from '../proxy.js'
+import {configureFetchProxy} from '../proxy.js'
 import {defaultFields, processIssueRenderedAndFields} from '../utils.js'
 
 /**
@@ -13,8 +15,9 @@ import {defaultFields, processIssueRenderedAndFields} from '../utils.js'
  * Provides core Jira API operations with formatting
  */
 export class JiraApi {
-  private client?: Version3Client
+  private client?: CloudClient
   private readonly config: AuthConfig
+  private httpClient?: Client
 
   constructor(config: AuthConfig) {
     this.config = config
@@ -48,8 +51,8 @@ export class JiraApi {
       const fileName = path.basename(filePath)
 
       const response = await client.issueAttachments.addAttachment({
-        attachment: {
-          file: fileContent,
+        attachments: {
+          content: fileContent,
           filename: fileName,
         },
         issueIdOrKey,
@@ -73,15 +76,9 @@ export class JiraApi {
    */
   async addComment(issueIdOrKey: string, body: string, parentId?: string): Promise<ApiResult> {
     try {
-      const client = this.getClient()
       // Convert Markdown body to Jira ADF
       const bodyContent = markdownToAdfDocument(body)
-
-      const response = await client.issueComments.addComment({
-        comment: bodyContent,
-        issueIdOrKey,
-        ...(parentId && {parentId}),
-      })
+      const response = await this.postComment(issueIdOrKey, bodyContent, parentId)
 
       return {
         data: response,
@@ -160,12 +157,7 @@ export class JiraApi {
         })
       }
 
-      const client = this.getClient()
-      const response = await client.issueComments.addComment({
-        comment: bodyContent,
-        issueIdOrKey,
-        ...(parentId && {parentId}),
-      })
+      const response = await this.postComment(issueIdOrKey, bodyContent, parentId)
 
       return {data: response, success: true}
     } catch (error: unknown) {
@@ -200,6 +192,7 @@ export class JiraApi {
    */
   clearClients(): void {
     this.client = undefined
+    this.httpClient = undefined
   }
 
   /**
@@ -232,9 +225,7 @@ export class JiraApi {
         processedFields.description = markdownToAdfDocument(fields.description)
       }
 
-      const response = await client.issues.createIssue({
-        fields: processedFields as Parameters<typeof client.issues.createIssue>[0]['fields'],
-      })
+      const response = await client.issues.createIssue({fields: processedFields})
 
       return {
         data: response,
@@ -417,36 +408,34 @@ export class JiraApi {
   /**
    * Get or create Jira client
    */
-  getClient(): Version3Client {
-    if (this.client) {
-      return this.client
-    }
-
-    const baseRequestConfig = buildProxyRequestConfig(this.config.host!)
-    const options = this.config.email
-      ? {
-          authentication: {
-            basic: {
-              apiToken: this.config.apiToken,
-              email: this.config.email,
-            },
-          },
-          ...(baseRequestConfig && {baseRequestConfig}),
-          host: this.config.host!,
-        }
-      : {
-          authentication: {
-            oauth2: {
-              accessToken: this.config.apiToken,
-            },
-          },
-          ...(baseRequestConfig && {baseRequestConfig}),
-          host: this.config.host!,
-        }
-
-    this.client = new Version3Client(options)
+  getClient(): CloudClient {
+    this.client ??= createCloudClient(this.getHttpClient())
 
     return this.client
+  }
+
+  /**
+   * Get or create the shared transport used by every generated API surface.
+   *
+   * One client means one set of credentials and, under OAuth 2.0, one token state —
+   * and it is what raw `sendRequest` calls go through for the endpoints the generated
+   * surface does not cover.
+   */
+  private getHttpClient(): Client {
+    if (this.httpClient) {
+      return this.httpClient
+    }
+
+    configureFetchProxy(this.config.host!)
+
+    this.httpClient = createClient({
+      auth: this.config.email
+        ? {apiToken: this.config.apiToken, email: this.config.email, type: 'basic'}
+        : {token: this.config.apiToken, type: 'bearer'},
+      host: this.config.host!,
+    })
+
+    return this.httpClient
   }
 
   /**
@@ -651,7 +640,7 @@ export class JiraApi {
     try {
       const finalFields = [...new Set<string>([...(fields ?? []), ...defaultFields])]
       const client = this.getClient()
-      const result = await client.issueSearch.searchForIssuesUsingJqlEnhancedSearch({
+      const result = await client.issueSearch.searchAndReconsileIssuesUsingJql({
         expand: 'renderedFields',
         failFast: true,
         fields: finalFields,
@@ -714,7 +703,7 @@ export class JiraApi {
       const bodyContent = markdownToAdfDocument(body)
 
       const response = await client.issueComments.updateComment({
-        body: bodyContent,
+        body: {body: bodyContent},
         id,
         issueIdOrKey,
       })
@@ -781,10 +770,7 @@ export class JiraApi {
         }),
       ) as typeof fields
 
-      await client.issues.editIssue({
-        fields: processedFields as Parameters<typeof client.issues.editIssue>[0]['fields'],
-        issueIdOrKey,
-      })
+      await client.issues.editIssue({fields: processedFields, issueIdOrKey})
 
       return {
         data: true,
@@ -822,6 +808,25 @@ export class JiraApi {
 
       if (content) this.collectExternalMedia(content, map)
     }
+  }
+
+  /**
+   * POST a comment, keeping `parentId` on the wire for threaded replies.
+   *
+   * The generated `issueComments.addComment` builds its request body from the fields it
+   * declares, and `parentId` is not one of them — a reply sent through it would silently
+   * become a top-level comment. Send that case through the shared transport instead.
+   */
+  private async postComment(issueIdOrKey: string, body: Document, parentId?: string): Promise<unknown> {
+    if (!parentId) {
+      return this.getClient().issueComments.addComment({body, issueIdOrKey})
+    }
+
+    return this.getHttpClient().sendRequest({
+      body: {body, parentId},
+      method: 'POST',
+      url: `/rest/api/3/issue/${issueIdOrKey}/comment`,
+    })
   }
 
   /**
