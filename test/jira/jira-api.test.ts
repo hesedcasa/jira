@@ -1,4 +1,5 @@
 import {expect} from 'chai'
+import {Agent, EnvHttpProxyAgent, getGlobalDispatcher, setGlobalDispatcher} from 'undici'
 
 import {JiraApi} from '../../src/jira/jira-api.js'
 
@@ -144,6 +145,37 @@ describe('JiraApi', () => {
         expect(result).to.have.property('success')
       } catch {
         // Expected to fail without actual connection
+      }
+    })
+  })
+
+  describe('getIssueDevelopment', () => {
+    it('routes the dev-status request through the proxy', async () => {
+      // This endpoint has no generated client method, so it never builds the transport that
+      // installs the dispatcher — the proxy has to be set up on this path in its own right.
+      const originalDispatcher = getGlobalDispatcher()
+      const originalProxy = process.env.HTTPS_PROXY
+      const originalNoProxy = process.env.NO_PROXY
+      const fetched = interceptFetch({detail: []})
+
+      // Start from a dispatcher that is definitively not a proxy one, so the assertion below
+      // reflects this call rather than whatever an earlier test or the ambient environment
+      // left installed.
+      setGlobalDispatcher(new Agent())
+      process.env.HTTPS_PROXY = 'http://proxy.example.com:8080'
+      delete process.env.NO_PROXY
+
+      try {
+        const result = await new JiraApi(mockConfig).getIssueDevelopment('10001', 'GitHub', 'pullrequest')
+
+        expect(result.success).to.equal(true)
+        expect(getGlobalDispatcher()).to.be.an.instanceOf(EnvHttpProxyAgent)
+      } finally {
+        if (originalProxy === undefined) delete process.env.HTTPS_PROXY
+        else process.env.HTTPS_PROXY = originalProxy
+        if (originalNoProxy !== undefined) process.env.NO_PROXY = originalNoProxy
+        fetched.restore()
+        setGlobalDispatcher(originalDispatcher)
       }
     })
   })

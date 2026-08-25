@@ -466,6 +466,11 @@ export class JiraApi {
    */
   async getIssueDevelopment(issueId: string, applicationType: string, dataType: string): Promise<ApiResult> {
     try {
+      // No generated client method covers this endpoint, so the request goes through fetch
+      // directly — which means the proxy dispatcher has to be installed here, rather than
+      // by the transport this method never builds.
+      configureFetchProxy(this.config.host!)
+
       const authHeader = buildAuthHeader(this.config)
       const url = `${this.config.host}/rest/dev-status/latest/issue/detail?issueId=${issueId}&applicationType=${applicationType}&dataType=${dataType}`
       const res = await fetch(url, {

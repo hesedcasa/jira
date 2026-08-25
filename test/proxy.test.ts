@@ -1,5 +1,5 @@
 import {expect} from 'chai'
-import {type Dispatcher, EnvHttpProxyAgent, getGlobalDispatcher, setGlobalDispatcher} from 'undici'
+import {Agent, type Dispatcher, EnvHttpProxyAgent, getGlobalDispatcher, setGlobalDispatcher} from 'undici'
 
 import {configureFetchProxy} from '../src/proxy.js'
 
@@ -20,9 +20,16 @@ describe('configureFetchProxy', () => {
   ]
 
   let originalDispatcher: Dispatcher
+  let baseline: Dispatcher
 
   beforeEach(() => {
     originalDispatcher = getGlobalDispatcher()
+
+    // Start from a dispatcher that is definitively not a proxy one. Mocha runs every file in
+    // one process, so without this the assertions could pass on state another test — or the
+    // ambient environment — left installed rather than on what this call did.
+    baseline = new Agent()
+    setGlobalDispatcher(baseline)
 
     for (const key of proxyEnvKeys) {
       delete process.env[key]
@@ -44,7 +51,7 @@ describe('configureFetchProxy', () => {
   it('leaves the global dispatcher alone when no proxy env var is set', () => {
     configureFetchProxy('https://test.atlassian.net')
 
-    expect(getGlobalDispatcher()).to.equal(originalDispatcher)
+    expect(getGlobalDispatcher()).to.equal(baseline)
   })
 
   it('installs a proxy dispatcher when HTTPS_PROXY is set', () => {
@@ -69,7 +76,7 @@ describe('configureFetchProxy', () => {
 
     configureFetchProxy('https://test.atlassian.net')
 
-    expect(getGlobalDispatcher()).to.equal(originalDispatcher)
+    expect(getGlobalDispatcher()).to.equal(baseline)
   })
 
   it('leaves the global dispatcher alone for a host without a parseable URL', () => {
@@ -77,6 +84,6 @@ describe('configureFetchProxy', () => {
 
     configureFetchProxy('test.atlassian.net')
 
-    expect(getGlobalDispatcher()).to.equal(originalDispatcher)
+    expect(getGlobalDispatcher()).to.equal(baseline)
   })
 })
