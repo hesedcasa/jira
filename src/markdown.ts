@@ -17,7 +17,10 @@ const BLANK = /^[\s>]*$/
 /** Leading blockquote markers, so a quoted line's own indentation can be measured. */
 const QUOTE_MARKERS = /^(?:\s*>)+/
 
-/** Indentation, in spaces, that starts an indented code block. */
+/** A list item marker — its width is where the item's own content starts. */
+const LIST_MARKER = /^[\t ]*(?:[*+-]|\d+[).])[\t ]+/
+
+/** Columns of indentation past the enclosing block that start an indented code block. */
 const INDENTED_CODE = 4
 
 /**
@@ -26,10 +29,14 @@ const INDENTED_CODE = 4
  */
 const NEW_BLOCK = /^[\s>]*(?:[*+-]\s|\d+[).]\s|#{1,6}\s|```|~~~|\||={2,}\s*$|-{3,}\s*$)/
 
-/** Indentation of a line's own content, ignoring any blockquote markers. */
-function indentOf(line: string): number {
-  const [indent = ''] = /^[\t ]*/.exec(line.replace(QUOTE_MARKERS, '')) ?? []
-  return [...indent].reduce((total, character) => total + (character === '\t' ? INDENTED_CODE : 1), 0)
+/** Width of a run of leading whitespace in columns, counting a tab as four. */
+function widthOf(text: string): number {
+  return [...text].reduce((total, character) => total + (character === '\t' ? INDENTED_CODE : 1), 0)
+}
+
+/** A line's own content, with any blockquote markers stripped. */
+function unquote(line: string): string {
+  return line.replace(QUOTE_MARKERS, '')
 }
 
 /**
@@ -48,6 +55,9 @@ function markHardBreaks(raw: string): string {
   let isInFence = false
   let isInIndentedCode = false
   let isAfterBlank = false
+  // Where the enclosing list item's content starts, which is what an indented
+  // code block inside it is indented against. Zero outside a list.
+  let contentIndent = 0
 
   return lines
     .map((line, index) => {
@@ -64,11 +74,16 @@ function markHardBreaks(raw: string): string {
         return line
       }
 
-      // An indented code block opens after a blank line and runs until the
-      // indentation drops back out of it.
-      isInIndentedCode = indentOf(line) >= INDENTED_CODE && (isInIndentedCode || isAfterBlank)
+      // An indented code block opens after a blank line, four columns past the
+      // content around it, and runs until the indentation drops back out of it.
+      const content = unquote(line)
+      const [indent = ''] = /^[\t ]*/.exec(content) ?? []
+      isInIndentedCode = widthOf(indent) >= contentIndent + INDENTED_CODE && (isInIndentedCode || isAfterBlank)
       isAfterBlank = false
       if (isInIndentedCode) return line
+
+      const [marker] = LIST_MARKER.exec(content) ?? []
+      if (marker !== undefined) contentIndent = widthOf(marker)
 
       const next = lines[index + 1]
       if (next === undefined || BLANK.test(next) || NEW_BLOCK.test(next) || HARD_BREAK_END.test(line)) {

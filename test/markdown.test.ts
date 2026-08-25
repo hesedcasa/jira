@@ -120,6 +120,22 @@ describe('markdownToAdfDocument', () => {
     expect(hasHardBreak(item?.[2]?.content)).to.equal(true)
   })
 
+  it('breaks indented prose in a list item that is not deep enough to be code', () => {
+    const adf = markdownToAdfDocument('- item\n\n    prose line one\n    prose line two') as {content?: AdfNode[]}
+
+    expect(adf.content?.[0].type).to.equal('bulletList')
+    expect(hasHardBreak(adf.content)).to.equal(true)
+  })
+
+  it('measures code indentation against the enclosing list item, not the document', () => {
+    // Four columns past `1. ` content indent is code; three is still prose.
+    const code = markdownToAdfDocument('1. item\n\n       code a\n       code b') as {content?: AdfNode[]}
+    const prose = markdownToAdfDocument('1. item\n\n   prose one\n   prose two') as {content?: AdfNode[]}
+
+    expect(code.content?.[0]?.content?.[0]?.content?.[1]?.content?.[0]?.text).to.equal('code a\ncode b')
+    expect(hasHardBreak(prose.content)).to.equal(true)
+  })
+
   it('keeps paragraphs and code blocks intact in a mixed body', () => {
     const adf = markdownToAdfDocument('intro one\nintro two\n\n```\ncode a\ncode b\n```\n\ntail one\ntail two') as {
       content?: AdfNode[]
