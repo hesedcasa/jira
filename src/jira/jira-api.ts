@@ -586,8 +586,10 @@ export class JiraApi {
       const users = await client.userSearch.findUsers({accountId, query})
 
       if (users) {
+        // accountId identifies a single user, so unwrap it; a text query can match
+        // several users, so return every match instead of silently keeping just the first.
         return {
-          data: users[0] ?? null,
+          data: accountId === undefined ? users : (users[0] ?? null),
           success: true,
         }
       }

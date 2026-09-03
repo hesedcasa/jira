@@ -15,6 +15,25 @@ export const defaultFields = [
 export const processIssueRenderedAndFields = (issue: Issue): void => {
   const turndownService = new TurndownService()
 
+  // Jira renders ADF code blocks as `<pre class="code-<lang>">` with no inner <code>
+  // element, so turndown's built-in fenced/indented code-block rules (which require
+  // node.firstChild.nodeName === 'CODE') never match and the block falls through to
+  // plain-text handling, dropping the fence entirely. Restore it as a fenced block.
+  turndownService.addRule('jiraCodeBlock', {
+    filter: (node) => node.nodeName === 'PRE' && /(?:^|\s)code-/.test(node.getAttribute('class') ?? ''),
+    replacement(_content, node) {
+      const language = /code-(\S+)/.exec(node.getAttribute('class') ?? '')?.[1]
+      const code = node.textContent ?? ''
+      let longestBacktickRun = 0
+      for (const run of code.match(/`+/g) ?? []) {
+        longestBacktickRun = Math.max(longestBacktickRun, run.length)
+      }
+
+      const fence = '`'.repeat(Math.max(3, longestBacktickRun + 1))
+      return `\n\n${fence}${language && language !== 'generic' ? language : ''}\n${code}\n${fence}\n\n`
+    },
+  })
+
   // Filter renderedFields first
   issue.renderedFields &&= Object.fromEntries(
     Object.entries(issue.renderedFields).filter(

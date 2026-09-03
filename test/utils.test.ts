@@ -50,6 +50,21 @@ describe('utils', () => {
       expect(String(issue.fields?.description)).to.include('Test description')
     })
 
+    it('preserves punctuation in code block languages', () => {
+      const issue = {
+        fields: {},
+        renderedFields: {
+          description: '<pre class="code-c++">vector&lt;int&gt;</pre><pre class="code-objective-c">@interface Foo</pre>',
+        },
+      } as Issue
+
+      processIssueRenderedAndFields(issue)
+
+      expect(issue.fields?.description).to.equal(
+        '```c++\nvector<int>\n```\n\n```objective-c\n@interface Foo\n```',
+      )
+    })
+
     it('filters empty custom fields from renderedFields', () => {
       const issue = {
         fields: {},
@@ -148,6 +163,29 @@ describe('utils', () => {
       processIssueRenderedAndFields(issue)
 
       expect(issue.fields).to.not.be.undefined
+    })
+
+    it('uses a longer fence when code contains a triple-backtick line', () => {
+      const issue = {
+        fields: {},
+        renderedFields: {
+          description: '<pre class="code-java">line one\n```\nline two</pre>',
+        },
+      } as Issue
+
+      processIssueRenderedAndFields(issue)
+
+      const trimmed = String(issue.fields?.description).trim()
+      let fenceLength = 0
+      while (trimmed[fenceLength] === '`') fenceLength++
+
+      expect(fenceLength).to.be.greaterThan(3)
+      const fence = '`'.repeat(fenceLength)
+      // The fence must not appear anywhere inside the code content itself.
+      const inner = trimmed.slice(fenceLength, -fenceLength)
+      expect(inner).to.not.include(fence)
+      expect(inner).to.include('line one')
+      expect(inner).to.include('line two')
     })
 
     it('clears renderedFields after processing', () => {

@@ -25,4 +25,23 @@ export abstract class BaseCommand extends Command {
     const message = err instanceof Error ? err.message : String(err)
     return {error: message}
   }
+
+  // Commands never throw on an API failure — the API layer catches and returns
+  // {success: false} instead (see CLAUDE.md's ApiResult contract), so oclif's own
+  // catch()-based exitCode logic never fires. Without this, a failed request looks
+  // like a success to any script checking $?.
+  protected override async _run<T>(): Promise<T> {
+    const result = await super._run<T>()
+    if (
+      result !== null &&
+      typeof result === 'object' &&
+      'success' in result &&
+      result.success === false &&
+      (process.exitCode === undefined || process.exitCode === 0)
+    ) {
+      process.exitCode = 1
+    }
+
+    return result
+  }
 }
