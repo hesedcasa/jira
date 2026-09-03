@@ -32,8 +32,14 @@ export abstract class BaseCommand extends Command {
   // like a success to any script checking $?.
   protected override async _run<T>(): Promise<T> {
     const result = await super._run<T>()
-    if (result !== null && typeof result === 'object' && 'success' in result && result.success === false) {
-      process.exitCode ??= 1
+    if (
+      result !== null &&
+      typeof result === 'object' &&
+      'success' in result &&
+      result.success === false &&
+      (process.exitCode === undefined || process.exitCode === 0)
+    ) {
+      process.exitCode = 1
     }
 
     return result

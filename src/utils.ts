@@ -22,7 +22,7 @@ export const processIssueRenderedAndFields = (issue: Issue): void => {
   turndownService.addRule('jiraCodeBlock', {
     filter: (node) => node.nodeName === 'PRE' && /(?:^|\s)code-/.test(node.getAttribute('class') ?? ''),
     replacement(_content, node) {
-      const language = /code-(\w+)/.exec(node.getAttribute('class') ?? '')?.[1]
+      const language = /code-(\S+)/.exec(node.getAttribute('class') ?? '')?.[1]
       const code = node.textContent ?? ''
       return `\n\n\`\`\`${language && language !== 'generic' ? language : ''}\n${code}\n\`\`\`\n\n`
     },

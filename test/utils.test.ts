@@ -50,6 +50,21 @@ describe('utils', () => {
       expect(String(issue.fields?.description)).to.include('Test description')
     })
 
+    it('preserves punctuation in code block languages', () => {
+      const issue = {
+        fields: {},
+        renderedFields: {
+          description: '<pre class="code-c++">vector&lt;int&gt;</pre><pre class="code-objective-c">@interface Foo</pre>',
+        },
+      } as Issue
+
+      processIssueRenderedAndFields(issue)
+
+      expect(issue.fields?.description).to.equal(
+        '```c++\nvector<int>\n```\n\n```objective-c\n@interface Foo\n```',
+      )
+    })
+
     it('filters empty custom fields from renderedFields', () => {
       const issue = {
         fields: {},

@@ -28,7 +28,7 @@ npm run pre-commit       # format + find-deadcode (what the hook runs)
 
 ## Architecture
 
-```
+```text
 src/
 ├── base-command.ts   # BaseCommand — output mode + oclif parse/error workarounds
 ├── commands/jira/    # Oclif commands: auth, board, issue, project, user
@@ -162,7 +162,7 @@ static override args = {
 
 The legacy single `{"auth": {...}}` shape is still read and surfaces as the `default` profile. Values pass through plugin-lib's `resolveSecrets`, so an `apiToken` may be a Vault or Infisical reference rather than a literal. Manage all of this with `jira auth add|update|list|profile|delete|test` — don't hand-edit or write config from command code.
 
-**Nothing in this repo loads `.env`** — there is no dotenv dependency, so the variables must already be in the process environment. Export them before running any command that talks to Confluence:
+**Nothing in this repo loads `.env`** — there is no dotenv dependency, so the variables must already be in the process environment. Export them before running any command that talks to Jira:
 
 ```bash
 set -a; . ./.env; set +a
