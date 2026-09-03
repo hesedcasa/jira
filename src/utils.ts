@@ -24,7 +24,13 @@ export const processIssueRenderedAndFields = (issue: Issue): void => {
     replacement(_content, node) {
       const language = /code-(\S+)/.exec(node.getAttribute('class') ?? '')?.[1]
       const code = node.textContent ?? ''
-      return `\n\n\`\`\`${language && language !== 'generic' ? language : ''}\n${code}\n\`\`\`\n\n`
+      let longestBacktickRun = 0
+      for (const run of code.match(/`+/g) ?? []) {
+        longestBacktickRun = Math.max(longestBacktickRun, run.length)
+      }
+
+      const fence = '`'.repeat(Math.max(3, longestBacktickRun + 1))
+      return `\n\n${fence}${language && language !== 'generic' ? language : ''}\n${code}\n${fence}\n\n`
     },
   })
 

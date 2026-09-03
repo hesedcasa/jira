@@ -165,6 +165,29 @@ describe('utils', () => {
       expect(issue.fields).to.not.be.undefined
     })
 
+    it('uses a longer fence when code contains a triple-backtick line', () => {
+      const issue = {
+        fields: {},
+        renderedFields: {
+          description: '<pre class="code-java">line one\n```\nline two</pre>',
+        },
+      } as Issue
+
+      processIssueRenderedAndFields(issue)
+
+      const trimmed = String(issue.fields?.description).trim()
+      let fenceLength = 0
+      while (trimmed[fenceLength] === '`') fenceLength++
+
+      expect(fenceLength).to.be.greaterThan(3)
+      const fence = '`'.repeat(fenceLength)
+      // The fence must not appear anywhere inside the code content itself.
+      const inner = trimmed.slice(fenceLength, -fenceLength)
+      expect(inner).to.not.include(fence)
+      expect(inner).to.include('line one')
+      expect(inner).to.include('line two')
+    })
+
     it('clears renderedFields after processing', () => {
       const issue = {
         fields: {},
