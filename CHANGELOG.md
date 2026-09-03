@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/hesedcasa/jira/compare/v1.0.0...v1.0.1) (2026-09-03)
+
+
+### 🛠️ Fixes
+
+* exit non-zero on API failures, preserve code fences, and return all query matches ([#131](https://github.com/hesedcasa/jira/issues/131)) ([66386d6](https://github.com/hesedcasa/jira/commit/66386d6a4911808aa4dcc3e3c8ebdcaccc7c51f6))
+
 ## [1.0.0](https://github.com/hesedcasa/jira/compare/v0.11.2...v1.0.0) (2026-08-25)
 
 
