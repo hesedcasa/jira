@@ -20,10 +20,15 @@ describe('e2e: issue lifecycle', () => {
     configDir = await createConfigDir()
   })
 
+  // allSettled + finally: a single failed delete must not skip the label-based
+  // backstop sweep, nor leave the token-bearing config dir on disk.
   after(async () => {
-    await Promise.all(created.map((key) => deleteIssue(key)))
-    await cleanupRun()
-    await removeConfigDir(configDir)
+    try {
+      await Promise.allSettled(created.map((key) => deleteIssue(key)))
+      await cleanupRun()
+    } finally {
+      await removeConfigDir(configDir)
+    }
   })
 
   async function createIssue(summary: string): Promise<string> {
