@@ -93,7 +93,7 @@
     "test:coverage": "c8 npm test",
     "test:coverage:report": "c8 --reporter=html --reporter=text npm test",
     "test:e2e": "./scripts/e2e.sh",
-    "e2e:mocha": "mocha --forbid-only \"test/e2e/**/*.e2e.test.ts\"",
+    "e2e:mocha": "mocha --forbid-only --timeout 120000 \"test/e2e/**/*.e2e.test.ts\"",
     "e2e:sweep": "node --loader ts-node/esm --no-warnings scripts/sweep.ts",
     "version": "oclif readme && git add README.md",
     "find-deadcode": "ts-prune --ignore '(run|default)'",

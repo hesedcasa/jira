@@ -6,7 +6,6 @@ import {
   E2E_PROJECT,
   redactSecret,
   removeConfigDir,
-  requireEnv,
   runCli,
   runCliJson,
 } from './helpers.js'
@@ -29,11 +28,17 @@ describe('e2e: connection', () => {
     expect(code).to.equal(0)
   })
 
+  // A synthetic secret, not the real API token: chai renders the actual
+  // string in its failure message, so if this used the live token the one
+  // circumstance where this test fails (a redaction regression) would print
+  // the credential into the terminal and CI logs. redactSecret is a pure
+  // string function, so a synthetic value proves the same property with zero
+  // exposure.
   it('redacts the API token from captured output', () => {
-    const {apiToken} = requireEnv()
-    const text = `some output embedding ${apiToken} in the middle of it`
+    const secret = 'SEKRET-PLACEHOLDER-0001'
+    const text = `some output embedding ${secret} in the middle of it`
 
-    expect(redactSecret(text, apiToken)).to.not.include(apiToken)
+    expect(redactSecret(text, secret)).to.not.include(secret)
   })
 
   it('leaves text untouched when there is no secret to redact', () => {

@@ -1,6 +1,6 @@
 import {expect} from 'chai'
 
-import {cleanupRun, RUN_ID, RUN_LABEL, seedIssue, waitForIndexed} from './fixtures.js'
+import {cleanupRun, RUN_ID, RUN_LABEL, seedIssue, SHARED_LABEL, waitForIndexed} from './fixtures.js'
 import {
   createConfigDir,
   E2E_BOARD_ID,
@@ -15,6 +15,13 @@ import {
 type Issue = {fields: Record<string, unknown>; key: string}
 type Paged<T> = {isLast: boolean; maxResults: number; startAt: number; total: number; values: T[]}
 
+// RUN_LABEL is shared across every e2e file in this mocha process. issue-lifecycle
+// deletes its own fixtures before this file's tests run, and Jira's index lag
+// applies to deletions as well as creations, so a RUN_LABEL search here can
+// transiently see stale entries for already-deleted issues. A file-scoped
+// label keeps this file's exact-count assertions immune to what other files do.
+const READ_LABEL = `e2e-read-${RUN_ID}`
+
 describe('e2e: read paths', () => {
   let configDir: string
   let seededKey: string
@@ -24,14 +31,19 @@ describe('e2e: read paths', () => {
   // assertion passes whether or not --max works.
   before(async () => {
     configDir = await createConfigDir()
-    seededKey = await seedIssue()
-    secondKey = await seedIssue()
-    await waitForIndexed(RUN_LABEL, 2)
+    seededKey = await seedIssue({labels: [SHARED_LABEL, RUN_LABEL, READ_LABEL]})
+    secondKey = await seedIssue({labels: [SHARED_LABEL, RUN_LABEL, READ_LABEL]})
+    await waitForIndexed(READ_LABEL, 2)
   })
 
+  // allSettled + finally: a failed cleanup must not leave the token-bearing
+  // config dir on disk.
   after(async () => {
-    await cleanupRun()
-    await removeConfigDir(configDir)
+    try {
+      await cleanupRun()
+    } finally {
+      await removeConfigDir(configDir)
+    }
   })
 
   it('lists both sandbox projects', async () => {
@@ -87,7 +99,7 @@ describe('e2e: read paths', () => {
 
   it('finds the seeded issues by JQL', async () => {
     const payload = await runCliJson<{data: {issues: Issue[]}}>(
-      ['jira', 'issue', 'search', `labels = "${RUN_LABEL}"`],
+      ['jira', 'issue', 'search', `labels = "${READ_LABEL}"`],
       configDir,
     )
     const keys = payload.data.issues.map((issue) => issue.key)
@@ -104,20 +116,42 @@ describe('e2e: read paths', () => {
     expect(payload.data.issues).to.deep.equal([])
   })
 
-  // Scoped to the run label so the count is deterministic, and paired with an
-  // unbounded search so the capped result is only reachable if --max works.
+  // Scoped to this file's own label so the count is deterministic, and paired
+  // with an unbounded search so the capped result is only reachable if --max
+  // works.
   it('honours --max', async () => {
     const unbounded = await runCliJson<{data: {issues: Issue[]}}>(
-      ['jira', 'issue', 'search', `labels = "${RUN_LABEL}"`],
+      ['jira', 'issue', 'search', `labels = "${READ_LABEL}"`],
       configDir,
     )
     expect(unbounded.data.issues, 'both fixtures should be visible').to.have.lengthOf(2)
 
     const capped = await runCliJson<{data: {issues: Issue[]}}>(
-      ['jira', 'issue', 'search', `labels = "${RUN_LABEL}"`, '--max', '1'],
+      ['jira', 'issue', 'search', `labels = "${READ_LABEL}"`, '--max', '1'],
       configDir,
     )
     expect(capped.data.issues).to.have.lengthOf(1)
+  })
+
+  // Two pages of one issue each must together cover both seeded keys with no
+  // overlap — the regression class this closes is a broken/ignored pagination
+  // token.
+  it('pages through results with --max and --next', async () => {
+    const firstPage = await runCliJson<{data: {issues: Issue[]; nextPageToken?: string}}>(
+      ['jira', 'issue', 'search', `labels = "${READ_LABEL}"`, '--max', '1'],
+      configDir,
+    )
+    expect(firstPage.data.issues).to.have.lengthOf(1)
+    expect(firstPage.data.nextPageToken, 'expected a nextPageToken for the second page').to.be.a('string')
+
+    const secondPage = await runCliJson<{data: {issues: Issue[]}}>(
+      ['jira', 'issue', 'search', `labels = "${READ_LABEL}"`, '--max', '1', '--next', firstPage.data.nextPageToken!],
+      configDir,
+    )
+    expect(secondPage.data.issues).to.have.lengthOf(1)
+
+    const seenKeys = [firstPage.data.issues[0].key, secondPage.data.issues[0].key]
+    expect(seenKeys).to.have.members([seededKey, secondKey])
   })
 
   it('resolves the authenticated user by query', async () => {

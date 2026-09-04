@@ -64,10 +64,22 @@ describe('e2e: content and ADF round-trip', () => {
     expect(fetched.data.fields.description).to.contain('line one  \nline two')
   })
 
-  it('round-trips headings, lists and code blocks', async () => {
-    const description = ['# Heading', '', '- item one', '- item two', '', '```bash', 'ls -a', 'echo hi', '```'].join(
-      '\n',
-    )
+  it('round-trips headings, lists, code blocks and tables', async () => {
+    const description = [
+      '# Heading',
+      '',
+      '- item one',
+      '- item two',
+      '',
+      '```bash',
+      'ls -a',
+      'echo hi',
+      '```',
+      '',
+      '| Col A | Col B |',
+      '| --- | --- |',
+      '| cell-a1 | cell-b1 |',
+    ].join('\n')
     const key = await createIssue(description)
     const fetched = await runCliJson<Fetched>(['jira', 'issue', key], configDir)
     const body = fetched.data.fields.description
@@ -79,6 +91,45 @@ describe('e2e: content and ADF round-trip', () => {
     expect(body).to.contain('ls -a')
     expect(body).to.contain('echo hi')
     expect(body).to.not.contain('ls -a  \n')
+    // The table cells must keep their raw text. Turndown (the HTML-to-Markdown
+    // converter Jira's renderedFields go through) has no table plugin here, so
+    // the round trip does not come back as pipe-table syntax — each cell comes
+    // back as its own paragraph. That is fine: the spec only requires the cell
+    // text itself to survive intact.
+    expect(body).to.contain('Col A')
+    expect(body).to.contain('Col B')
+    expect(body).to.contain('cell-a1')
+    expect(body).to.contain('cell-b1')
+  })
+
+  it('preserves single newlines in a blockquote as hard breaks', async () => {
+    const description = ['> line one', '> line two'].join('\n')
+    const key = await createIssue(description)
+    const fetched = await runCliJson<Fetched>(['jira', 'issue', key], configDir)
+    const body = fetched.data.fields.description
+
+    expect(body).to.contain('line one')
+    expect(body).to.contain('line two')
+    // Observed round-trip: '> line one  \n> line two' — Turndown re-prefixes
+    // every line of a blockquote with '> ', including the continuation line,
+    // so the hard break sits before that marker rather than before bare text.
+    // The two trailing spaces are the thing under test and are present here.
+    expect(body).to.contain('line one  \n> line two')
+  })
+
+  it('preserves a single newline inside a list item as a hard break', async () => {
+    const description = ['- item line one', '  item line two'].join('\n')
+    const key = await createIssue(description)
+    const fetched = await runCliJson<Fetched>(['jira', 'issue', key], configDir)
+    const body = fetched.data.fields.description
+
+    expect(body).to.contain('item line one')
+    expect(body).to.contain('item line two')
+    // Observed round-trip: '*   item line one  \n    item line two' — Turndown
+    // indents a list item's continuation line to align with the item's own
+    // content column rather than leaving it flush left. The two trailing
+    // spaces before the newline are the hard break under test.
+    expect(body).to.contain('item line one  \n    item line two')
   })
 
   it(String.raw`unescapes a literal \n typed inside one shell argument`, async () => {

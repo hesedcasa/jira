@@ -55,12 +55,18 @@ export async function seedIssue(overrides: Record<string, unknown> = {}): Promis
 /**
  * Searches for issues carrying a label.
  *
+ * Always scoped to E2E_PROJECT. Both `cleanupRun` and `sweepStale` are
+ * destructive queries driven by ambient environment variables (a label and an
+ * age cutoff) with no other guard, so scoping every lookup to the fixture
+ * project here — structurally, once — bounds their blast radius to that one
+ * project instead of every project the credentials can see.
+ *
  * @param label The exact label to match.
  * @param extraJql Optional additional JQL, ANDed onto the label clause.
  * @returns The matching issue keys.
  */
 export async function findByLabel(label: string, extraJql = ''): Promise<string[]> {
-  const jql = `labels = "${label}"${extraJql ? ` AND ${extraJql}` : ''}`
+  const jql = `project = "${E2E_PROJECT}" AND labels = "${label}"${extraJql ? ` AND ${extraJql}` : ''}`
   const {body, status} = await call('POST', '/rest/api/3/search/jql', {
     fields: ['key'],
     jql,
@@ -82,7 +88,10 @@ export async function findByLabel(label: string, extraJql = ''): Promise<string[
  *
  * @param label The label to search for.
  * @param expected How many issues should be visible.
- * @returns The keys found, which may be fewer than expected if the deadline passes.
+ * @returns The keys found.
+ * @throws {Error} If the deadline passes before `expected` issues are visible
+ *   — a silent return here would let a `before` hook "succeed" with nothing
+ *   indexed and defer the real failure into a confusing assertion error later.
  */
 export async function waitForIndexed(label: string, expected: number): Promise<string[]> {
   const deadline = Date.now() + 30_000
@@ -98,7 +107,27 @@ export async function waitForIndexed(label: string, expected: number): Promise<s
     })
   }
 
-  return keys
+  throw new Error(`waitForIndexed: expected ${expected} issue(s) labelled "${label}", but saw ${keys.length}`)
+}
+
+/**
+ * Deletes every issue in `keys`, tolerating individual failures until all
+ * deletions have been attempted, then throwing if any actually failed.
+ *
+ * Promise.all would abandon the remaining deletions on the first rejection;
+ * allSettled ensures a single stuck issue never masks failures to delete the
+ * rest.
+ *
+ * @param keys The issue keys to delete.
+ */
+async function deleteAll(keys: string[]): Promise<void> {
+  const results = await Promise.allSettled(keys.map((key) => deleteIssue(key)))
+  const failures = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+  if (failures.length > 0) {
+    throw new Error(
+      `deleteAll: ${failures.length}/${keys.length} deletion(s) failed: ${failures.map((f) => String(f.reason)).join('; ')}`,
+    )
+  }
 }
 
 /**
@@ -118,7 +147,7 @@ export async function deleteIssue(key: string): Promise<void> {
  */
 export async function cleanupRun(): Promise<void> {
   const keys = await findByLabel(RUN_LABEL)
-  await Promise.all(keys.map((key) => deleteIssue(key)))
+  await deleteAll(keys)
 }
 
 /**
@@ -131,6 +160,6 @@ export async function cleanupRun(): Promise<void> {
  */
 export async function sweepStale(): Promise<number> {
   const keys = await findByLabel(SHARED_LABEL, 'created <= "-1h"')
-  await Promise.all(keys.map((key) => deleteIssue(key)))
+  await deleteAll(keys)
   return keys.length
 }
