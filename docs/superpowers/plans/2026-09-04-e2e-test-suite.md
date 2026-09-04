@@ -24,6 +24,7 @@ These apply to every task.
 - **Fixtures live in project `SS`; project `KAN` is left empty** and exists to drive empty-result assertions. Boards 1 and 2 and sprint 1 are pre-existing and read-only.
 - **Lint:** `eslint-config-oclif` enforces `perfectionist/sort-objects`. Keep object literals alphabetically sorted, or wrap a block in `/* eslint-disable perfectionist/sort-objects -- reason */`. `test/**` already has the type-checked rules relaxed in `eslint.config.mjs`.
 - **`@typescript-eslint/array-type`:** inline object-literal arrays must be written `Array<{id: number}>`, never `{id: number}[]`. Named types and primitives go the other way — `string[]`, `unknown[]`, `Issue[]` and a generic `T[]` are all correct, and `Array<string>` is an error.
+- **No regex literals in test files.** `require-unicode-regexp` is configured to demand the `v` flag, and `v` requires TS target es2024 while this repo targets es2022 — eslint and tsc contradict each other. Use string methods instead: `.to.contain('first  \nsecond')`, `.to.not.contain(...)`, `key.startsWith('SS-')`. For hard-break checks this is stricter than the regex was, since it pins the exact two spaces.
 - **`npm run posttest` runs lint.** A task is not done until `npm test` is green, which includes lint.
 
 ---
@@ -98,7 +99,7 @@ export function requireEnv(): {apiToken: string; email: string; host: string} {
     )
   }
 
-  return {apiToken, email, host: host.replace(/\/$/, '')}
+  return {apiToken, email, host: host.endsWith('/') ? host.slice(0, -1) : host}
 }
 
 /**
@@ -496,7 +497,7 @@ import {cleanupRun, deleteIssue, findByLabel, RUN_LABEL, seedIssue, waitForIndex
 describe('e2e: fixtures', () => {
   it('seeds an issue that is findable by its run label, then cleans up', async () => {
     const key = await seedIssue()
-    expect(key).to.match(/^SS-\d+$/)
+    expect(key.startsWith('SS-'), `unexpected key: ${key}`).to.be.true
 
     const found = await waitForIndexed(RUN_LABEL, 1)
     expect(found).to.include(key)
@@ -897,7 +898,7 @@ describe('e2e: issue lifecycle', () => {
   it('creates an issue and reads it back', async () => {
     const summary = `[e2e ${RUN_ID}] lifecycle create`
     const key = await createIssue(summary)
-    expect(key).to.match(/^SS-\d+$/)
+    expect(key.startsWith('SS-'), `unexpected key: ${key}`).to.be.true
 
     const fetched = await runCliJson<Fetched>(['jira', 'issue', key], configDir)
     expect(fetched.success).to.be.true
@@ -1073,7 +1074,7 @@ describe('e2e: content and ADF round-trip', () => {
     // preprocessing in src/markdown.ts regressed.
     expect(fetched.data.fields.description).to.contain('line one')
     expect(fetched.data.fields.description).to.contain('line two')
-    expect(fetched.data.fields.description).to.match(/line one {2}\nline two/)
+    expect(fetched.data.fields.description).to.contain('line one  \nline two')
   })
 
   it('round-trips headings, lists and code blocks', async () => {
@@ -1090,7 +1091,7 @@ describe('e2e: content and ADF round-trip', () => {
     // Inside a code block the newline must stay raw — no hard-break padding.
     expect(body).to.contain('ls -a')
     expect(body).to.contain('echo hi')
-    expect(body).to.not.match(/ls -a {2}\n/)
+    expect(body).to.not.contain('ls -a  \n')
   })
 
   it('unescapes a literal \\n typed inside one shell argument', async () => {
@@ -1115,7 +1116,7 @@ describe('e2e: content and ADF round-trip', () => {
     const withComment = await runCliJson<Fetched>(['jira', 'issue', key], configDir)
     const comment = withComment.data.fields.comment?.comments.find((c) => c.id === commentId)
     expect(comment, 'comment missing from the issue').to.exist
-    expect(comment!.body).to.match(/first {2}\nsecond/)
+    expect(comment!.body).to.contain('first  \nsecond')
 
     const {code: updateCode} = await runCli(
       ['jira', 'issue', 'comment-update', key, commentId, 'edited body'],
