@@ -690,11 +690,15 @@ type Paged<T> = {isLast: boolean; maxResults: number; startAt: number; total: nu
 describe('e2e: read paths', () => {
   let configDir: string
   let seededKey: string
+  let secondKey: string
 
+  // Two fixtures, not one: with a single issue in the project a `--max 1`
+  // assertion passes whether or not --max works.
   before(async () => {
     configDir = await createConfigDir()
     seededKey = await seedIssue()
-    await waitForIndexed(RUN_LABEL, 1)
+    secondKey = await seedIssue()
+    await waitForIndexed(RUN_LABEL, 2)
   })
 
   after(async () => {
@@ -753,12 +757,14 @@ describe('e2e: read paths', () => {
     expect(payload.data.values).to.be.an('array')
   })
 
-  it('finds the seeded issue by JQL', async () => {
+  it('finds the seeded issues by JQL', async () => {
     const payload = await runCliJson<{data: {issues: Issue[]}}>(
       ['jira', 'issue', 'search', `labels = "${RUN_LABEL}"`],
       configDir,
     )
-    expect(payload.data.issues.map((issue) => issue.key)).to.include(seededKey)
+    const keys = payload.data.issues.map((issue) => issue.key)
+    expect(keys).to.include(seededKey)
+    expect(keys).to.include(secondKey)
   })
 
   it('returns an empty issue list for the empty project and still exits 0', async () => {
@@ -770,12 +776,20 @@ describe('e2e: read paths', () => {
     expect(payload.data.issues).to.deep.equal([])
   })
 
+  // Scoped to the run label so the count is deterministic, and paired with an
+  // unbounded search so the capped result is only reachable if --max works.
   it('honours --max', async () => {
-    const payload = await runCliJson<{data: {issues: Issue[]}}>(
-      ['jira', 'issue', 'search', `project = ${E2E_PROJECT}`, '--max', '1'],
+    const unbounded = await runCliJson<{data: {issues: Issue[]}}>(
+      ['jira', 'issue', 'search', `labels = "${RUN_LABEL}"`],
       configDir,
     )
-    expect(payload.data.issues.length).to.be.at.most(1)
+    expect(unbounded.data.issues, 'both fixtures should be visible').to.have.lengthOf(2)
+
+    const capped = await runCliJson<{data: {issues: Issue[]}}>(
+      ['jira', 'issue', 'search', `labels = "${RUN_LABEL}"`, '--max', '1'],
+      configDir,
+    )
+    expect(capped.data.issues).to.have.lengthOf(1)
   })
 
   it('resolves the authenticated user by query', async () => {
