@@ -77,6 +77,11 @@ A near-verbatim port of the mysql helper. Exports:
 The suite runs `bin/run.js` (the built `dist/`), not `bin/dev.js`, so it tests
 the artifact that ships.
 
+`runCliJson` must **not** append `--json`. `BaseCommand.jsonEnabled()` already
+returns true unless `--toon` is present, and `--json` is not a declared flag —
+passing it yields `{"error": "Nonexistent flag: --json"}`. This is the one place
+the mysql helper cannot be copied verbatim.
+
 ### `test/e2e/fixtures.ts`
 
 Seeding and teardown go through raw `fetch` with a Basic auth header built from
@@ -100,18 +105,45 @@ Selection is by label, not by summary text. JQL's `~` operator runs a tokenized
 text match that discards punctuation, so `summary ~ "[e2e abc123]"` would match
 far more than intended; `labels =` is an exact term match.
 
+JQL indexing is asynchronous. A probe found a freshly created issue was not
+returned by a label search for roughly three seconds. `cleanupRun()` therefore
+polls with a short backoff until the expected number of fixtures is visible, or
+a deadline passes, rather than searching once and trusting the result.
+
 `sweepStale()` replaces the guarantee mysql gets free from `tmpfs`. Without it a
 crashed run leaves fixtures in the sandbox permanently; with it, the next run
 reclaims them while never touching fixtures belonging to a run still in flight.
 
 ### Test files
 
+`test/e2e/fixtures.e2e.test.ts` covers the fixture helpers themselves — seeding,
+label lookup, cleanup, and a double delete. If the oracle is broken, every other
+file fails for the wrong reason, so it is worth its own tests.
+
 `test/e2e/connection.e2e.test.ts`
 - `jira auth test` against `default` exits 0.
-- `jira auth test --profile broken` exits non-zero and reports a failure.
-- A read command under `--profile broken` exits non-zero with
-  `success: false` in the JSON payload — the `66386d6` regression.
-- An unknown profile name errors rather than silently falling back.
+- `jira auth test --profile broken` exits 2 and reports a failure.
+- An unknown profile exits 1 with `{"error": "Missing authentication config."}`
+  on stdout, rather than silently falling back to the default profile.
+- The Agile endpoints (`jira board`, `jira board sprints`) under `--profile
+  broken` exit 1 with `success: false` and a 401 — the `66386d6` regression
+  guard.
+
+A bad API token does **not** produce a uniform failure. Probing the live
+instance showed Jira Cloud treats an unauthenticated caller as anonymous rather
+than rejecting it, so behaviour splits three ways:
+
+| command | exit | payload |
+| --- | --- | --- |
+| `project list`, `issue search`, `user --query` | 0 | `success: true`, empty results |
+| `project SS`, `issue SS-1` | 1 | `success: false`, 404 |
+| `board`, `board sprints 2` | 1 | `success: false`, 401 |
+
+The suite asserts each of these three shapes as observed. The first row is
+arguably wrong — an auth failure surfacing as an empty success is exactly the
+class of bug `66386d6` fixed elsewhere — but it originates in Jira's response,
+not in this CLI, and changing it is out of scope here. The test pins current
+behaviour so that a future fix is a deliberate, visible change.
 
 `test/e2e/read.e2e.test.ts` — one seeded issue so the search assertions have
 something to find; otherwise every assertion is a read.
@@ -186,6 +218,13 @@ not a merge gate, no gating job is needed — unlike the mysql workflow.
 Credentials come from repository secrets. The job checks out, installs, builds,
 runs `e2e:mocha`, and runs `e2e:sweep` in an `always()` step so a cancelled run
 cannot leak fixtures.
+
+## Constraint: never assert on error message text
+
+The sandbox account's Jira language is not English — a 404 for a missing issue
+comes back as `事务不存在或者您没有查看的权限。`. Assertions must therefore match on
+HTTP status codes embedded in the error string, on `success`, and on exit codes,
+never on human-readable message text.
 
 ## Error handling
 
