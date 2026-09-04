@@ -40,15 +40,15 @@ ADF round-trip as `"line one  \nline two"`.
 
 ### Mapping from the mysql suite
 
-| mysql | jira |
-| --- | --- |
-| `docker/` disposable server with baked-in seed | live sandbox plus per-run seed and teardown in mocha hooks |
-| `mq_e2e` seeded database | project `SS`, seeded with fixtures; owns board 2 and sprint 1 |
-| `mq_e2e_empty` | project `KAN`, left empty; drives empty-result assertions |
-| `broken` profile with a bad password | `broken` profile with a bad API token |
-| `MQ_E2E_PORT` | `ATLASSIAN_URL`, `ATLASSIAN_EMAIL`, `ATLASSIAN_API_TOKEN` |
-| `MQ_CONFIG_DIR` temp dir | `JIRA_CONFIG_DIR` temp dir |
-| `tmpfs`, so every `up` is clean | run-scoped fixture tagging plus a stale sweep |
+| mysql                                          | jira                                                          |
+| ---------------------------------------------- | ------------------------------------------------------------- |
+| `docker/` disposable server with baked-in seed | live sandbox plus per-run seed and teardown in mocha hooks    |
+| `mq_e2e` seeded database                       | project `SS`, seeded with fixtures; owns board 2 and sprint 1 |
+| `mq_e2e_empty`                                 | project `KAN`, left empty; drives empty-result assertions     |
+| `broken` profile with a bad password           | `broken` profile with a bad API token                         |
+| `MQ_E2E_PORT`                                  | `ATLASSIAN_URL`, `ATLASSIAN_EMAIL`, `ATLASSIAN_API_TOKEN`     |
+| `MQ_CONFIG_DIR` temp dir                       | `JIRA_CONFIG_DIR` temp dir                                    |
+| `tmpfs`, so every `up` is clean                | run-scoped fixture tagging plus a stale sweep                 |
 
 `@oclif/core` reads `<BIN>_CONFIG_DIR` (`config.js:277`), and this package's
 oclif `bin` is `jira`, so `JIRA_CONFIG_DIR` redirects `this.config.configDir`
@@ -64,8 +64,8 @@ A near-verbatim port of the mysql helper. Exports:
   mode `0600` and returns the path. Profiles:
   - `default` — the sandbox credentials read from the environment.
   - `broken` — same host and email, API token replaced with a bad literal.
-  Credentials are written as literals, not `env:` references, so the suite does
-  not depend on `resolveSecrets` reaching a secret backend.
+    Credentials are written as literals, not `env:` references, so the suite does
+    not depend on `resolveSecrets` reaching a secret backend.
 - `removeConfigDir(dir)`
 - `runCli(args, configDir)` — spawns `process.execPath bin/run.js …` with
   `JIRA_CONFIG_DIR`, `NO_COLOR=1`, `FORCE_COLOR=0`. Returns
@@ -121,23 +121,24 @@ label lookup, cleanup, and a double delete. If the oracle is broken, every other
 file fails for the wrong reason, so it is worth its own tests.
 
 `test/e2e/connection.e2e.test.ts`
+
 - `jira auth test` against `default` exits 0.
 - `jira auth test --profile broken` exits 2 and reports a failure.
 - An unknown profile exits 1 with `{"error": "Missing authentication config."}`
   on stdout, rather than silently falling back to the default profile.
 - The Agile endpoints (`jira board`, `jira board sprints`) under `--profile
-  broken` exit 1 with `success: false` and a 401 — the `66386d6` regression
+broken` exit 1 with `success: false` and a 401 — the `66386d6` regression
   guard.
 
 A bad API token does **not** produce a uniform failure. Probing the live
 instance showed Jira Cloud treats an unauthenticated caller as anonymous rather
 than rejecting it, so behaviour splits three ways:
 
-| command | exit | payload |
-| --- | --- | --- |
-| `project list`, `issue search`, `user --query` | 0 | `success: true`, empty results |
-| `project SS`, `issue SS-1` | 1 | `success: false`, 404 |
-| `board`, `board sprints 2` | 1 | `success: false`, 401 |
+| command                                        | exit | payload                        |
+| ---------------------------------------------- | ---- | ------------------------------ |
+| `project list`, `issue search`, `user --query` | 0    | `success: true`, empty results |
+| `project SS`, `issue SS-1`                     | 1    | `success: false`, 404          |
+| `board`, `board sprints 2`                     | 1    | `success: false`, 401          |
 
 The suite asserts each of these three shapes as observed. The first row is
 arguably wrong — an auth failure surfacing as an empty success is exactly the
@@ -147,6 +148,7 @@ behaviour so that a future fix is a deliberate, visible change.
 
 `test/e2e/read.e2e.test.ts` — one seeded issue so the search assertions have
 something to find; otherwise every assertion is a read.
+
 - `jira project list` contains `KAN` and `SS`.
 - `jira project SS` returns the project.
 - `jira board` lists boards 1 and 2.
@@ -163,6 +165,7 @@ cannot be created through the REST API, so board 1, board 2 and sprint 1 are
 pre-existing fixtures; loose assertions keep a rename from turning the suite red.
 
 `test/e2e/issue-lifecycle.e2e.test.ts`
+
 - `jira issue create` into `SS`, then `jira issue <key>` returns matching fields.
 - `jira issue update <key> --fields summary=…` is reflected on the next read.
 - `jira user list-assignable <key>` yields an accountId; `jira issue assign`
@@ -172,6 +175,7 @@ pre-existing fixtures; loose assertions keep a rename from turning the suite red
 - `jira issue delete <key>` exits 0 and a subsequent read exits non-zero.
 
 `test/e2e/content.e2e.test.ts` — the ADF surface.
+
 - Create an issue whose description contains a multi-line paragraph, a heading,
   a bullet list, a fenced code block and a table. Read it back and assert that
   single newlines inside the paragraph survived as hard breaks, and that the
