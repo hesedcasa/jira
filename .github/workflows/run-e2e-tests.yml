@@ -19,15 +19,14 @@ jobs:
     name: End-to-end tests against the Jira sandbox
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
-      ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
-      ATLASSIAN_URL: ${{ secrets.ATLASSIAN_URL }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
         with:
           fetch-depth: 2
+          # Nothing here pushes, and the default would leave GITHUB_TOKEN in
+          # the workspace git config for every later step to reuse.
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -43,9 +42,26 @@ jobs:
       - name: Build the CLI
         run: npm run build
 
+      # The sandbox credentials are scoped to the two steps that actually talk
+      # to Jira, so nothing before them — actions, `npm ci` lifecycle scripts,
+      # the build — ever has them in its environment.
       - name: Run end-to-end tests
         run: npm run e2e:mocha
+        env:
+          ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
+          ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
+          ATLASSIAN_URL: ${{ secrets.ATLASSIAN_URL }}
+          E2E_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
 
+      # `always()`, so a killed mocha run (the job timeout above skips its
+      # `after` hooks) still gets its fixtures reclaimed. E2E_RUN_ID is what
+      # makes that possible: it pins this run's label so the sweep can delete
+      # this run's fixtures, not just the ones older than an hour.
       - name: Sweep leftover fixtures
         if: always()
         run: npm run e2e:sweep
+        env:
+          ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
+          ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
+          ATLASSIAN_URL: ${{ secrets.ATLASSIAN_URL }}
+          E2E_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}

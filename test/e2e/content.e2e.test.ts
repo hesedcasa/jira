@@ -137,8 +137,11 @@ describe('e2e: content and ADF round-trip', () => {
     const fetched = await runCliJson<Fetched>(['jira', 'issue', key], configDir)
 
     expect(fetched.data.fields.description).to.not.contain(String.raw`\n`)
-    expect(fetched.data.fields.description).to.contain('alpha')
-    expect(fetched.data.fields.description).to.contain('bravo')
+    // Asserting the rendered separator, not just the absence of the literal
+    // sequence: a regression that *dropped* the escape rather than converting
+    // it would still satisfy a `not.contain` check on its own. The two
+    // trailing spaces are the hard break, as in the tests above.
+    expect(fetched.data.fields.description).to.contain('alpha  \nbravo')
   })
 
   it('adds, updates and deletes a comment', async () => {

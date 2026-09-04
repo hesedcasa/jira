@@ -195,6 +195,11 @@ npm run e2e:mocha             # run without rebuilding
 npm run e2e:sweep             # delete fixtures older than an hour
 ```
 
+`e2e:sweep` also deletes the _current_ run's fixtures when `E2E_RUN_ID` is set
+— `scripts/e2e.sh` and the CI workflow both set it, so a mocha killed before
+its `after` hooks ran (a job timeout, a local Ctrl-C) still gets cleaned up
+instead of waiting an hour for the stale sweep to reach it.
+
 Five rules specific to this suite:
 
 - **Never pass `--json`.** JSON is already the default (`BaseCommand.jsonEnabled()`);
@@ -204,7 +209,9 @@ Five rules specific to this suite:
 - **Fixtures are created with raw `fetch` in `test/e2e/fixtures.ts`, never
   through the CLI** — they are the oracle the CLI is checked against.
 - **Every fixture carries the `e2e-cli` and `e2e-run-<id>` labels.** JQL indexing
-  is asynchronous, so searches for fresh issues poll via `waitForIndexed`.
+  is asynchronous, so searches for fresh issues poll via `waitForIndexed`, and
+  `cleanupRun` unions the label search with the keys `seedIssue` recorded so a
+  not-yet-indexed fixture is still reclaimed.
 - **No regex literals in `test/**`.** `require-unicode-regexp` is configured to
   demand the `v` flag, and the `v` flag requires TS target `es2024` while this
   repo targets `es2022`, so eslint and tsc contradict each other. Use string

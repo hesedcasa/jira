@@ -3,13 +3,29 @@ import {randomBytes} from 'node:crypto'
 
 import {E2E_PROJECT, requireEnv} from './helpers.js'
 
-/** One token per mocha process, so concurrent runs never delete each other's fixtures. */
-export const RUN_ID = randomBytes(4).toString('hex')
+/**
+ * One token per mocha process, so concurrent runs never delete each other's
+ * fixtures.
+ *
+ * E2E_RUN_ID overrides it so a *separate* process can address this run's
+ * fixtures by label — `scripts/e2e.sh` and the CI workflow both set it, which
+ * is what lets their post-run sweep reclaim fixtures a killed mocha never got
+ * to clean up.
+ */
+export const RUN_ID = process.env.E2E_RUN_ID || randomBytes(4).toString('hex')
 export const RUN_LABEL = `e2e-run-${RUN_ID}`
 /** Carried by every fixture ever created, so a crashed run can be reclaimed later. */
 export const SHARED_LABEL = 'e2e-cli'
 
 type JiraResponse = {body: unknown; status: number}
+
+/**
+ * Keys created by this process, as a fallback for `cleanupRun`.
+ *
+ * Jira's search index is asynchronous, so a JQL lookup alone can miss a
+ * fixture created moments earlier and silently leave it behind.
+ */
+const created = new Set<string>()
 
 async function call(method: string, endpoint: string, body?: unknown): Promise<JiraResponse> {
   const {apiToken, email, host} = requireEnv()
@@ -49,7 +65,9 @@ export async function seedIssue(overrides: Record<string, unknown> = {}): Promis
     throw new Error(`seedIssue failed: ${status} ${JSON.stringify(body)}`)
   }
 
-  return (body as {key: string}).key
+  const {key} = body as {key: string}
+  created.add(key)
+  return key
 }
 
 /**
@@ -67,17 +85,30 @@ export async function seedIssue(overrides: Record<string, unknown> = {}): Promis
  */
 export async function findByLabel(label: string, extraJql = ''): Promise<string[]> {
   const jql = `project = "${E2E_PROJECT}" AND labels = "${label}"${extraJql ? ` AND ${extraJql}` : ''}`
-  const {body, status} = await call('POST', '/rest/api/3/search/jql', {
-    fields: ['key'],
-    jql,
-    maxResults: 100,
-  })
+  const keys: string[] = []
+  let nextPageToken: string | undefined
 
-  if (status !== 200) {
-    throw new Error(`findByLabel failed: ${status} ${JSON.stringify(body)}`)
-  }
+  // Every page, not just the first: a caller that stopped at 100 would delete
+  // one page of fixtures and report success, leaving the rest in the sandbox.
+  do {
+    // eslint-disable-next-line no-await-in-loop -- each page's request needs the previous page's token
+    const {body, status} = await call('POST', '/rest/api/3/search/jql', {
+      fields: ['key'],
+      jql,
+      maxResults: 100,
+      ...(nextPageToken && {nextPageToken}),
+    })
 
-  return ((body as {issues?: Array<{key: string}>}).issues ?? []).map((issue) => issue.key)
+    if (status !== 200) {
+      throw new Error(`findByLabel failed: ${status} ${JSON.stringify(body)}`)
+    }
+
+    const page = body as {issues?: Array<{key: string}>; nextPageToken?: string}
+    keys.push(...(page.issues ?? []).map((issue) => issue.key))
+    nextPageToken = page.nextPageToken
+  } while (nextPageToken)
+
+  return keys
 }
 
 /**
@@ -111,6 +142,20 @@ export async function waitForIndexed(label: string, expected: number): Promise<s
 }
 
 /**
+ * Reads an issue's HTTP status straight from the REST API.
+ *
+ * An existence check that does not go through JQL, so it is not subject to
+ * the search index's lag — 404 means gone, right now.
+ *
+ * @param key The issue key.
+ * @returns The status code: 200 if the issue is there, 404 once it is gone.
+ */
+export async function issueHttpStatus(key: string): Promise<number> {
+  const {status} = await call('GET', `/rest/api/3/issue/${key}?fields=key`)
+  return status
+}
+
+/**
  * Deletes every issue in `keys`, tolerating individual failures until all
  * deletions have been attempted, then throwing if any actually failed.
  *
@@ -140,14 +185,22 @@ export async function deleteIssue(key: string): Promise<void> {
   if (status !== 204 && status !== 404) {
     throw new Error(`deleteIssue ${key} failed: ${status}`)
   }
+
+  created.delete(key)
 }
 
 /**
  * Deletes every fixture created by this process.
+ *
+ * Unions the JQL lookup with the keys `seedIssue` recorded, because indexing
+ * lags creation by seconds: a suite that seeds an issue and then cleans up
+ * immediately would otherwise find nothing and orphan it. The JQL half still
+ * matters — with E2E_RUN_ID set, a sweep running in a different process than
+ * mocha has an empty `created` set and the label is all it has to go on.
  */
 export async function cleanupRun(): Promise<void> {
-  const keys = await findByLabel(RUN_LABEL)
-  await deleteAll(keys)
+  const indexed = await findByLabel(RUN_LABEL)
+  await deleteAll([...new Set([...indexed, ...created])])
 }
 
 /**
