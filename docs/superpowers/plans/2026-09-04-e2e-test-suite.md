@@ -34,12 +34,14 @@ These apply to every task.
 Delivers a working `npm run test:e2e` with one real passing test.
 
 **Files:**
+
 - Create: `test/e2e/helpers.ts`
 - Create: `test/e2e/connection.e2e.test.ts`
 - Create: `scripts/e2e.sh`
 - Modify: `package.json` (the `scripts` block)
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces:
   - `E2E_PROJECT = 'SS'`, `E2E_EMPTY_PROJECT = 'KAN'`, `E2E_BOARD_ID = 2`, `E2E_SPRINT_ID = 1` — exported consts.
@@ -321,11 +323,13 @@ git commit -m "test: add e2e harness and connection smoke test"
 Seeding goes through raw `fetch`, never the CLI, so a bug in `createIssue` cannot mask itself by also corrupting the fixture it is checked against.
 
 **Files:**
+
 - Create: `test/e2e/fixtures.ts`
 - Create: `scripts/sweep.ts`
 - Create: `test/e2e/fixtures.e2e.test.ts`
 
 **Interfaces:**
+
 - Consumes: `requireEnv()`, `E2E_PROJECT` from `./helpers.js`.
 - Produces:
   - `RUN_ID: string` — short random token, one per process.
@@ -559,9 +563,11 @@ git commit -m "test: add e2e fixture seeding, cleanup and stale sweep"
 Pins the three-way split in how a bad API token surfaces. Jira treats an unauthenticated caller as anonymous rather than rejecting it, so the behaviour is not uniform.
 
 **Files:**
+
 - Modify: `test/e2e/connection.e2e.test.ts`
 
 **Interfaces:**
+
 - Consumes: `createConfigDir`, `removeConfigDir`, `runCli`, `runCliJson`, `E2E_BOARD_ID`, `E2E_PROJECT` from `./helpers.js`.
 - Produces: nothing consumed by later tasks.
 
@@ -661,9 +667,11 @@ git commit -m "test: cover auth failure modes end to end"
 ### Task 4: Read-path tests
 
 **Files:**
+
 - Create: `test/e2e/read.e2e.test.ts`
 
 **Interfaces:**
+
 - Consumes: everything from `./helpers.js`, plus `cleanupRun`, `RUN_ID`, `seedIssue`, `waitForIndexed`, `RUN_LABEL` from `./fixtures.js`.
 - Produces: nothing consumed by later tasks.
 
@@ -846,9 +854,11 @@ git commit -m "test: cover project, board and search read paths end to end"
 Exercises the write path through the CLI: create, read, update, assign, transition, delete.
 
 **Files:**
+
 - Create: `test/e2e/issue-lifecycle.e2e.test.ts`
 
 **Interfaces:**
+
 - Consumes: `./helpers.js` exports, plus `cleanupRun`, `deleteIssue`, `RUN_ID`, `RUN_LABEL`, `SHARED_LABEL` from `./fixtures.js`.
 - Produces: nothing consumed by later tasks.
 
@@ -1026,15 +1036,17 @@ git commit -m "test: cover the issue create-to-delete lifecycle end to end"
 The highest-value file. `markdownToAdfDocument()` inserts explicit hard breaks so single newlines survive in paragraphs, blockquotes and list items but not in code blocks, tables or headings; `processIssueRenderedAndFields()` converts the rendered HTML back with turndown. Only a real Jira closes that loop.
 
 **Files:**
+
 - Create: `test/e2e/content.e2e.test.ts`
 
 **Interfaces:**
+
 - Consumes: `./helpers.js` exports, plus `cleanupRun`, `deleteIssue`, `RUN_ID`, `RUN_LABEL`, `SHARED_LABEL` from `./fixtures.js`.
 - Produces: nothing consumed by later tasks.
 
 - [ ] **Step 1: Write `test/e2e/content.e2e.test.ts`**
 
-```typescript
+````typescript
 import {expect} from 'chai'
 
 import {cleanupRun, deleteIssue, RUN_ID, RUN_LABEL, SHARED_LABEL} from './fixtures.js'
@@ -1189,7 +1201,7 @@ describe('e2e: content and ADF round-trip', () => {
     expect(afterDelete.data.worklogs.map((w) => w.id)).to.not.include(worklogId)
   })
 })
-```
+````
 
 - [ ] **Step 2: Run it**
 
@@ -1217,9 +1229,11 @@ git commit -m "test: cover the markdown-to-ADF round trip, comments and worklogs
 Attachments exercise the plain-`fetch` download path that bypasses `jira.js`, plus `configureFetchProxy`.
 
 **Files:**
+
 - Create: `test/e2e/attachment.e2e.test.ts`
 
 **Interfaces:**
+
 - Consumes: `./helpers.js` exports, plus `cleanupRun`, `deleteIssue`, `RUN_ID`, `RUN_LABEL`, `SHARED_LABEL` from `./fixtures.js`.
 - Produces: nothing.
 
@@ -1315,8 +1329,11 @@ describe('e2e: attachments and dev info', () => {
     expect(payload.error).to.contain('File not found')
   })
 
+  // `jira issue dev` takes the NUMERIC issue id, not the key — its arg is
+  // documented as 'Issue ID' (unlike every other issue command) and a key
+  // returns HTTP 400. Hence `issueId`, captured from the create response.
   it('returns a well-formed dev-info payload for an issue with no linked work', async () => {
-    const payload = await runCliJson<{data: unknown; success: boolean}>(['jira', 'issue', 'dev', issueKey], configDir)
+    const payload = await runCliJson<{data: unknown; success: boolean}>(['jira', 'issue', 'dev', issueId], configDir)
     expect(payload.success).to.be.true
     expect(payload.data).to.be.an('object')
   })
@@ -1371,11 +1388,13 @@ git commit -m "test: cover attachment upload, download and dev info end to end"
 ### Task 8: Nightly CI workflow and documentation
 
 **Files:**
+
 - Create: `.github/workflows/run-e2e-tests.yml`
 - Modify: `CLAUDE.md` (the Testing section)
 - Modify: `README.md` (contributing/testing prose only, never the generated `<!-- commands -->` block)
 
 **Interfaces:**
+
 - Consumes: the `test:e2e`, `e2e:mocha` and `e2e:sweep` scripts from Tasks 1 and 2.
 - Produces: nothing.
 
@@ -1444,7 +1463,7 @@ In GitHub → Settings → Secrets and variables → Actions, add `ATLASSIAN_URL
 
 Append to the `## Testing` section:
 
-```markdown
+````markdown
 ### End-to-end tests
 
 `test/e2e/**` runs the built `bin/run.js` as a real subprocess against the live
@@ -1458,6 +1477,7 @@ npm run test:e2e -- --keep    # leave fixtures behind for inspection
 npm run e2e:mocha             # run without rebuilding
 npm run e2e:sweep             # delete fixtures older than an hour
 ```
+````
 
 Four rules specific to this suite:
 
@@ -1472,7 +1492,8 @@ Four rules specific to this suite:
 
 Fixtures go in project `SS`; `KAN` is deliberately kept empty so empty-result
 assertions have a stable target.
-```
+
+````
 
 - [ ] **Step 4: Add a short testing note to `README.md`**
 
@@ -1483,7 +1504,7 @@ Only in hand-written prose. The `<!-- commands -->` block is generated by `oclif
 
 The e2e suite runs the built binary against a live Jira sandbox and is excluded
 from `npm test`. See the Testing section of `CLAUDE.md` for how to run it.
-```
+````
 
 - [ ] **Step 5: Validate the workflow and the docs**
 
