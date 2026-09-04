@@ -879,10 +879,15 @@ describe('e2e: issue lifecycle', () => {
     configDir = await createConfigDir()
   })
 
+  // allSettled + finally: a single failed delete must not skip the label-based
+  // backstop sweep, nor leave the token-bearing config dir on disk.
   after(async () => {
-    await Promise.all(created.map((key) => deleteIssue(key)))
-    await cleanupRun()
-    await removeConfigDir(configDir)
+    try {
+      await Promise.allSettled(created.map((key) => deleteIssue(key)))
+      await cleanupRun()
+    } finally {
+      await removeConfigDir(configDir)
+    }
   })
 
   async function createIssue(summary: string): Promise<string> {
@@ -1050,10 +1055,15 @@ describe('e2e: content and ADF round-trip', () => {
     configDir = await createConfigDir()
   })
 
+  // allSettled + finally: a single failed delete must not skip the label-based
+  // backstop sweep, nor leave the token-bearing config dir on disk.
   after(async () => {
-    await Promise.all(created.map((key) => deleteIssue(key)))
-    await cleanupRun()
-    await removeConfigDir(configDir)
+    try {
+      await Promise.allSettled(created.map((key) => deleteIssue(key)))
+      await cleanupRun()
+    } finally {
+      await removeConfigDir(configDir)
+    }
   })
 
   async function createIssue(description: string): Promise<string> {
@@ -1259,11 +1269,16 @@ describe('e2e: attachments and dev info', () => {
     issueKey = payload.data.key
   })
 
+  // allSettled + finally: a failed delete must not skip the backstop sweep, the
+  // token-bearing config dir, or the temp file directory.
   after(async () => {
-    if (issueKey) await deleteIssue(issueKey)
-    await cleanupRun()
-    await removeConfigDir(configDir)
-    await fs.rm(workDir, {force: true, recursive: true})
+    try {
+      if (issueKey) await Promise.allSettled([deleteIssue(issueKey)])
+      await cleanupRun()
+    } finally {
+      await removeConfigDir(configDir)
+      await fs.rm(workDir, {force: true, recursive: true})
+    }
   })
 
   it('uploads a file and downloads it back byte-for-byte', async () => {
