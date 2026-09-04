@@ -34,6 +34,13 @@ USAGE
 ```
 <!-- usagestop -->
 
+# Testing
+
+### End-to-end tests
+
+The e2e suite runs the built binary against a live Jira sandbox and is excluded
+from `npm test`. See the Testing section of `CLAUDE.md` for how to run it.
+
 # Commands
 
 <!-- commands -->

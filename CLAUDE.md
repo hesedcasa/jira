@@ -181,6 +181,38 @@ set -a; . ./.env; set +a
   ```
 - `/* eslint-disable max-params */` at the top of a test file when mocked functions take more than four params. `eslint.config.mjs` already relaxes the type-checked and several style rules for `test/**`.
 
+### End-to-end tests
+
+`test/e2e/**` runs the built `bin/run.js` as a real subprocess against the live
+Jira sandbox. It is excluded from `npm test` and needs credentials exported
+first, because nothing in this repo loads `.env`:
+
+```bash
+set -a; . ./.env; set +a
+npm run test:e2e              # build, run, then sweep
+npm run test:e2e -- --keep    # leave fixtures behind for inspection
+npm run e2e:mocha             # run without rebuilding
+npm run e2e:sweep             # delete fixtures older than an hour
+```
+
+Five rules specific to this suite:
+
+- **Never pass `--json`.** JSON is already the default (`BaseCommand.jsonEnabled()`);
+  `--json` is not a declared flag and the command will fail to parse.
+- **Never assert on error message text.** The sandbox account's Jira language is
+  not English. Assert on exit codes, `success`, and the HTTP status substring.
+- **Fixtures are created with raw `fetch` in `test/e2e/fixtures.ts`, never
+  through the CLI** — they are the oracle the CLI is checked against.
+- **Every fixture carries the `e2e-cli` and `e2e-run-<id>` labels.** JQL indexing
+  is asynchronous, so searches for fresh issues poll via `waitForIndexed`.
+- **No regex literals in `test/**`.** `require-unicode-regexp` is configured to
+  demand the `v` flag, and the `v` flag requires TS target `es2024` while this
+  repo targets `es2022`, so eslint and tsc contradict each other. Use string
+  methods instead.
+
+Fixtures go in project `SS`; `KAN` is deliberately kept empty so empty-result
+assertions have a stable target.
+
 ## Release & CI
 
 - Conventional Commits are **enforced on PR titles** by `.github/workflows/convetional-commit.yml`. Use `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:` for commits and PR titles alike.

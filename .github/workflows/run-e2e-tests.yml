@@ -1,0 +1,50 @@
+name: Run end-to-end tests
+
+permissions: read-all
+
+# Nightly and on demand only. These tests share one live Jira sandbox, so
+# running them per pull request would let concurrent runs collide, and fork
+# PRs cannot read the secrets they need.
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: jira-e2e
+  cancel-in-progress: false
+
+jobs:
+  run-e2e-tests:
+    name: End-to-end tests against the Jira sandbox
+    runs-on: ubuntu-latest
+    env:
+      ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
+      ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
+      ATLASSIAN_URL: ${{ secrets.ATLASSIAN_URL }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          cache: npm
+          node-version-file: '.nvmrc'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The steps below are what `npm run test:e2e` does locally, split out so
+      # the sweep still runs when a test fails.
+      - name: Build the CLI
+        run: npm run build
+
+      - name: Run end-to-end tests
+        run: npm run e2e:mocha
+
+      - name: Sweep leftover fixtures
+        if: always()
+        run: npm run e2e:sweep
