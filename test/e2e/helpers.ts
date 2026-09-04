@@ -106,7 +106,45 @@ export async function runCli(args: string[], configDir: string): Promise<CliResu
 }
 
 /**
+ * Replaces every occurrence of `secret` in `text` with `<redacted>`.
+ *
+ * A missing/empty secret is a no-op rather than matching everything — an
+ * empty needle would otherwise turn `replaceAll` into a full-string redaction.
+ *
+ * Exported (rather than a private helper) so it can be exercised directly by
+ * a unit-style test without invoking a command whose output carries a real
+ * token, such as `jira auth list`.
+ *
+ * @param text Captured stdout/stderr that may contain the secret.
+ * @param secret The value to scrub; falsy values leave `text` untouched.
+ * @returns `text` with every occurrence of `secret` replaced.
+ */
+export function redactSecret(text: string, secret: string | undefined): string {
+  return secret ? text.replaceAll(secret, '<redacted>') : text
+}
+
+/**
+ * Reads the API token for redaction purposes only. Swallows the
+ * "missing credentials" error from requireEnv() so that a call site with no
+ * env configured still gets a (no-op) redaction rather than a thrown error.
+ *
+ * @returns The API token, or undefined if the environment isn't configured.
+ */
+function redactionToken(): string | undefined {
+  try {
+    return requireEnv().apiToken
+  } catch {
+    return undefined
+  }
+}
+
+/**
  * Runs the CLI and fails the test if it exited non-zero.
+ *
+ * The failure message redacts the API token from stdout/stderr before it is
+ * interpolated, so a failing `jira auth …` call never prints the real token
+ * into mocha's failure output or CI logs. The returned `CliResult` itself is
+ * left unredacted — tests need the real values to assert on.
  *
  * @param args Command line arguments.
  * @param configDir Value for JIRA_CONFIG_DIR.
@@ -114,7 +152,10 @@ export async function runCli(args: string[], configDir: string): Promise<CliResu
  */
 export async function runCliOk(args: string[], configDir: string): Promise<CliResult> {
   const result = await runCli(args, configDir)
-  expect(result.code, `\`jira ${args.join(' ')}\` failed:\n${result.stdout}\n${result.stderr}`).to.equal(0)
+  const secret = redactionToken()
+  const stdout = redactSecret(result.stdout, secret)
+  const stderr = redactSecret(result.stderr, secret)
+  expect(result.code, `\`jira ${args.join(' ')}\` failed:\n${stdout}\n${stderr}`).to.equal(0)
   return result
 }
 
