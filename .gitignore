@@ -19,3 +19,6 @@ pnpm-lock.yaml
 *.tsbuildinfo
 coverage/
 .env
+
+# Subagent-driven development scratch (ledger, briefs, review packages)
+.superpowers/
