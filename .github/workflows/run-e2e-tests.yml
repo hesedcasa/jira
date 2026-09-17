@@ -18,7 +18,9 @@ jobs:
   run-e2e-tests:
     name: End-to-end tests against the Jira sandbox
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Two legs (standalone CLI, then the same suite via sdkck) at up to 2
+    # minutes per test.
+    timeout-minutes: 45
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -52,6 +54,38 @@ jobs:
           ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
           ATLASSIAN_URL: ${{ secrets.ATLASSIAN_URL }}
           E2E_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+
+      # Second leg: the same suite through the latest sdkck host CLI with this
+      # build packed and installed as its @hesed/jira plugin — covering the
+      # `prepack` artifacts (oclif.manifest.json, README) and plugin dispatch
+      # under a host. The plugin is installed before any `sdkck jira` call so
+      # sdkck's first-use auto-installer cannot fetch the published release
+      # over this build. The throwaway sdkck home (mktemp -d) keeps the
+      # install, config and caches out of the runner's real sdkck setup; the
+      # test side finds it via E2E_SDKCK_HOME.
+      - name: Install the latest sdkck and the packed plugin
+        run: |
+          npm install --no-save sdkck
+          home="$(mktemp -d)"
+          echo "E2E_SDKCK_HOME=$home" >> "$GITHUB_ENV"
+          # A `file:` URL is required: sdkck resolves any bare path containing
+          # a slash as a GitHub org/repo. Packing into the throwaway home
+          # keeps the tarball out of the workspace.
+          tgz="$(npm pack --pack-destination "$home" | tail -n 1)"
+          SDKCK_CACHE_DIR="$home/cache" \
+          SDKCK_CONFIG_DIR="$home/config" \
+          SDKCK_DATA_DIR="$home/data" \
+            ./node_modules/.bin/sdkck plugins install "file:$home/$tgz"
+
+      - name: Run end-to-end tests via sdkck
+        run: npm run e2e:mocha
+        env:
+          ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
+          ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
+          ATLASSIAN_URL: ${{ secrets.ATLASSIAN_URL }}
+          E2E_HOST_CLI: sdkck
+          E2E_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+          E2E_SDKCK_HOME: ${{ env.E2E_SDKCK_HOME }}
 
       # `always()`, so a killed mocha run (the job timeout above skips its
       # `after` hooks) still gets its fixtures reclaimed. E2E_RUN_ID is what
