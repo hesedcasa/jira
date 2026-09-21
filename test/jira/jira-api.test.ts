@@ -9,8 +9,8 @@ type SentRequest = {body: unknown; method?: string; url: string}
 /** The parts of the issueLink request body linkIssues is expected to send. */
 type LinkWireBody = {
   comment?: {body: {type: string}}
-  inwardIssue?: {key: string}
-  outwardIssue?: {key: string}
+  inwardIssue?: {id?: string; key?: string}
+  outwardIssue?: {id?: string; key?: string}
   type?: {name: string}
 }
 
@@ -409,6 +409,23 @@ describe('JiraApi', () => {
         expect(body.inwardIssue?.key).to.equal('TEST-2')
         expect(body.type?.name).to.equal('Blocks')
         expect(body).to.not.have.property('comment')
+      } finally {
+        fetched.restore()
+      }
+    })
+
+    it('sends numeric issue IDs as id references', async () => {
+      const fetched = interceptFetch({})
+
+      try {
+        const result = await jiraApi.linkIssues('10700', '10701', 'Relates')
+
+        expect(result.success).to.equal(true)
+        const body = fetched.requests[0].body as LinkWireBody
+        expect(body.outwardIssue?.id).to.equal('10700')
+        expect(body.inwardIssue?.id).to.equal('10701')
+        expect(body.outwardIssue).to.not.have.property('key')
+        expect(body.inwardIssue).to.not.have.property('key')
       } finally {
         fetched.restore()
       }

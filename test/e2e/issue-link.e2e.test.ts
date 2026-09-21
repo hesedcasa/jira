@@ -1,7 +1,7 @@
 import {expect} from 'chai'
 
 import {cleanupRun, getIssueLinks, RUN_ID, seedIssue} from './fixtures.js'
-import {createConfigDir, removeConfigDir, runCli} from './helpers.js'
+import {createConfigDir, removeConfigDir, runCli, runCliJson} from './helpers.js'
 
 describe('e2e: issue links', () => {
   let configDir: string
@@ -70,6 +70,28 @@ describe('e2e: issue links', () => {
     expect(
       onBlocker.some((link) => link.type.name === 'Blocks' && link.inwardIssue?.key === blocked),
       `expected ${blocker} to link outward to ${blocked}`,
+    ).to.be.true
+  })
+
+  it('links issues by numeric issue ID', async () => {
+    const blocker = await seedIssue({summary: `[e2e ${RUN_ID}] link numeric blocker`})
+    const blocked = await seedIssue({summary: `[e2e ${RUN_ID}] link numeric blocked`})
+
+    // Numeric IDs read through the CLI's get path; the link itself is
+    // verified against the raw API, which reports the other end as a key.
+    const blockerRead = await runCliJson<{data: {id: string}}>(['jira', 'issue', blocker], configDir)
+    const blockedRead = await runCliJson<{data: {id: string}}>(['jira', 'issue', blocked], configDir)
+
+    const {code} = await runCli(
+      ['jira', 'issue', 'link', blockerRead.data.id, blockedRead.data.id, '--type', 'Relates'],
+      configDir,
+    )
+    expect(code).to.equal(0)
+
+    const onBlocker = await getIssueLinks(blocker)
+    expect(
+      onBlocker.some((link) => link.type.name === 'Relates' && link.inwardIssue?.key === blocked),
+      `expected ${blocker} (${blockerRead.data.id}) to link to ${blocked} (${blockedRead.data.id}) by numeric ID`,
     ).to.be.true
   })
 
