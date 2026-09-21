@@ -123,6 +123,18 @@ export async function doTransition(config: AuthConfig, issueIdOrKey: string, tra
   return jira.doTransition(issueIdOrKey, transitionId)
 }
 
+// eslint-disable-next-line max-params
+export async function linkIssues(
+  config: AuthConfig,
+  outwardIssueIdOrKey: string,
+  inwardIssueIdOrKey: string,
+  linkTypeName: string,
+  comment?: string,
+): Promise<ApiResult> {
+  const jira = await getClient(config)
+  return jira.linkIssues(outwardIssueIdOrKey, inwardIssueIdOrKey, linkTypeName, comment)
+}
+
 export async function getIssueDevelopment(
   config: AuthConfig,
   issueId: string,

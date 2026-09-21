@@ -325,6 +325,38 @@ export class JiraApi {
   }
 
   /**
+   * Link two issues with an issue link type. The outward issue is the one the
+   * link type describes: "PROJ-1 blocks PROJ-2" is outward=PROJ-1, inward=PROJ-2.
+   */
+  async linkIssues(
+    outwardIssueIdOrKey: string,
+    inwardIssueIdOrKey: string,
+    linkTypeName: string,
+    comment?: string,
+  ): Promise<ApiResult> {
+    try {
+      const client = this.getClient()
+      await client.issueLinks.linkIssues({
+        comment: comment === undefined ? undefined : {body: markdownToAdfDocument(comment)},
+        inwardIssue: {key: inwardIssueIdOrKey},
+        outwardIssue: {key: outwardIssueIdOrKey},
+        type: {name: linkTypeName},
+      })
+
+      return {
+        data: true,
+        success: true,
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      return {
+        error: errorMessage,
+        success: false,
+      }
+    }
+  }
+
+  /**
    * Download attachment from an issue
    */
   async downloadAttachment(issueIdOrKey: string, attachmentId: string, outputPath?: string): Promise<ApiResult> {

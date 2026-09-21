@@ -6,6 +6,14 @@ import {JiraApi} from '../../src/jira/jira-api.js'
 /** One intercepted request: where it went and what was sent. */
 type SentRequest = {body: unknown; method?: string; url: string}
 
+/** The parts of the issueLink request body linkIssues is expected to send. */
+type LinkWireBody = {
+  comment?: {body: {type: string}}
+  inwardIssue?: {key: string}
+  outwardIssue?: {key: string}
+  type?: {name: string}
+}
+
 /**
  * Replace global fetch — the transport jira.js 6 builds on — with one that records the
  * request and answers with `payload`. Returns the recorded requests and a restore hook.
@@ -377,6 +385,46 @@ describe('JiraApi', () => {
         expect(result).to.have.property('success')
       } catch {
         // Expected to fail without actual connection
+      }
+    })
+  })
+
+  describe('linkIssues', () => {
+    it('exports linkIssues method', () => {
+      expect(jiraApi.linkIssues).to.be.a('function')
+    })
+
+    it('sends the outward/inward mapping and link type to the issueLink endpoint', async () => {
+      const fetched = interceptFetch({})
+
+      try {
+        const result = await jiraApi.linkIssues('TEST-1', 'TEST-2', 'Blocks')
+
+        expect(result.success).to.equal(true)
+        expect(fetched.requests).to.have.lengthOf(1)
+        expect(fetched.requests[0].url).to.equal('https://test.atlassian.net/rest/api/3/issueLink')
+        expect(fetched.requests[0].method).to.equal('POST')
+        const body = fetched.requests[0].body as LinkWireBody
+        expect(body.outwardIssue?.key).to.equal('TEST-1')
+        expect(body.inwardIssue?.key).to.equal('TEST-2')
+        expect(body.type?.name).to.equal('Blocks')
+        expect(body).to.not.have.property('comment')
+      } finally {
+        fetched.restore()
+      }
+    })
+
+    it('includes the comment as ADF when given', async () => {
+      const fetched = interceptFetch({})
+
+      try {
+        const result = await jiraApi.linkIssues('TEST-1', 'TEST-2', 'Duplicates', 'Same root cause')
+
+        expect(result.success).to.equal(true)
+        const body = fetched.requests[0].body as LinkWireBody
+        expect(body.comment?.body.type).to.equal('doc')
+      } finally {
+        fetched.restore()
       }
     })
   })
