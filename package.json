@@ -1,7 +1,7 @@
 {
   "name": "@hesed/jira",
   "description": "CLI for Jira API interaction",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "author": "Hesed",
   "bin": {
     "jira": "./bin/run.js"
