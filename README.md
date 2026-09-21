@@ -58,6 +58,7 @@ USAGE
 * [`jira jira issue create`](#jira-jira-issue-create)
 * [`jira jira issue delete ISSUEID`](#jira-jira-issue-delete-issueid)
 * [`jira jira issue dev ISSUEID`](#jira-jira-issue-dev-issueid)
+* [`jira jira issue link ISSUEID LINKEDISSUEID`](#jira-jira-issue-link-issueid-linkedissueid)
 * [`jira jira issue search JQL`](#jira-jira-issue-search-jql)
 * [`jira jira issue transition ISSUEID TRANSITIONID`](#jira-jira-issue-transition-issueid-transitionid)
 * [`jira jira issue transitions ISSUEID`](#jira-jira-issue-transitions-issueid)
@@ -657,6 +658,36 @@ EXAMPLES
 ```
 
 _See code: [src/commands/jira/issue/dev.ts](https://github.com/hesedcasa/jira/blob/v1.0.1/src/commands/jira/issue/dev.ts)_
+
+## `jira jira issue link ISSUEID LINKEDISSUEID`
+
+Link two issues with an issue link type
+
+```
+USAGE
+  $ jira jira issue link ISSUEID LINKEDISSUEID --type <value> [--comment <value>] [-p <value>]
+
+ARGUMENTS
+  ISSUEID        Issue ID or issue key that carries the link type (e.g. for Blocks, the blocker)
+  LINKEDISSUEID  Issue ID or issue key the link points to (e.g. for Blocks, the blocked issue)
+
+FLAGS
+  -p, --profile=<value>  Authentication profile name
+      --comment=<value>  Optional comment (Markdown) added with the link
+      --type=<value>     (required) Issue link type name as configured on the site, e.g. Blocks, Relates, Duplicate
+
+DESCRIPTION
+  Link two issues with an issue link type
+
+EXAMPLES
+  $ jira jira issue link PROJ-123 PROJ-456 --type Blocks   # PROJ-123 blocks PROJ-456
+
+  $ jira jira issue link PROJ-123 PROJ-456 --type Relates
+
+  $ jira jira issue link PROJ-123 PROJ-456 --type Duplicate --comment "Same root cause"
+```
+
+_See code: [src/commands/jira/issue/link.ts](https://github.com/hesedcasa/jira/blob/v1.0.1/src/commands/jira/issue/link.ts)_
 
 ## `jira jira issue search JQL`
 

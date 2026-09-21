@@ -155,6 +155,32 @@ export async function issueHttpStatus(key: string): Promise<number> {
   return status
 }
 
+/** The parts of an issuelinks entry link assertions need. */
+export type IssueLinkEntry = {
+  inwardIssue?: {key: string}
+  outwardIssue?: {key: string}
+  type: {inward: string; name: string; outward: string}
+}
+
+/**
+ * Reads an issue's issue links straight from the REST API.
+ *
+ * The oracle for link assertions: link writes are visible immediately on a
+ * plain issue GET, while the CLI's read path renders and prunes fields.
+ *
+ * @param key The issue key.
+ * @returns The issue's issuelinks entries.
+ */
+export async function getIssueLinks(key: string): Promise<IssueLinkEntry[]> {
+  const {body, status} = await call('GET', `/rest/api/3/issue/${key}?fields=issuelinks`)
+  if (status !== 200) {
+    throw new Error(`getIssueLinks ${key} failed: ${status}`)
+  }
+
+  const {fields} = body as {fields: {issuelinks?: IssueLinkEntry[]}}
+  return fields.issuelinks ?? []
+}
+
 /**
  * Deletes every issue in `keys`, tolerating individual failures until all
  * deletions have been attempted, then throwing if any actually failed.

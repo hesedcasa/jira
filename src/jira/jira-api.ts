@@ -11,6 +11,16 @@ import {configureFetchProxy} from '../proxy.js'
 import {defaultFields, processIssueRenderedAndFields} from '../utils.js'
 
 /**
+ * Builds an issue reference for request bodies, which — unlike the path-based
+ * issue endpoints — distinguishes `id` from `key`. Jira issue keys must start
+ * with a letter, so all-digit input can only be a numeric issue ID.
+ */
+function issueRef(issueIdOrKey: string): {id: string} | {key: string} {
+  const isAllDigits = issueIdOrKey.length > 0 && [...issueIdOrKey].every((char) => char >= '0' && char <= '9')
+  return isAllDigits ? {id: issueIdOrKey} : {key: issueIdOrKey}
+}
+
+/**
  * Jira API Utility Module
  * Provides core Jira API operations with formatting
  */
@@ -310,6 +320,39 @@ export class JiraApi {
     try {
       const client = this.getClient()
       await client.issues.doTransition({issueIdOrKey, transition: {id: transitionId}})
+
+      return {
+        data: true,
+        success: true,
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      return {
+        error: errorMessage,
+        success: false,
+      }
+    }
+  }
+
+  /**
+   * Link two issues with an issue link type. The outward issue is the one the
+   * link type describes: "PROJ-1 blocks PROJ-2" is outward=PROJ-1, inward=PROJ-2.
+   * Each argument may be an issue key or a numeric issue ID.
+   */
+  async linkIssues(
+    outwardIssueIdOrKey: string,
+    inwardIssueIdOrKey: string,
+    linkTypeName: string,
+    comment?: string,
+  ): Promise<ApiResult> {
+    try {
+      const client = this.getClient()
+      await client.issueLinks.linkIssues({
+        comment: comment === undefined ? undefined : {body: markdownToAdfDocument(comment)},
+        inwardIssue: issueRef(inwardIssueIdOrKey),
+        outwardIssue: issueRef(outwardIssueIdOrKey),
+        type: {name: linkTypeName},
+      })
 
       return {
         data: true,
