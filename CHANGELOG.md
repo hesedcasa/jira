@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/hesedcasa/jira/compare/v1.0.1...v1.1.0) (2026-09-21)
+
+
+### 🎉 Features
+
+* add jira issue link command ([#147](https://github.com/hesedcasa/jira/issues/147)) ([0d910ae](https://github.com/hesedcasa/jira/commit/0d910ae709a7b2cbe42bdef06ea17fe1e88b4372))
+
 ## [1.0.1](https://github.com/hesedcasa/jira/compare/v1.0.0...v1.0.1) (2026-09-03)
 
 
