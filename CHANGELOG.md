@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/hesedcasa/jira/compare/v1.1.0...v1.1.1) (2026-09-28)
+
+
+### 🛠️ Fixes
+
+* **issue:** convert ADF bodies to markdown without losing code or escaping text ([#154](https://github.com/hesedcasa/jira/issues/154)) ([2c25f29](https://github.com/hesedcasa/jira/commit/2c25f293a043c8a6f1784b97c9d63bc14167b253))
+
 ## [1.1.0](https://github.com/hesedcasa/jira/compare/v1.0.1...v1.1.0) (2026-09-21)
 
 
