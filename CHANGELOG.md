@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/hesedcasa/jira/compare/v1.1.1...v1.2.0) (2026-09-28)
+
+
+### 🎉 Features
+
+* **issue:** add --text-fields for literal string values on create and update ([#156](https://github.com/hesedcasa/jira/issues/156)) ([c305311](https://github.com/hesedcasa/jira/commit/c3053118eeeedeb71d7a4f873babf6999f3fabaa))
+
 ## [1.1.1](https://github.com/hesedcasa/jira/compare/v1.1.0...v1.1.1) (2026-09-28)
 
 
