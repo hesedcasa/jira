@@ -214,4 +214,118 @@ describe('issue:update', () => {
 
     expect(clearClientsCalled).to.be.true
   })
+
+  it('passes --text-fields as a separate literal map', async () => {
+    let receivedFields: any = null
+    let receivedTextFields: any = null
+
+    mockUpdateIssue = async (_config: any, _issueId: string, fields: any, textFields: any) => {
+      receivedFields = fields
+      receivedTextFields = textFields
+      return {data: true, success: true}
+    }
+
+    IssueUpdate = await esmock('../../../../src/commands/jira/issue/update.js', {
+      '../../../../src/jira/jira-client.js': {
+        clearClients: mockClearClients,
+        updateIssue: mockUpdateIssue,
+      },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
+    })
+
+    const command = new IssueUpdate.default(
+      ['TEST-123', '--text-fields', 'summary={"fix":"login"}', 'description=[1, 2]', '--fields', 'labels=["a"]'],
+      createMockConfig(),
+    )
+
+    const result = await command.run()
+
+    expect(result.success).to.be.true
+    expect(receivedFields).to.deep.equal({labels: '["a"]'})
+    expect(receivedTextFields).to.deep.equal({description: '[1, 2]', summary: '{"fix":"login"}'})
+  })
+
+  it('keeps everything after the first = in a --text-fields value', async () => {
+    let receivedTextFields: any = null
+
+    mockUpdateIssue = async (_config: any, _issueId: string, _fields: any, textFields: any) => {
+      receivedTextFields = textFields
+      return {data: true, success: true}
+    }
+
+    IssueUpdate = await esmock('../../../../src/commands/jira/issue/update.js', {
+      '../../../../src/jira/jira-client.js': {
+        clearClients: mockClearClients,
+        updateIssue: mockUpdateIssue,
+      },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
+    })
+
+    const command = new IssueUpdate.default(['TEST-123', '--text-fields', 'summary=a=b'], createMockConfig())
+
+    await command.run()
+
+    expect(receivedTextFields).to.deep.equal({summary: 'a=b'})
+  })
+
+  it('errors without sending a request when a key is in both --fields and --text-fields', async () => {
+    let updateIssueCalled = false
+    let errorOutput: null | string = null
+
+    mockUpdateIssue = async () => {
+      updateIssueCalled = true
+      return {data: true, success: true}
+    }
+
+    IssueUpdate = await esmock('../../../../src/commands/jira/issue/update.js', {
+      '../../../../src/jira/jira-client.js': {
+        clearClients: mockClearClients,
+        updateIssue: mockUpdateIssue,
+      },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
+    })
+
+    const command = new IssueUpdate.default(
+      ['TEST-123', '--fields', 'summary=a', '--text-fields', 'summary=b'],
+      createMockConfig(),
+    )
+    command.error = (message: string) => {
+      errorOutput = message
+      throw new Error(message)
+    }
+
+    await command.run().catch(() => {})
+
+    expect(errorOutput).to.include('Field(s) given in both --fields and --text-fields: summary')
+    expect(updateIssueCalled).to.be.false
+  })
+
+  it('errors when neither --fields nor --text-fields is given', async () => {
+    let updateIssueCalled = false
+    let errorOutput: null | string = null
+
+    mockUpdateIssue = async () => {
+      updateIssueCalled = true
+      return {data: true, success: true}
+    }
+
+    IssueUpdate = await esmock('../../../../src/commands/jira/issue/update.js', {
+      '../../../../src/jira/jira-client.js': {
+        clearClients: mockClearClients,
+        updateIssue: mockUpdateIssue,
+      },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
+    })
+
+    const command = new IssueUpdate.default(['TEST-123'], createMockConfig())
+    command.error = (message: string) => {
+      errorOutput = message
+      throw new Error(message)
+    }
+
+    await command.run().catch(() => {})
+
+    expect(errorOutput).to.include('At least one of --fields or --text-fields is required')
+    expect(updateIssueCalled).to.be.false
+  })
 })

@@ -33,18 +33,23 @@ export async function getIssue(config: AuthConfig, issueIdOrKey: string): Promis
   return jira.getIssue(issueIdOrKey)
 }
 
-export async function createIssue(config: AuthConfig, fields: Record<string, unknown>): Promise<ApiResult> {
+export async function createIssue(
+  config: AuthConfig,
+  fields: Record<string, unknown>,
+  textFields: Record<string, string> = {},
+): Promise<ApiResult> {
   const jira = await getClient(config)
-  return jira.createIssue(fields)
+  return jira.createIssue(fields, textFields)
 }
 
 export async function updateIssue(
   config: AuthConfig,
   issueIdOrKey: string,
   fields: Record<string, unknown>,
+  textFields: Record<string, string> = {},
 ): Promise<ApiResult> {
   const jira = await getClient(config)
-  return jira.updateIssue(issueIdOrKey, fields)
+  return jira.updateIssue(issueIdOrKey, fields, textFields)
 }
 
 export async function addAttachment(config: AuthConfig, issueIdOrKey: string, filePath: string): Promise<ApiResult> {

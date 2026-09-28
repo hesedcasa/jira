@@ -580,12 +580,13 @@ Create a new issue
 
 ```
 USAGE
-  $ jira jira issue create --fields <value>... [-p <value>] [--toon]
+  $ jira jira issue create [--fields <value>...] [-p <value>] [--text-fields <value>...] [--toon]
 
 FLAGS
-  -p, --profile=<value>    Authentication profile name
-      --fields=<value>...  (required) Issue fields in key=value format
-      --toon               Format output as toon
+  -p, --profile=<value>         Authentication profile name
+      --fields=<value>...       Issue fields in key=value format
+      --text-fields=<value>...  Issue fields in key=value format, sent as literal strings
+      --toon                    Format output as toon
 
 DESCRIPTION
   Create a new issue
@@ -602,10 +603,18 @@ EXAMPLES
   ls -a
   ```'
 
+  $ jira jira issue create --fields project='{"key":"PROJ"}' issuetype='{"name":"Task"}' --text-fields 'summary=[1, 2] is a list' 'description=[1, 2]'
+
 FLAG DESCRIPTIONS
   --fields=<value>...  Issue fields in key=value format
 
-    Minimum fields required: project, summary, description & issuetype
+    Minimum fields required (from --fields or --text-fields): project, summary, description & issuetype. Values starting
+    with { or [ are parsed as JSON
+
+  --text-fields=<value>...  Issue fields in key=value format, sent as literal strings
+
+    Like --fields, but the value is never JSON-parsed. A description is still converted from Markdown. A key may not
+    appear in both --fields and --text-fields
 ```
 
 _See code: [src/commands/jira/issue/create.ts](https://github.com/hesedcasa/jira/blob/v1.1.1/src/commands/jira/issue/create.ts)_
@@ -774,14 +783,18 @@ Update an existing issue
 
 ```
 USAGE
-  $ jira jira issue update ISSUEID --fields <value>... [-p <value>]
+  $ jira jira issue update ISSUEID [--fields <value>...] [-p <value>] [--text-fields <value>...]
 
 ARGUMENTS
   ISSUEID  Issue ID or issue key
 
 FLAGS
-  -p, --profile=<value>    Authentication profile name
-      --fields=<value>...  (required) Issue fields to update in key=value format
+  -p, --profile=<value>         Authentication profile name
+      --fields=<value>...       Issue fields to update in key=value format. Values starting with { or [ are parsed as
+                                JSON. At least one of --fields or --text-fields is required
+      --text-fields=<value>...  Issue fields to update in key=value format, sent as literal strings: the value is never
+                                JSON-parsed. Rich-text fields (description, ADF custom fields) are still converted from
+                                Markdown. A key may not appear in both --fields and --text-fields
 
 DESCRIPTION
   Update an existing issue
@@ -801,6 +814,8 @@ EXAMPLES
   $ jira jira issue update PROJ-123 --fields description="$(cat content.md)"
 
   $ jira jira issue update PROJ-123 --fields timetracking='{"originalEstimate": "5h"}'
+
+  $ jira jira issue update PROJ-123 --text-fields 'summary={"fix":"login"}'
 ```
 
 _See code: [src/commands/jira/issue/update.ts](https://github.com/hesedcasa/jira/blob/v1.1.1/src/commands/jira/issue/update.ts)_

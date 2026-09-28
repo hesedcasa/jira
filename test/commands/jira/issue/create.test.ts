@@ -343,4 +343,97 @@ describe('issue:create', () => {
 
     expect(clearClientsCalled).to.be.true
   })
+
+  it('accepts required fields from --text-fields and passes them as a literal map', async () => {
+    let receivedFields: any = null
+    let receivedTextFields: any = null
+
+    mockCreateIssue = async (_config: any, fields: any, textFields: any) => {
+      receivedFields = fields
+      receivedTextFields = textFields
+      return {data: {id: '10001', key: 'TEST-123'}, success: true}
+    }
+
+    IssueCreate = await esmock('../../../../src/commands/jira/issue/create.js', {
+      '../../../../src/jira/jira-client.js': {
+        clearClients: mockClearClients,
+        createIssue: mockCreateIssue,
+      },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
+    })
+
+    const command = new IssueCreate.default(
+      [
+        '--fields',
+        'project={"key":"TEST"}',
+        'issuetype={"name":"Task"}',
+        '--text-fields',
+        'summary=[1, 2] is a list',
+        'description=[1, 2]',
+      ],
+      createMockConfig(),
+    )
+
+    const result = await command.run()
+
+    expect(result.success).to.be.true
+    expect(receivedFields).to.deep.equal({issuetype: '{"name":"Task"}', project: '{"key":"TEST"}'})
+    expect(receivedTextFields).to.deep.equal({description: '[1, 2]', summary: '[1, 2] is a list'})
+  })
+
+  it('still reports a required field missing from both flags', async () => {
+    const command = new IssueCreate.default(
+      ['--fields', 'project={"key":"TEST"}', 'issuetype={"name":"Task"}', '--text-fields', 'summary=S'],
+      createMockConfig(),
+    )
+
+    command.error = (message: string) => {
+      errorOutput = message
+      throw new Error(message)
+    }
+
+    await command.run().catch(() => {})
+
+    expect(errorOutput).to.include('Required field "description" is missing')
+  })
+
+  it('errors without sending a request when a key is in both --fields and --text-fields', async () => {
+    let createIssueCalled = false
+
+    mockCreateIssue = async () => {
+      createIssueCalled = true
+      return {data: {}, success: true}
+    }
+
+    IssueCreate = await esmock('../../../../src/commands/jira/issue/create.js', {
+      '../../../../src/jira/jira-client.js': {
+        clearClients: mockClearClients,
+        createIssue: mockCreateIssue,
+      },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
+    })
+
+    const command = new IssueCreate.default(
+      [
+        '--fields',
+        'project={"key":"TEST"}',
+        'issuetype={"name":"Task"}',
+        'summary=S',
+        'description=D',
+        '--text-fields',
+        'summary=T',
+      ],
+      createMockConfig(),
+    )
+
+    command.error = (message: string) => {
+      errorOutput = message
+      throw new Error(message)
+    }
+
+    await command.run().catch(() => {})
+
+    expect(errorOutput).to.include('Field(s) given in both --fields and --text-fields: summary')
+    expect(createIssueCalled).to.be.false
+  })
 })

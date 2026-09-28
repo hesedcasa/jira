@@ -120,3 +120,37 @@ export const processIssueRenderedAndFields = (issue: Issue): void => {
   issue.fields = merged as typeof issue.fields
   issue.renderedFields = {}
 }
+
+/**
+ * Parse repeated `key=value` flag values into a map, splitting on the first `=`
+ * so a value may itself contain `=`.
+ */
+export const parseKeyValuePairs = (pairs: readonly string[] = []): Record<string, string> => {
+  const result: Record<string, string> = {}
+  for (const pair of pairs) {
+    const [key, ...valueParts] = pair.split('=')
+    // defineProperty, not assignment: a key such as `__proto__` must stay an ordinary own property.
+    Object.defineProperty(result, key, {
+      configurable: true,
+      enumerable: true,
+      value: valueParts.join('='),
+      writable: true,
+    })
+  }
+
+  return result
+}
+
+/**
+ * The error for keys given in both `--fields` and `--text-fields`, so neither
+ * value is picked silently; `undefined` when the two maps don't overlap.
+ */
+export const duplicateFieldsError = (
+  fields: Record<string, unknown>,
+  textFields: Record<string, unknown>,
+): string | undefined => {
+  const duplicates = Object.keys(textFields).filter((key) => Object.hasOwn(fields, key))
+  return duplicates.length > 0
+    ? `Field(s) given in both --fields and --text-fields: ${duplicates.join(', ')}`
+    : undefined
+}
