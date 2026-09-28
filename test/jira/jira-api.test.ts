@@ -1,10 +1,14 @@
 import {expect} from 'chai'
 import {Agent, EnvHttpProxyAgent, getGlobalDispatcher, setGlobalDispatcher} from 'undici'
 
+import {type AdfNode, adfToMarkdown} from '../../src/adf-to-markdown.js'
 import {JiraApi} from '../../src/jira/jira-api.js'
 
 /** One intercepted request: where it went and what was sent. */
 type SentRequest = {body: unknown; method?: string; url: string}
+
+/** The `fields` object of an issue create/edit request body. */
+type IssueWireBody = {fields: Record<string, unknown>}
 
 /** The parts of the issueLink request body linkIssues is expected to send. */
 type LinkWireBody = {
@@ -281,6 +285,46 @@ describe('JiraApi', () => {
     })
   })
 
+  describe('createIssue with textFields', () => {
+    it('keeps JSON parsing for fields and sends textFields as literal strings', async () => {
+      const fetched = interceptFetch({id: '10001', key: 'P-1'})
+
+      try {
+        const result = await jiraApi.createIssue(
+          {issuetype: '{"name":"Task"}', labels: '["a"]', project: '{"key":"P"}'},
+          {description: '[1, 2]', summary: '{"fix":"login"}'},
+        )
+
+        expect(result.success).to.equal(true)
+        expect(fetched.requests).to.have.lengthOf(1)
+        expect(fetched.requests[0].url).to.equal('https://test.atlassian.net/rest/api/3/issue')
+        const {fields} = fetched.requests[0].body as IssueWireBody
+        expect(fields.project).to.deep.equal({key: 'P'})
+        expect(fields.issuetype).to.deep.equal({name: 'Task'})
+        expect(fields.labels).to.deep.equal(['a'])
+        expect(fields.summary).to.equal('{"fix":"login"}')
+        expect(fields.description).to.have.property('type', 'doc')
+        expect(adfToMarkdown(fields.description as AdfNode)).to.equal('[1, 2]')
+      } finally {
+        fetched.restore()
+      }
+    })
+
+    it('rejects a key given in both maps without sending a request', async () => {
+      const fetched = interceptFetch({})
+
+      try {
+        const result = await jiraApi.createIssue({summary: 'a'}, {summary: 'b'})
+
+        expect(result.success).to.equal(false)
+        expect(result.error).to.include('summary')
+        expect(fetched.requests).to.have.lengthOf(0)
+      } finally {
+        fetched.restore()
+      }
+    })
+  })
+
   describe('updateIssue', () => {
     it('exports updateIssue method', () => {
       expect(jiraApi.updateIssue).to.be.a('function')
@@ -292,6 +336,93 @@ describe('JiraApi', () => {
         expect(result).to.have.property('success')
       } catch {
         // Expected to fail without actual connection
+      }
+    })
+
+    it('sends a JSON-looking text summary as a string', async () => {
+      const fetched = interceptFetch({})
+
+      try {
+        const result = await jiraApi.updateIssue('TEST-1', {}, {summary: '{"fix":"login"}'})
+
+        expect(result.success).to.equal(true)
+        expect(fetched.requests).to.have.lengthOf(1)
+        expect(fetched.requests[0].method).to.equal('PUT')
+        const {fields} = fetched.requests[0].body as IssueWireBody
+        expect(fields.summary).to.equal('{"fix":"login"}')
+      } finally {
+        fetched.restore()
+      }
+    })
+
+    it('converts a JSON-looking text description to ADF that reads back verbatim', async () => {
+      const fetched = interceptFetch({})
+
+      try {
+        await jiraApi.updateIssue('TEST-1', {}, {description: '[1, 2]'})
+
+        const {fields} = fetched.requests[0].body as IssueWireBody
+        expect(fields.description).to.have.property('type', 'doc')
+        expect(adfToMarkdown(fields.description as AdfNode)).to.equal('[1, 2]')
+      } finally {
+        fetched.restore()
+      }
+    })
+
+    it('still JSON-parses --fields values alongside textFields', async () => {
+      const fetched = interceptFetch({})
+
+      try {
+        await jiraApi.updateIssue('TEST-1', {description: '[1, 2]', labels: '["a"]'}, {summary: '[x]'})
+
+        const {fields} = fetched.requests[0].body as IssueWireBody
+        expect(fields.labels).to.deep.equal(['a'])
+        expect(fields.description).to.deep.equal([1, 2])
+        expect(fields.summary).to.equal('[x]')
+      } finally {
+        fetched.restore()
+      }
+    })
+
+    it('converts text values for ADF custom fields reported by the field schema', async () => {
+      // One payload answers both the field-schema lookup and the edit.
+      const fetched = interceptFetch({
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 1,
+        values: [
+          {
+            id: 'customfield_100',
+            name: 'Notes',
+            schema: {custom: 'com.atlassian.jira.plugin.system.customfieldtypes:textarea', type: 'string'},
+          },
+        ],
+      })
+
+      try {
+        await jiraApi.updateIssue('TEST-1', {}, {customfield_100: '{"a":1}', customfield_200: '{"b":2}'})
+
+        const edit = fetched.requests.find((request) => request.method === 'PUT')
+        const {fields} = edit?.body as IssueWireBody
+        expect(adfToMarkdown(fields.customfield_100 as AdfNode)).to.equal('{"a":1}')
+        expect(fields.customfield_200).to.equal('{"b":2}')
+      } finally {
+        fetched.restore()
+      }
+    })
+
+    it('rejects a key given in both maps without sending a request', async () => {
+      const fetched = interceptFetch({})
+
+      try {
+        const result = await jiraApi.updateIssue('TEST-1', {summary: 'a'}, {summary: 'b'})
+
+        expect(result.success).to.equal(false)
+        expect(result.error).to.include('summary')
+        expect(fetched.requests).to.have.lengthOf(0)
+      } finally {
+        fetched.restore()
       }
     })
   })

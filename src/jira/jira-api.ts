@@ -8,7 +8,7 @@ import path from 'node:path'
 
 import {markdownToAdfDocument} from '../markdown.js'
 import {configureFetchProxy} from '../proxy.js'
-import {defaultFields, processIssueRenderedAndFields} from '../utils.js'
+import {defaultFields, duplicateFieldsError, processIssueRenderedAndFields} from '../utils.js'
 
 /**
  * Builds an issue reference for request bodies, which — unlike the path-based
@@ -206,10 +206,16 @@ export class JiraApi {
   }
 
   /**
-   * Create a new issue
+   * Create a new issue. `textFields` are sent as literal strings (never JSON-parsed);
+   * a text `description` is still converted from Markdown to ADF.
    */
-  async createIssue(fields: Record<string, unknown>): Promise<ApiResult> {
+  async createIssue(fields: Record<string, unknown>, textFields: Record<string, string> = {}): Promise<ApiResult> {
     try {
+      const duplicateError = duplicateFieldsError(fields, textFields)
+      if (duplicateError) {
+        return {error: duplicateError, success: false}
+      }
+
       const client = this.getClient()
 
       // Parse JSON-encoded strings for individual fields
@@ -233,6 +239,10 @@ export class JiraApi {
       // Convert Markdown description to Jira ADF
       if (typeof fields.description === 'string') {
         processedFields.description = markdownToAdfDocument(fields.description)
+      }
+
+      for (const [key, value] of Object.entries(textFields)) {
+        processedFields[key] = key === 'description' ? markdownToAdfDocument(value) : value
       }
 
       const response = await client.issues.createIssue({fields: processedFields})
@@ -803,15 +813,27 @@ export class JiraApi {
   }
 
   /**
-   * Update an existing issue
+   * Update an existing issue. `textFields` are sent as literal strings (never JSON-parsed);
+   * ADF fields among them are still converted from Markdown.
    */
-  async updateIssue(issueIdOrKey: string, fields: Record<string, unknown>): Promise<ApiResult> {
+  async updateIssue(
+    issueIdOrKey: string,
+    fields: Record<string, unknown>,
+    textFields: Record<string, string> = {},
+  ): Promise<ApiResult> {
     try {
+      const duplicateError = duplicateFieldsError(fields, textFields)
+      if (duplicateError) {
+        return {error: duplicateError, success: false}
+      }
+
       const client = this.getClient()
 
       // Fetch schemas only for the custom fields being updated to determine which require ADF.
       // System fields like 'description' are always treated as ADF (fallback set).
-      const customFieldIds = Object.keys(fields).filter((k) => k.startsWith('customfield_'))
+      const customFieldIds = [...Object.keys(fields), ...Object.keys(textFields)].filter((k) =>
+        k.startsWith('customfield_'),
+      )
       const adfFieldIds = new Set<string>(['description'])
       if (customFieldIds.length > 0) {
         try {
@@ -850,6 +872,10 @@ export class JiraApi {
           return [key, value]
         }),
       ) as typeof fields
+
+      for (const [key, value] of Object.entries(textFields)) {
+        processedFields[key] = adfFieldIds.has(key) ? markdownToAdfDocument(value) : value
+      }
 
       await client.issues.editIssue({fields: processedFields, issueIdOrKey})
 

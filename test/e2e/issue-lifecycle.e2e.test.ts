@@ -5,7 +5,9 @@ import {createConfigDir, E2E_PROJECT, removeConfigDir, runCli, runCliJson} from 
 
 type Created = {data: {key: string}; success: boolean}
 type Fetched = {
-  data: {fields: {assignee: null | {accountId: string}; status: {name: string}; summary: string}}
+  data: {
+    fields: {assignee: null | {accountId: string}; description: string; status: {name: string}; summary: string}
+  }
   success: boolean
 }
 
@@ -74,6 +76,37 @@ describe('e2e: issue lifecycle', () => {
 
     const fetched = await runCliJson<Fetched>(['jira', 'issue', key], configDir)
     expect(fetched.data.fields.summary).to.equal(updated)
+  })
+
+  it('creates and updates with --text-fields values that look like JSON', async () => {
+    const payload = await runCliJson<Created>(
+      [
+        'jira',
+        'issue',
+        'create',
+        '--fields',
+        `project={"key":"${E2E_PROJECT}"}`,
+        'issuetype={"name":"Task"}',
+        `labels=${LABELS}`,
+        '--text-fields',
+        'summary={"fix":"login"}',
+        'description=[1, 2]',
+      ],
+      configDir,
+    )
+    expect(payload.success).to.be.true
+    const {key} = payload.data
+    created.push(key)
+
+    const fetched = await runCliJson<Fetched>(['jira', 'issue', key], configDir)
+    expect(fetched.data.fields.summary).to.equal('{"fix":"login"}')
+    expect(fetched.data.fields.description).to.equal('[1, 2]')
+
+    const {code} = await runCli(['jira', 'issue', 'update', key, '--text-fields', 'summary=["a", "b"]'], configDir)
+    expect(code).to.equal(0)
+
+    const updated = await runCliJson<Fetched>(['jira', 'issue', key], configDir)
+    expect(updated.data.fields.summary).to.equal('["a", "b"]')
   })
 
   it('assigns the issue to an assignable user', async () => {

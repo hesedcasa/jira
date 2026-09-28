@@ -2,7 +2,7 @@ import type {Issue} from 'jira.js/cloud'
 
 import {expect} from 'chai'
 
-import {defaultFields, processIssueRenderedAndFields} from '../src/utils.js'
+import {defaultFields, duplicateFieldsError, parseKeyValuePairs, processIssueRenderedAndFields} from '../src/utils.js'
 
 describe('utils', () => {
   describe('defaultFields', () => {
@@ -304,6 +304,28 @@ describe('utils', () => {
       processIssueRenderedAndFields(issue)
 
       expect(issue.renderedFields).to.be.empty
+    })
+  })
+
+  describe('parseKeyValuePairs', () => {
+    it('splits on the first = only', () => {
+      expect(parseKeyValuePairs(['summary=a=b', 'labels=["a"]'])).to.deep.equal({labels: '["a"]', summary: 'a=b'})
+    })
+
+    it('returns an empty map when no pairs are given', () => {
+      expect(parseKeyValuePairs()).to.deep.equal({})
+    })
+  })
+
+  describe('duplicateFieldsError', () => {
+    it('names every key present in both maps', () => {
+      expect(duplicateFieldsError({a: '1', b: '2', c: '3'}, {a: 'x', c: 'y'})).to.equal(
+        'Field(s) given in both --fields and --text-fields: a, c',
+      )
+    })
+
+    it('is undefined when the maps do not overlap', () => {
+      expect(duplicateFieldsError({a: '1'}, {b: '2'})).to.be.undefined
     })
   })
 })

@@ -3,6 +3,7 @@ import {Args, Flags} from '@oclif/core'
 
 import {BaseCommand} from '../../../base-command.js'
 import {clearClients, updateIssue} from '../../../jira/jira-client.js'
+import {duplicateFieldsError, parseKeyValuePairs} from '../../../utils.js'
 
 export default class IssueUpdate extends BaseCommand {
   static override args = {
@@ -15,11 +16,23 @@ export default class IssueUpdate extends BaseCommand {
     "<%= config.bin %> <%= command.id %> PROJ-123 --fields description='\n# Header\n## Sub-header\n- Item 1\n- Item 2\n```bash\nls -a\n```'",
     '<%= config.bin %> <%= command.id %> PROJ-123 --fields description="$(cat content.md)"',
     '<%= config.bin %> <%= command.id %> PROJ-123 --fields timetracking=\'{"originalEstimate": "5h"}\'',
+    '<%= config.bin %> <%= command.id %> PROJ-123 --text-fields \'summary={"fix":"login"}\'',
   ]
 
   static override flags = {
-    fields: Flags.string({description: 'Issue fields to update in key=value format', multiple: true, required: true}),
+    fields: Flags.string({
+      description:
+        'Issue fields to update in key=value format. Values starting with { or [ are parsed as JSON. At least one of --fields or --text-fields is required',
+      multiple: true,
+      required: false,
+    }),
     profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
+    'text-fields': Flags.string({
+      description:
+        'Issue fields to update in key=value format, sent as literal strings: the value is never JSON-parsed. Rich-text fields (description, ADF custom fields) are still converted from Markdown. A key may not appear in both --fields and --text-fields',
+      multiple: true,
+      required: false,
+    }),
   }
 
   public async run(): Promise<ApiResult> {
@@ -30,16 +43,19 @@ export default class IssueUpdate extends BaseCommand {
       this.error(`Missing authentication config.`)
     }
 
-    const fields: Record<string, string> = {}
-    if (flags.fields) {
-      for (const field of flags.fields) {
-        const [key, ...valueParts] = field.split('=')
-        const value = valueParts.join('=')
-        fields[key] = value
-      }
+    const fields = parseKeyValuePairs(flags.fields)
+    const textFields = parseKeyValuePairs(flags['text-fields'])
+
+    if (Object.keys(fields).length === 0 && Object.keys(textFields).length === 0) {
+      this.error('At least one of --fields or --text-fields is required')
     }
 
-    const result = await updateIssue(auth, args.issueId, fields)
+    const duplicateError = duplicateFieldsError(fields, textFields)
+    if (duplicateError) {
+      this.error(duplicateError)
+    }
+
+    const result = await updateIssue(auth, args.issueId, fields, textFields)
     clearClients()
 
     return result
