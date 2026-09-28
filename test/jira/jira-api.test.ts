@@ -310,6 +310,44 @@ describe('JiraApi', () => {
       }
     })
 
+    it('converts text values for ADF custom fields reported by the field schema', async () => {
+      // One payload answers both the field-schema lookup and the create.
+      const fetched = interceptFetch({
+        id: '10001',
+        isLast: true,
+        key: 'P-1',
+        maxResults: 50,
+        self: 'https://test.atlassian.net/rest/api/3/issue/10001',
+        startAt: 0,
+        total: 1,
+        values: [
+          {
+            id: 'customfield_100',
+            name: 'Notes',
+            schema: {custom: 'com.atlassian.jira.plugin.system.customfieldtypes:textarea', type: 'string'},
+          },
+        ],
+      })
+
+      try {
+        await jiraApi.createIssue(
+          {customfield_300: 'plain', project: '{"key":"P"}'},
+          {customfield_100: '{"a":1}', customfield_200: '{"b":2}'},
+        )
+
+        const lookup = fetched.requests.find((request) => request.url.includes('/field/search'))
+        expect(lookup?.url).to.include('customfield_100')
+        expect(lookup?.url).to.not.include('customfield_300')
+        const create = fetched.requests.find((request) => request.method === 'POST')
+        const {fields} = create?.body as IssueWireBody
+        expect(adfToMarkdown(fields.customfield_100 as AdfNode)).to.equal('{"a":1}')
+        expect(fields.customfield_200).to.equal('{"b":2}')
+        expect(fields.customfield_300).to.equal('plain')
+      } finally {
+        fetched.restore()
+      }
+    })
+
     it('rejects a key given in both maps without sending a request', async () => {
       const fetched = interceptFetch({})
 

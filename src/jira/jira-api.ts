@@ -206,8 +206,36 @@ export class JiraApi {
   }
 
   /**
+   * The keys among `keys` whose values must be sent as ADF: `description` always,
+   * plus the custom fields whose schema marks them as rich text. Only custom fields
+   * trigger a schema lookup, and a failed lookup falls back to `description` alone.
+   */
+  async getAdfFieldIds(keys: readonly string[]): Promise<Set<string>> {
+    const adfFieldIds = new Set<string>(['description'])
+    const customFieldIds = keys.filter((k) => k.startsWith('customfield_'))
+    if (customFieldIds.length === 0) return adfFieldIds
+
+    try {
+      const page = await this.getClient().issueFields.getFieldsPaginated({id: customFieldIds, type: ['custom']})
+      const adfFields = (page.values ?? []).filter(
+        (f) =>
+          f.schema?.type === 'any' ||
+          f.schema?.custom?.includes('textarea') ||
+          f.schema?.custom?.includes('multilinetexteditor'),
+      )
+      for (const f of adfFields) {
+        adfFieldIds.add(f.id)
+      }
+    } catch {
+      // non-fatal — proceed with fallback set
+    }
+
+    return adfFieldIds
+  }
+
+  /**
    * Create a new issue. `textFields` are sent as literal strings (never JSON-parsed);
-   * a text `description` is still converted from Markdown to ADF.
+   * ADF fields among them (description, rich-text custom fields) are still converted from Markdown.
    */
   async createIssue(fields: Record<string, unknown>, textFields: Record<string, string> = {}): Promise<ApiResult> {
     try {
@@ -241,8 +269,10 @@ export class JiraApi {
         processedFields.description = markdownToAdfDocument(fields.description)
       }
 
+      // Only text fields get the schema lookup, so --fields keeps sending exactly what it did before.
+      const adfFieldIds = await this.getAdfFieldIds(Object.keys(textFields))
       for (const [key, value] of Object.entries(textFields)) {
-        processedFields[key] = key === 'description' ? markdownToAdfDocument(value) : value
+        processedFields[key] = adfFieldIds.has(key) ? markdownToAdfDocument(value) : value
       }
 
       const response = await client.issues.createIssue({fields: processedFields})
@@ -829,28 +859,7 @@ export class JiraApi {
 
       const client = this.getClient()
 
-      // Fetch schemas only for the custom fields being updated to determine which require ADF.
-      // System fields like 'description' are always treated as ADF (fallback set).
-      const customFieldIds = [...Object.keys(fields), ...Object.keys(textFields)].filter((k) =>
-        k.startsWith('customfield_'),
-      )
-      const adfFieldIds = new Set<string>(['description'])
-      if (customFieldIds.length > 0) {
-        try {
-          const page = await client.issueFields.getFieldsPaginated({id: customFieldIds, type: ['custom']})
-          const adfFields = (page.values ?? []).filter(
-            (f) =>
-              f.schema?.type === 'any' ||
-              f.schema?.custom?.includes('textarea') ||
-              f.schema?.custom?.includes('multilinetexteditor'),
-          )
-          for (const f of adfFields) {
-            adfFieldIds.add(f.id)
-          }
-        } catch {
-          // non-fatal — proceed with fallback set
-        }
-      }
+      const adfFieldIds = await this.getAdfFieldIds([...Object.keys(fields), ...Object.keys(textFields)])
 
       const processedFields = Object.fromEntries(
         Object.entries(fields).map(([key, value]) => {

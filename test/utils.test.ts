@@ -312,6 +312,13 @@ describe('utils', () => {
       expect(parseKeyValuePairs(['summary=a=b', 'labels=["a"]'])).to.deep.equal({labels: '["a"]', summary: 'a=b'})
     })
 
+    it('keeps a __proto__ key as an ordinary own property', () => {
+      const parsed = parseKeyValuePairs(['__proto__=x'])
+      expect(Object.hasOwn(parsed, '__proto__')).to.be.true
+      expect(Object.keys(parsed)).to.deep.equal(['__proto__'])
+      expect(duplicateFieldsError(parsed, parseKeyValuePairs(['__proto__=y']))).to.include('__proto__')
+    })
+
     it('returns an empty map when no pairs are given', () => {
       expect(parseKeyValuePairs()).to.deep.equal({})
     })

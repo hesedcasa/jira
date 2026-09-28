@@ -129,7 +129,13 @@ export const parseKeyValuePairs = (pairs: readonly string[] = []): Record<string
   const result: Record<string, string> = {}
   for (const pair of pairs) {
     const [key, ...valueParts] = pair.split('=')
-    result[key] = valueParts.join('=')
+    // defineProperty, not assignment: a key such as `__proto__` must stay an ordinary own property.
+    Object.defineProperty(result, key, {
+      configurable: true,
+      enumerable: true,
+      value: valueParts.join('='),
+      writable: true,
+    })
   }
 
   return result
