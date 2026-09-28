@@ -1,7 +1,7 @@
 import {type ApiResult, type AuthConfig, buildAuthHeader} from '@hesed/plugin-lib'
 import fs from 'fs-extra'
 import {type CloudClient, createCloudClient} from 'jira.js'
-import {type Document} from 'jira.js/cloud'
+import {type Document, type Issue} from 'jira.js/cloud'
 import {type Client, createClient} from 'jira.js/core'
 import {Buffer} from 'node:buffer'
 import path from 'node:path'
@@ -487,7 +487,8 @@ export class JiraApi {
   async getIssue(issueIdOrKey: string): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      const issue = await client.issues.getIssue({expand: 'renderedFields', issueIdOrKey})
+      const issue = await client.issues.getIssue({issueIdOrKey})
+      await this.loadAllComments(issueIdOrKey, issue)
 
       processIssueRenderedAndFields(issue)
 
@@ -502,6 +503,35 @@ export class JiraApi {
         success: false,
       }
     }
+  }
+
+  /**
+   * The comment list embedded in an issue is capped by Jira. When it is
+   * truncated (`total > comments.length`), page the comment endpoint so every
+   * comment is returned, oldest first.
+   */
+  private async loadAllComments(issueIdOrKey: string, issue: Issue): Promise<void> {
+    const comment = (issue.fields as undefined | {comment?: {comments?: unknown[]; total?: number}})?.comment
+    if (!comment || !Array.isArray(comment.comments) || (comment.total ?? 0) <= comment.comments.length) return
+
+    const client = this.getClient()
+    const comments: unknown[] = []
+    for (;;) {
+      // eslint-disable-next-line no-await-in-loop
+      const page = await client.issueComments.getComments({
+        issueIdOrKey,
+        maxResults: 100,
+        orderBy: 'created',
+        startAt: comments.length,
+      })
+      const values = page.comments ?? []
+      comments.push(...values)
+      if (values.length === 0 || comments.length >= (page.total ?? 0)) break
+    }
+
+    comment.comments = comments
+    comment.total = comments.length
+    Object.assign(comment, {maxResults: comments.length, startAt: 0})
   }
 
   /**
@@ -691,7 +721,6 @@ export class JiraApi {
       const finalFields = [...new Set<string>([...(fields ?? []), ...defaultFields])]
       const client = this.getClient()
       const result = await client.issueSearch.searchAndReconsileIssuesUsingJql({
-        expand: 'renderedFields',
         failFast: true,
         fields: finalFields,
         jql,

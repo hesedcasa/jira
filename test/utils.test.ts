@@ -187,6 +187,85 @@ describe('utils', () => {
       expect(inner).to.include('line two')
     })
 
+    it('converts ADF description, comments and rich-text custom fields to markdown', () => {
+      const adf = (value: string) => ({
+        content: [{content: [{text: value, type: 'text'}], type: 'paragraph'}],
+        type: 'doc',
+        version: 1,
+      })
+      const issue = {
+        fields: {
+          comment: {
+            comments: [
+              {
+                author: {accountId: 'acc-1', displayName: 'Jane'},
+                body: adf('[minion:plan] x'),
+                created: '2026-09-29T00:02:40.373+0800',
+                id: '10001',
+                updated: '2026-09-29T00:02:40.373+0800',
+              },
+            ],
+            maxResults: 1,
+            startAt: 0,
+            total: 1,
+          },
+          created: '2026-09-25T16:32:00.000+0800',
+          customfield_10050: adf('rich *text*'),
+          description: adf('the description'),
+          updated: '2026-09-29T00:02:40.373+0800',
+        },
+        renderedFields: {
+          comment: {comments: [{body: '<p>rendered</p>', created: 'Today 12:02 AM'}]},
+          created: 'Friday 4:32 PM',
+          description: '<p>rendered</p>',
+          updated: 'Today 12:02 AM',
+        },
+      } as unknown as Issue
+
+      processIssueRenderedAndFields(issue)
+
+      const fields = issue.fields as unknown as Record<string, unknown>
+      expect(fields.description).to.equal('the description')
+      expect(fields.customfield_10050).to.equal('rich *text*')
+      expect(fields.created).to.equal('2026-09-25T16:32:00.000+0800')
+      expect(fields.updated).to.equal('2026-09-29T00:02:40.373+0800')
+      const {comments} = fields.comment as {comments: Array<Record<string, unknown>>}
+      expect(comments[0]).to.deep.equal({
+        author: {accountId: 'acc-1', displayName: 'Jane'},
+        body: '[minion:plan] x',
+        created: '2026-09-29T00:02:40.373+0800',
+        id: '10001',
+        updated: '2026-09-29T00:02:40.373+0800',
+      })
+      expect(issue.renderedFields).to.be.empty
+    })
+
+    it('returns an empty description string when Jira has none', () => {
+      const issue = {fields: {description: null, summary: 'x'}} as unknown as Issue
+
+      processIssueRenderedAndFields(issue)
+
+      expect(issue.fields?.description).to.equal('')
+    })
+
+    it('keeps rendered-HTML fallback lossless for code, inline code and brackets', () => {
+      const issue = {
+        fields: {},
+        renderedFields: {
+          description:
+            '<p><span class="error">&#91;minion:plan&#93;</span> x</p><ul><li><tt>code</tt> inline</li></ul>' +
+            '<div class="preformatted panel"><div class="preformattedContent panelContent"><pre>const x = 1;</pre></div></div>',
+        },
+      } as Issue
+
+      processIssueRenderedAndFields(issue)
+
+      const description = String(issue.fields?.description)
+      expect(description).to.include('[minion:plan] x')
+      expect(description).to.include('`code` inline')
+      expect(description).to.include('```\nconst x = 1;\n```')
+    })
+
     it('clears renderedFields after processing', () => {
       const issue = {
         fields: {},

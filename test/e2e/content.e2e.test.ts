@@ -6,7 +6,15 @@ import {createConfigDir, E2E_PROJECT, removeConfigDir, runCli, runCliJson} from 
 const LABELS = JSON.stringify([SHARED_LABEL, RUN_LABEL])
 
 type Fetched = {
-  data: {fields: {comment?: {comments: Array<{body: string; id: string}>}; description: string}}
+  data: {
+    fields: {
+      comment?: {
+        comments: Array<{author: {accountId: string}; body: string; created: string; id: string; updated: string}>
+      }
+      created: string
+      description: string
+    }
+  }
   success: boolean
 }
 
@@ -56,12 +64,10 @@ describe('e2e: content and ADF round-trip', () => {
     const key = await createIssue('line one\nline two')
     const fetched = await runCliJson<Fetched>(['jira', 'issue', key], configDir)
 
-    // Turndown renders an ADF hardBreak as two trailing spaces before the
-    // newline. Collapsing to "line one line two" means the hard-break
-    // preprocessing in src/markdown.ts regressed.
-    expect(fetched.data.fields.description).to.contain('line one')
-    expect(fetched.data.fields.description).to.contain('line two')
-    expect(fetched.data.fields.description).to.contain('line one  \nline two')
+    // An ADF hardBreak reads back as a plain newline. Collapsing to
+    // "line one line two" means the hard-break preprocessing in
+    // src/markdown.ts regressed.
+    expect(fetched.data.fields.description).to.equal('line one\nline two')
   })
 
   it('round-trips headings, lists, code blocks and tables', async () => {
@@ -84,22 +90,9 @@ describe('e2e: content and ADF round-trip', () => {
     const fetched = await runCliJson<Fetched>(['jira', 'issue', key], configDir)
     const body = fetched.data.fields.description
 
-    expect(body).to.contain('Heading')
-    expect(body).to.contain('item one')
-    expect(body).to.contain('item two')
-    // Inside a code block the newline must stay raw — no hard-break padding.
-    expect(body).to.contain('ls -a')
-    expect(body).to.contain('echo hi')
-    expect(body).to.not.contain('ls -a  \n')
-    // The table cells must keep their raw text. Turndown (the HTML-to-Markdown
-    // converter Jira's renderedFields go through) has no table plugin here, so
-    // the round trip does not come back as pipe-table syntax — each cell comes
-    // back as its own paragraph. That is fine: the spec only requires the cell
-    // text itself to survive intact.
-    expect(body).to.contain('Col A')
-    expect(body).to.contain('Col B')
-    expect(body).to.contain('cell-a1')
-    expect(body).to.contain('cell-b1')
+    // The ADF is converted directly, so the markdown comes back as written:
+    // fenced code keeps its language and the table stays a pipe table.
+    expect(body).to.equal(description)
   })
 
   it('preserves single newlines in a blockquote as hard breaks', async () => {
@@ -108,13 +101,7 @@ describe('e2e: content and ADF round-trip', () => {
     const fetched = await runCliJson<Fetched>(['jira', 'issue', key], configDir)
     const body = fetched.data.fields.description
 
-    expect(body).to.contain('line one')
-    expect(body).to.contain('line two')
-    // Observed round-trip: '> line one  \n> line two' — Turndown re-prefixes
-    // every line of a blockquote with '> ', including the continuation line,
-    // so the hard break sits before that marker rather than before bare text.
-    // The two trailing spaces are the thing under test and are present here.
-    expect(body).to.contain('line one  \n> line two')
+    expect(body).to.equal(description)
   })
 
   it('preserves a single newline inside a list item as a hard break', async () => {
@@ -123,13 +110,8 @@ describe('e2e: content and ADF round-trip', () => {
     const fetched = await runCliJson<Fetched>(['jira', 'issue', key], configDir)
     const body = fetched.data.fields.description
 
-    expect(body).to.contain('item line one')
-    expect(body).to.contain('item line two')
-    // Observed round-trip: '*   item line one  \n    item line two' — Turndown
-    // indents a list item's continuation line to align with the item's own
-    // content column rather than leaving it flush left. The two trailing
-    // spaces before the newline are the hard break under test.
-    expect(body).to.contain('item line one  \n    item line two')
+    // The continuation line is indented to the item's content column.
+    expect(body).to.equal(description)
   })
 
   it(String.raw`unescapes a literal \n typed inside one shell argument`, async () => {
@@ -139,9 +121,8 @@ describe('e2e: content and ADF round-trip', () => {
     expect(fetched.data.fields.description).to.not.contain(String.raw`\n`)
     // Asserting the rendered separator, not just the absence of the literal
     // sequence: a regression that *dropped* the escape rather than converting
-    // it would still satisfy a `not.contain` check on its own. The two
-    // trailing spaces are the hard break, as in the tests above.
-    expect(fetched.data.fields.description).to.contain('alpha  \nbravo')
+    // it would still satisfy a `not.contain` check on its own.
+    expect(fetched.data.fields.description).to.equal('alpha\nbravo')
   })
 
   it('adds, updates and deletes a comment', async () => {
@@ -157,7 +138,7 @@ describe('e2e: content and ADF round-trip', () => {
     const withComment = await runCliJson<Fetched>(['jira', 'issue', key], configDir)
     const comment = withComment.data.fields.comment?.comments.find((c) => c.id === commentId)
     expect(comment, 'comment missing from the issue').to.exist
-    expect(comment!.body).to.contain('first  \nsecond')
+    expect(comment!.body).to.equal('first\nsecond')
 
     const {code: updateCode} = await runCli(
       ['jira', 'issue', 'comment-update', key, commentId, 'edited body'],
@@ -175,6 +156,36 @@ describe('e2e: content and ADF round-trip', () => {
     const afterDelete = await runCliJson<Fetched>(['jira', 'issue', key], configDir)
     const ids = (afterDelete.data.fields.comment?.comments ?? []).map((c) => c.id)
     expect(ids).to.not.include(commentId)
+  })
+
+  it('reads a comment back verbatim: code fences, inline code, brackets and ISO timestamps', async () => {
+    const key = await createIssue('comment fidelity host')
+    const markdown = [
+      '[minion:plan] x',
+      '',
+      '- `code` inline, see [link](https://example.com)',
+      '',
+      '```ts',
+      'const x = 1;',
+      '```',
+    ].join('\n')
+
+    const added = await runCliJson<{data: {id: string}; success: boolean}>(
+      ['jira', 'issue', 'comment', key, markdown],
+      configDir,
+    )
+    expect(added.success).to.be.true
+
+    const fetched = await runCliJson<Fetched>(['jira', 'issue', key], configDir)
+    const comment = fetched.data.fields.comment?.comments.find((c) => c.id === added.data.id)
+    expect(comment, 'comment missing from the issue').to.exist
+    expect(comment!.body).to.equal(markdown)
+    expect(comment!.author.accountId).to.be.a('string').and.not.be.empty
+    // Raw ISO strings, not the humanised "Today 12:02 AM" of renderedFields.
+    for (const timestamp of [comment!.created, comment!.updated, fetched.data.fields.created]) {
+      expect(timestamp).to.include('T')
+      expect(Number.isNaN(Date.parse(timestamp))).to.be.false
+    }
   })
 
   it('adds, lists and deletes a worklog', async () => {

@@ -155,6 +155,49 @@ describe('JiraApi', () => {
         // Expected to fail without actual connection
       }
     })
+
+    it('converts ADF without renderedFields and pages truncated comments oldest first', async () => {
+      const adf = (value: string) => ({
+        content: [{content: [{text: value, type: 'text'}], type: 'paragraph'}],
+        type: 'doc',
+      })
+      const comment = (id: string) => ({body: adf(`c${id}`), created: '2026-09-29T00:02:40.373+0800', id})
+      const requests: string[] = []
+      const original = fetch
+      Reflect.set(globalThis, 'fetch', (async (input: RequestInfo | URL) => {
+        const url = String(input)
+        requests.push(url)
+        if (url.includes('/comment')) {
+          const startAt = Number(new URL(url).searchParams.get('startAt'))
+          const all = ['1', '2', '3'].map((id) => comment(id))
+          return Response.json({comments: all.slice(startAt, startAt + 2), startAt, total: 3})
+        }
+
+        return Response.json({
+          fields: {
+            comment: {comments: [comment('1')], maxResults: 1, startAt: 0, total: 3},
+            description: adf('desc'),
+          },
+          id: '1',
+          key: 'TEST-1',
+        })
+      }) as typeof fetch)
+
+      try {
+        const result = await jiraApi.getIssue('TEST-1')
+        expect(result.success).to.equal(true)
+        const {fields} = result.data as {
+          fields: {comment: {comments: Array<{body: string; id: string}>; total: number}; description: string}
+        }
+        expect(fields.description).to.equal('desc')
+        expect(fields.comment.comments.map((c) => c.body)).to.deep.equal(['c1', 'c2', 'c3'])
+        expect(fields.comment.total).to.equal(3)
+        expect(requests[0]).to.not.include('renderedFields')
+        expect(requests.slice(1).every((url) => url.includes('orderBy=created'))).to.equal(true)
+      } finally {
+        Reflect.set(globalThis, 'fetch', original)
+      }
+    })
   })
 
   describe('getIssueDevelopment', () => {

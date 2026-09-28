@@ -39,6 +39,7 @@ src/
 │   ├── agile-api.ts      # AgileApi — board/sprint/version calls
 │   └── agile-client.ts
 ├── markdown.ts       # Markdown → ADF, with hard-break preprocessing
+├── adf-to-markdown.ts # ADF → Markdown for reading issues and comments (verbatim text)
 ├── proxy.ts          # global undici dispatcher so fetch honours HTTP(S)_PROXY
 └── utils.ts          # defaultFields, processIssueRenderedAndFields
 ```
@@ -78,7 +79,7 @@ jira.js v6 dropped axios for `fetch`, so there is no per-client agent. `configur
 
 ### Issue field processing
 
-`processIssueRenderedAndFields(issue)` is called on every issue returned. It converts `renderedFields` HTML to Markdown with `turndown` (description and each comment body), drops empty `customfield_*` entries, merges `renderedFields` over `fields`, then empties `renderedFields`. `defaultFields` is the base field list for issue queries.
+`processIssueRenderedAndFields(issue)` is called on every issue returned. Issues are fetched **without** `expand: 'renderedFields'`: every ADF value in `fields` (description, comment bodies, worklog comments, rich-text custom fields — anything shaped `{type: 'doc', content: [...]}`) is converted straight to Markdown by `adfToMarkdown()` in `src/adf-to-markdown.ts`. That keeps code-block languages, inline-code backticks and literal text such as `[minion:plan]` (no backslash escaping), and leaves `created`/`updated` as raw ISO strings. It also drops empty `customfield_*` entries and empties `renderedFields`; a caller-supplied `renderedFields` is only a fallback for keys `fields` lacks (turndown, with escaping disabled). `description` is always a string. `getIssue` pages `/issue/{key}/comment` (oldest first) when the embedded comment list is truncated. `defaultFields` is the base field list for issue queries.
 
 ### Markdown → ADF
 
