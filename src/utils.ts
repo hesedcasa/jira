@@ -1,6 +1,8 @@
 import {type Issue} from 'jira.js/cloud'
 import TurndownService from 'turndown'
 
+import {type AdfAttachment, adfToMarkdown, codeSpan, isAdfDocument} from './adf-to-markdown.js'
+
 export const defaultFields = [
   'summary',
   'description',
@@ -12,15 +14,32 @@ export const defaultFields = [
   'issuetype',
 ]
 
-export const processIssueRenderedAndFields = (issue: Issue): void => {
+/**
+ * Replace every ADF document found in `value` (at any depth) with its Markdown,
+ * so rich-text custom fields, comment bodies and worklog comments never leak as
+ * raw ADF JSON.
+ */
+const convertAdf = (value: unknown, attachments: readonly AdfAttachment[]): unknown => {
+  if (isAdfDocument(value)) return adfToMarkdown(value, {attachments})
+  if (Array.isArray(value)) return value.map((item) => convertAdf(item, attachments))
+  if (typeof value === 'object' && value !== null) {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, convertAdf(item, attachments)]))
+  }
+
+  return value
+}
+
+const createTurndownService = (): TurndownService => {
   const turndownService = new TurndownService()
 
-  // Jira renders ADF code blocks as `<pre class="code-<lang>">` with no inner <code>
-  // element, so turndown's built-in fenced/indented code-block rules (which require
-  // node.firstChild.nodeName === 'CODE') never match and the block falls through to
-  // plain-text handling, dropping the fence entirely. Restore it as a fenced block.
+  // Text is emitted verbatim: markers such as `[minion:plan]` must survive exactly.
+  turndownService.escape = (text) => text
+
+  // Jira renders ADF code blocks as a bare `<pre>` (optionally `class="code-<lang>"`)
+  // with no inner <code> element, so turndown's built-in code-block rules (which require
+  // node.firstChild.nodeName === 'CODE') never match. Restore it as a fenced block.
   turndownService.addRule('jiraCodeBlock', {
-    filter: (node) => node.nodeName === 'PRE' && /(?:^|\s)code-/.test(node.getAttribute('class') ?? ''),
+    filter: (node) => node.nodeName === 'PRE' && node.firstChild?.nodeName !== 'CODE',
     replacement(_content, node) {
       const language = /code-(\S+)/.exec(node.getAttribute('class') ?? '')?.[1]
       const code = node.textContent ?? ''
@@ -34,44 +53,68 @@ export const processIssueRenderedAndFields = (issue: Issue): void => {
     },
   })
 
-  // Filter renderedFields first
-  issue.renderedFields &&= Object.fromEntries(
-    Object.entries(issue.renderedFields).filter(
-      ([key, value]) => !key.startsWith('customfield_') || (value !== null && value !== ''),
-    ),
-  ) as typeof issue.renderedFields
+  // Jira renders ADF inline `code` marks as <tt>.
+  turndownService.addRule('jiraInlineCode', {
+    filter: (node) => node.nodeName === 'TT',
+    replacement: (content) => codeSpan(content),
+  })
 
-  // Replace description in renderedFields
-  if (issue.renderedFields) {
-    const rf = issue.renderedFields as Record<string, unknown>
-    rf.description = turndownService.turndown(String(rf.description ?? ''))
+  return turndownService
+}
 
-    // Process all comments' body
-    if (rf.comment && typeof rf.comment === 'object' && 'comments' in rf.comment) {
-      const commentObj = rf.comment as {comments: Array<{body?: string}>}
-      if (Array.isArray(commentObj.comments)) {
-        commentObj.comments = commentObj.comments.map((c) =>
-          c.body ? {...c, body: turndownService.turndown(c.body)} : c,
-        )
-      }
+/** The issue's attachments, used to link media embedded in its rich text. */
+const attachmentsOf = (fields: Record<string, unknown>): AdfAttachment[] =>
+  Array.isArray(fields.attachment) ? (fields.attachment as AdfAttachment[]) : []
+
+const isEmptyCustomField = (key: string, value: unknown): boolean =>
+  key.startsWith('customfield_') && ['', null, undefined].includes(value as null | string | undefined)
+
+/**
+ * Normalise an issue for output: rich-text (ADF) fields become Markdown strings,
+ * empty custom fields are dropped, and `renderedFields` is emptied.
+ *
+ * Raw `fields` always win. `renderedFields` (only present when a caller asked for
+ * it) is a fallback for keys the raw fields lack, so it can never replace raw ISO
+ * timestamps with humanised text such as "Today 12:02 AM".
+ */
+export const processIssueRenderedAndFields = (issue: Issue): void => {
+  const fieldsObj = (issue.fields || {}) as Record<string, unknown>
+  const renderedFields = (issue.renderedFields ?? {}) as Record<string, unknown>
+  const merged: Record<string, unknown> = {}
+  const attachments = attachmentsOf(fieldsObj)
+
+  for (const [key, value] of Object.entries(fieldsObj)) {
+    if (!isEmptyCustomField(key, value)) {
+      merged[key] = convertAdf(value, attachments)
     }
   }
 
-  // Merge non-empty issue fields and renderedFields into a unified fields object
-  const renderedFields = (issue.renderedFields ?? {}) as Record<string, unknown>
-  const fieldsObj = (issue.fields || {}) as Record<string, unknown>
-  const merged: Record<string, unknown> = {}
+  let turndownService: TurndownService | undefined
+  const turndown = (html: unknown): string => {
+    turndownService ??= createTurndownService()
+    return turndownService.turndown(String(html ?? ''))
+  }
 
-  for (const [key, value] of Object.entries(fieldsObj)) {
-    if (!key.startsWith('customfield_') || (value !== null && value !== '')) {
+  for (const [key, value] of Object.entries(renderedFields)) {
+    if (isEmptyCustomField(key, value) || (merged[key] !== null && merged[key] !== undefined)) continue
+
+    if (key === 'description') {
+      merged[key] = turndown(value)
+    } else if (key === 'comment' && value && typeof value === 'object' && 'comments' in value) {
+      merged[key] = Array.isArray(value.comments)
+        ? {
+            ...value,
+            comments: value.comments.map((c: {body?: string}) => (c.body ? {...c, body: turndown(c.body)} : c)),
+          }
+        : value
+    } else if (value !== null && value !== undefined) {
       merged[key] = value
     }
   }
 
-  for (const [key, value] of Object.entries(renderedFields)) {
-    if (!key.startsWith('customfield_') || (value !== null && value !== '')) {
-      merged[key] = value ?? merged[key]
-    }
+  // The description is always a string in the output, even when Jira has none.
+  if ('description' in merged && (merged.description === null || merged.description === undefined)) {
+    merged.description = ''
   }
 
   issue.fields = merged as typeof issue.fields
