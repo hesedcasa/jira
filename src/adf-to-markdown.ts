@@ -106,8 +106,8 @@ function linkDestination(href: string): string {
 
 /**
  * A line that starts with a block marker (`- `, `1. `, `# `, `>`, a fence…)
- * would be parsed as a new block, so after a hard break the marker is escaped
- * to keep the line inside its paragraph.
+ * would be parsed as a new block, so when plain text starts a line after a
+ * hard break the marker is escaped to keep the line inside its paragraph.
  */
 const BLOCK_MARKER = /^[\t ]*(?:(?:[-*+]|#{1,6})(?=[\t ]|$)|>|`{3}|~{3})/
 const ORDERED_MARKER = /^[\t ]*\d{1,9}(?=[.)](?:[\t ]|$))/
@@ -263,12 +263,25 @@ function renderInline(nodes: AdfNode[]): string {
 
     pendingSpace += lead
     transition(marks)
-    out += text
+    // Escape only plain text that starts a line after a hard break — never a
+    // code-span delimiter or a mark opener, which a backslash would corrupt.
+    const lineTail = out.slice(out.lastIndexOf('\n') + 1)
+    const isLineStart = out.includes('\n') && /^[\t ]*$/.test(lineTail)
+    if (isLineStart) text = escapeLineStart(lineTail + text).slice(lineTail.length)
+    out += escapeBlockMarkersAfterBreaks(text)
     pendingSpace = trail
   }
 
   transition([])
-  return escapeBlockMarkersAfterBreaks(out + pendingSpace)
+  return out + pendingSpace
+}
+
+/** Escape the delimiters that would end a generated link's text early. */
+function linkText(text: string): string {
+  return text
+    .replaceAll('\\', '\\\\')
+    .replaceAll('[', String.raw`\[`)
+    .replaceAll(']', String.raw`\]`)
 }
 
 /**
@@ -287,10 +300,14 @@ let currentAttachments: readonly AdfAttachment[] = []
 function renderMedia(node: AdfNode): string {
   const name = attr(node, 'alt') ?? attr(node, 'filename')
   const url = attr(node, 'url')
-  const attachment = name === undefined ? undefined : currentAttachments.find((a) => a.filename === name)
+  // Jira's attachment metadata has no Media Services id, so a filename is the
+  // only link between the two. Link only when exactly one attachment has it;
+  // a duplicated filename is ambiguous and stays unlinked.
+  const matches = name === undefined ? [] : currentAttachments.filter((a) => a.filename === name)
+  const attachment = matches.length === 1 ? matches[0] : undefined
 
-  if (attachment?.content) return `[attachment: ${name}](${linkDestination(attachment.content)})`
-  if (url) return `[attachment: ${name ?? url}](${linkDestination(url)})`
+  if (attachment?.content) return `[attachment: ${linkText(name ?? '')}](${linkDestination(attachment.content)})`
+  if (url) return `[attachment: ${linkText(name ?? url)}](${linkDestination(url)})`
   if (name) return `[attachment: ${name}]`
   const id = attr(node, 'id')
   return id ? `[media: ${id}]` : '[media]'

@@ -190,6 +190,44 @@ describe('adfToMarkdown', () => {
     )
   })
 
+  it('leaves media unlinked when its filename matches more than one attachment', () => {
+    const media: AdfNode = {
+      content: [{attrs: {alt: 'diagram.png', id: 'uuid', type: 'file'}, type: 'media'}],
+      type: 'mediaSingle',
+    }
+    const attachments = [
+      {content: 'https://x.test/attachment/content/1', filename: 'diagram.png'},
+      {content: 'https://x.test/attachment/content/2', filename: 'diagram.png'},
+    ]
+    expect(adfToMarkdown(doc(media), {attachments})).to.equal('[attachment: diagram.png]')
+  })
+
+  it('escapes brackets in a linked attachment name', () => {
+    const media: AdfNode = {
+      content: [{attrs: {alt: 'report]final.png', type: 'file'}, type: 'media'}],
+      type: 'mediaSingle',
+    }
+    const attachments = [{content: 'https://x.test/attachment/content/1', filename: 'report]final.png'}]
+    expect(adfToMarkdown(doc(media), {attachments})).to.equal(
+      String.raw`[attachment: report\]final.png](https://x.test/attachment/content/1)`,
+    )
+  })
+
+  it('never escapes an inline-code delimiter that starts a line after a hard break', () => {
+    const adf = doc(paragraph(text('lead'), {type: 'hardBreak'}, text('a``b', {type: 'code'})))
+    const markdown = adfToMarkdown(adf)
+    expect(markdown).to.equal('lead\n```a``b```')
+
+    const written = markdownToAdfDocument(markdown).content[0].content ?? []
+    expect(written.at(-1)).to.deep.include({marks: [{type: 'code'}], text: 'a``b'})
+  })
+
+  it('escapes a block marker that follows a hard break inside bold text only where it starts the line', () => {
+    const strong = {type: 'strong'}
+    const adf = doc(paragraph(text('lead', strong), {type: 'hardBreak'}, text('- item', strong)))
+    expect(adfToMarkdown(adf)).to.equal('**lead\n\\- item**')
+  })
+
   it('returns an empty string for missing documents', () => {
     expect(adfToMarkdown(null)).to.equal('')
     expect(adfToMarkdown(doc())).to.equal('')
