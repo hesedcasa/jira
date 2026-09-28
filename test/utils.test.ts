@@ -240,6 +240,32 @@ describe('utils', () => {
       expect(issue.renderedFields).to.be.empty
     })
 
+    it('links embedded media in the description to the issue attachment', () => {
+      const issue = {
+        fields: {
+          attachment: [{content: 'https://x.test/attachment/content/10001', filename: 'shot.png', id: '10001'}],
+          description: {
+            content: [
+              {content: [{attrs: {alt: 'shot.png', id: 'uuid', type: 'file'}, type: 'media'}], type: 'mediaSingle'},
+            ],
+            type: 'doc',
+          },
+        },
+      } as unknown as Issue
+
+      processIssueRenderedAndFields(issue)
+
+      expect(issue.fields?.description).to.equal('[attachment: shot.png](https://x.test/attachment/content/10001)')
+    })
+
+    it('pads <tt> code that touches a backtick in the rendered-HTML fallback', () => {
+      const issue = {fields: {}, renderedFields: {description: '<p><tt>`x</tt></p>'}} as Issue
+
+      processIssueRenderedAndFields(issue)
+
+      expect(issue.fields?.description).to.equal('`` `x ``')
+    })
+
     it('returns an empty description string when Jira has none', () => {
       const issue = {fields: {description: null, summary: 'x'}} as unknown as Issue
 
@@ -263,6 +289,7 @@ describe('utils', () => {
       const description = String(issue.fields?.description)
       expect(description).to.include('[minion:plan] x')
       expect(description).to.include('`code` inline')
+      expect(description).to.not.include(String.raw`\[`)
       expect(description).to.include('```\nconst x = 1;\n```')
     })
 

@@ -200,6 +200,38 @@ describe('JiraApi', () => {
     })
   })
 
+  describe('getIssue comment paging', () => {
+    it('keeps paging when a comment page omits total', async () => {
+      const adf = (value: string) => ({
+        content: [{content: [{text: value, type: 'text'}], type: 'paragraph'}],
+        type: 'doc',
+      })
+      const all = Array.from({length: 5}, (_, index) => ({body: adf(`c${index + 1}`), id: String(index + 1)}))
+      const original = fetch
+      Reflect.set(globalThis, 'fetch', (async (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.includes('/comment')) {
+          const startAt = Number(new URL(url).searchParams.get('startAt'))
+          return Response.json({comments: all.slice(startAt, startAt + 2), startAt})
+        }
+
+        return Response.json({
+          fields: {comment: {comments: all.slice(0, 1), maxResults: 1, startAt: 0, total: 5}},
+          key: 'TEST-1',
+        })
+      }) as typeof fetch)
+
+      try {
+        const result = await jiraApi.getIssue('TEST-1')
+        const {fields} = result.data as {fields: {comment: {comments: Array<{body: string}>; total: number}}}
+        expect(fields.comment.comments.map((c) => c.body)).to.deep.equal(['c1', 'c2', 'c3', 'c4', 'c5'])
+        expect(fields.comment.total).to.equal(5)
+      } finally {
+        Reflect.set(globalThis, 'fetch', original)
+      }
+    })
+  })
+
   describe('getIssueDevelopment', () => {
     it('routes the dev-status request through the proxy', async () => {
       // This endpoint has no generated client method, so it never builds the transport that

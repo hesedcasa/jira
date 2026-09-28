@@ -1,7 +1,7 @@
 import {type Issue} from 'jira.js/cloud'
 import TurndownService from 'turndown'
 
-import {adfToMarkdown, isAdfDocument} from './adf-to-markdown.js'
+import {type AdfAttachment, adfToMarkdown, codeSpan, isAdfDocument} from './adf-to-markdown.js'
 
 export const defaultFields = [
   'summary',
@@ -19,11 +19,11 @@ export const defaultFields = [
  * so rich-text custom fields, comment bodies and worklog comments never leak as
  * raw ADF JSON.
  */
-const convertAdf = (value: unknown): unknown => {
-  if (isAdfDocument(value)) return adfToMarkdown(value)
-  if (Array.isArray(value)) return value.map((item) => convertAdf(item))
+const convertAdf = (value: unknown, attachments: readonly AdfAttachment[]): unknown => {
+  if (isAdfDocument(value)) return adfToMarkdown(value, {attachments})
+  if (Array.isArray(value)) return value.map((item) => convertAdf(item, attachments))
   if (typeof value === 'object' && value !== null) {
-    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, convertAdf(item)]))
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, convertAdf(item, attachments)]))
   }
 
   return value
@@ -56,19 +56,15 @@ const createTurndownService = (): TurndownService => {
   // Jira renders ADF inline `code` marks as <tt>.
   turndownService.addRule('jiraInlineCode', {
     filter: (node) => node.nodeName === 'TT',
-    replacement(content) {
-      let longestBacktickRun = 0
-      for (const run of content.match(/`+/g) ?? []) {
-        longestBacktickRun = Math.max(longestBacktickRun, run.length)
-      }
-
-      const fence = '`'.repeat(longestBacktickRun + 1)
-      return `${fence}${content}${fence}`
-    },
+    replacement: (content) => codeSpan(content),
   })
 
   return turndownService
 }
+
+/** The issue's attachments, used to link media embedded in its rich text. */
+const attachmentsOf = (fields: Record<string, unknown>): AdfAttachment[] =>
+  Array.isArray(fields.attachment) ? (fields.attachment as AdfAttachment[]) : []
 
 const isEmptyCustomField = (key: string, value: unknown): boolean =>
   key.startsWith('customfield_') && ['', null, undefined].includes(value as null | string | undefined)
@@ -85,10 +81,11 @@ export const processIssueRenderedAndFields = (issue: Issue): void => {
   const fieldsObj = (issue.fields || {}) as Record<string, unknown>
   const renderedFields = (issue.renderedFields ?? {}) as Record<string, unknown>
   const merged: Record<string, unknown> = {}
+  const attachments = attachmentsOf(fieldsObj)
 
   for (const [key, value] of Object.entries(fieldsObj)) {
     if (!isEmptyCustomField(key, value)) {
-      merged[key] = convertAdf(value)
+      merged[key] = convertAdf(value, attachments)
     }
   }
 

@@ -7,8 +7,10 @@
  *
  * Text is emitted verbatim: nothing is backslash-escaped, because the output is
  * read by people and LLMs, and markers such as `[minion:plan]` must survive
- * exactly. The one exception is `|` inside table cells, which would otherwise
- * split the cell.
+ * exactly. The two exceptions keep structure intact: `|` inside table cells,
+ * which would otherwise split the cell, and a block marker (`- `, `1. `, `#`…)
+ * at the start of a line after a hard break, which would otherwise start a new
+ * block when the Markdown is written back.
  */
 
 type AdfMark = {attrs?: Record<string, unknown>; type: string}
@@ -20,6 +22,9 @@ export type AdfNode = {
   text?: string
   type: string
 }
+
+/** The parts of a Jira attachment (`fields.attachment[]`) used to link embedded media. */
+export type AdfAttachment = {content?: string; filename?: string}
 
 /** Marks that wrap text in delimiters, outermost first. `code` is handled per node. */
 const WRAPPING_MARKS = ['strong', 'em', 'strike', 'link'] as const
@@ -63,11 +68,64 @@ function longestRun(text: string, character: string): number {
   return longest
 }
 
-function codeSpan(text: string): string {
+/**
+ * Wrap inline code in a backtick fence longer than any run inside it. Pad with a
+ * space when the code touches a backtick (so the fence stays separate), or when
+ * it both starts and ends with a space (CommonMark strips one from each side).
+ */
+export function codeSpan(text: string): string {
   const fence = '`'.repeat(longestRun(text, '`') + 1)
-  // Pad when the code starts or ends with a backtick, so the fence stays separate.
-  const pad = text.startsWith('`') || text.endsWith('`') ? ' ' : ''
+  const hasEdgeBacktick = text.startsWith('`') || text.endsWith('`')
+  const isSpacePadded = text.startsWith(' ') && text.endsWith(' ') && text.trim() !== ''
+  const pad = hasEdgeBacktick || isSpacePadded ? ' ' : ''
   return `${fence}${pad}${text}${pad}${fence}`
+}
+
+/** True when `(` and `)` in an unbracketed link destination nest at most one level deep and balance. */
+function hasSimpleParentheses(href: string): boolean {
+  let depth = 0
+  for (const c of href) {
+    if (c === '(') depth++
+    else if (c === ')') depth--
+    if (depth < 0 || depth > 1) return false
+  }
+
+  return depth === 0
+}
+
+/**
+ * A Markdown link destination. Bare destinations cannot hold whitespace or
+ * nested/unbalanced parentheses, so those are wrapped in `<...>` (with literal
+ * angle brackets percent-encoded, which `<...>` cannot contain).
+ */
+function linkDestination(href: string): string {
+  const encoded = href.replaceAll('<', '%3C').replaceAll('>', '%3E')
+  if (/\s/.test(encoded) || !hasSimpleParentheses(encoded)) return `<${encoded}>`
+  return encoded
+}
+
+/**
+ * A line that starts with a block marker (`- `, `1. `, `# `, `>`, a fence…)
+ * would be parsed as a new block, so after a hard break the marker is escaped
+ * to keep the line inside its paragraph.
+ */
+const BLOCK_MARKER = /^[\t ]*(?:(?:[-*+]|#{1,6})(?=[\t ]|$)|>|`{3}|~{3})/
+const ORDERED_MARKER = /^[\t ]*\d{1,9}(?=[.)](?:[\t ]|$))/
+
+function escapeLineStart(line: string): string {
+  // `1. x` → `1\. x`: escaping the delimiter is what stops the list.
+  const ordered = ORDERED_MARKER.exec(line)?.[0]
+  if (ordered !== undefined) return `${ordered}\\${line.slice(ordered.length)}`
+  if (!BLOCK_MARKER.test(line)) return line
+  const indentWidth = /^[\t ]*/.exec(line)?.[0].length ?? 0
+  return `${line.slice(0, indentWidth)}\\${line.slice(indentWidth)}`
+}
+
+function escapeBlockMarkersAfterBreaks(text: string): string {
+  return text
+    .split('\n')
+    .map((line, index) => (index === 0 ? line : escapeLineStart(line)))
+    .join('\n')
 }
 
 function indent(text: string, prefix: string, firstPrefix = prefix): string {
@@ -117,7 +175,7 @@ function openMark(mark: AdfMark): string {
 }
 
 function closeMark(mark: AdfMark): string {
-  if (mark.type === 'link') return `](${String(mark.attrs?.href ?? '')})`
+  if (mark.type === 'link') return `](${linkDestination(String(mark.attrs?.href ?? ''))})`
   return openMark(mark)
 }
 
@@ -210,12 +268,32 @@ function renderInline(nodes: AdfNode[]): string {
   }
 
   transition([])
-  return out + pendingSpace
+  return escapeBlockMarkersAfterBreaks(out + pendingSpace)
 }
 
+/**
+ * The issue's attachments, set for the duration of one `adfToMarkdown` call so
+ * embedded media can link to the attachment it shows.
+ */
+let currentAttachments: readonly AdfAttachment[] = []
+
+/**
+ * An embedded media node. Media nodes carry a Media Services UUID, not a Jira
+ * attachment id, so they are matched to the issue's attachments by filename
+ * and linked to the attachment's content URL. External media link to their
+ * URL. A node with nothing to match on is labelled as media, never presented
+ * as an attachment id.
+ */
 function renderMedia(node: AdfNode): string {
-  const label = attr(node, 'alt') ?? attr(node, 'filename') ?? attr(node, 'id') ?? attr(node, 'url') ?? 'media'
-  return `[attachment: ${label}]`
+  const name = attr(node, 'alt') ?? attr(node, 'filename')
+  const url = attr(node, 'url')
+  const attachment = name === undefined ? undefined : currentAttachments.find((a) => a.filename === name)
+
+  if (attachment?.content) return `[attachment: ${name}](${linkDestination(attachment.content)})`
+  if (url) return `[attachment: ${name ?? url}](${linkDestination(url)})`
+  if (name) return `[attachment: ${name}]`
+  const id = attr(node, 'id')
+  return id ? `[media: ${id}]` : '[media]'
 }
 
 function renderList(node: AdfNode): string {
@@ -356,9 +434,19 @@ function renderBlocks(nodes: AdfNode[]): string {
   return out.filter((block) => block.trim() !== '').join('\n\n')
 }
 
-/** Convert an ADF document (or any ADF node) to Markdown. */
-export function adfToMarkdown(doc: AdfNode | null | undefined): string {
+/**
+ * Convert an ADF document (or any ADF node) to Markdown. Pass the issue's
+ * `attachments` so embedded media link to the attachment they show.
+ */
+export function adfToMarkdown(
+  doc: AdfNode | null | undefined,
+  options: {attachments?: readonly AdfAttachment[]} = {},
+): string {
   if (!doc) return ''
-  if (doc.type === 'doc') return renderBlocks(doc.content ?? [])
-  return renderBlocks([doc])
+  currentAttachments = options.attachments ?? []
+  try {
+    return renderBlocks(doc.type === 'doc' ? (doc.content ?? []) : [doc])
+  } finally {
+    currentAttachments = []
+  }
 }

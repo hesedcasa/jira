@@ -526,11 +526,13 @@ export class JiraApi {
       })
       const values = page.comments ?? []
       comments.push(...values)
-      if (values.length === 0 || comments.length >= (page.total ?? 0)) break
+      // A page without `total` falls back to the embedded total, so paging does not stop after one page.
+      if (values.length === 0 || comments.length >= (page.total ?? comment.total ?? 0)) break
     }
 
+    // Keep Jira's total rather than the fetched count, so a short read stays visible.
     comment.comments = comments
-    comment.total = comments.length
+    comment.total = Math.max(comment.total ?? 0, comments.length)
     Object.assign(comment, {maxResults: comments.length, startAt: 0})
   }
 

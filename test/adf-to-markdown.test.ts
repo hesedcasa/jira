@@ -126,6 +126,70 @@ describe('adfToMarkdown', () => {
     )
   })
 
+  it('pads inline code that starts and ends with a space so the write path keeps it', () => {
+    const adf = doc(paragraph(text(' a ', {type: 'code'})))
+    const markdown = adfToMarkdown(adf)
+    expect(markdown).to.equal('`  a  `')
+    expect(markdownToAdfDocument(markdown).content[0]).to.deep.include({
+      content: [{marks: [{type: 'code'}], text: ' a ', type: 'text'}],
+    })
+  })
+
+  it('keeps list-like text after a hard break inside its paragraph', () => {
+    const adf = doc(
+      paragraph(
+        text('Keep this line'),
+        {type: 'hardBreak'},
+        text('- do not delete'),
+        {type: 'hardBreak'},
+        text('1. nor this'),
+        {type: 'hardBreak'},
+        text('# or this'),
+      ),
+    )
+    const markdown = adfToMarkdown(adf)
+    expect(markdown).to.equal(
+      ['Keep this line', String.raw`\- do not delete`, String.raw`1\. nor this`, String.raw`\# or this`].join('\n'),
+    )
+
+    const written = markdownToAdfDocument(markdown)
+    expect(written.content).to.have.lengthOf(1)
+    expect(written.content[0].type).to.equal('paragraph')
+    // marklassian splits escaped text into adjacent text nodes; the content is what matters.
+    const content = (written.content[0].content ?? [])
+      .map((node: {text?: string; type: string}) => (node.type === 'hardBreak' ? '\n' : (node.text ?? '')))
+      .join('')
+    expect(content).to.equal('Keep this line\n- do not delete\n1. nor this\n# or this')
+  })
+
+  it('wraps link destinations with spaces or nested parentheses in angle brackets', () => {
+    const link = (href: string): string => adfToMarkdown(doc(paragraph(text('x', {attrs: {href}, type: 'link'}))))
+    expect(link('https://x.test/wiki/Foo_(bar)')).to.equal('[x](https://x.test/wiki/Foo_(bar))')
+    expect(link('https://x.test/a b')).to.equal('[x](<https://x.test/a b>)')
+    expect(link('https://x.test/f(a(b))')).to.equal('[x](<https://x.test/f(a(b))>)')
+    expect(link('https://x.test/a)b')).to.equal('[x](<https://x.test/a)b>)')
+    expect(link('https://x.test/<a> b')).to.equal('[x](<https://x.test/%3Ca%3E b>)')
+  })
+
+  it('links embedded media to the matching attachment, and never shows a UUID as an attachment', () => {
+    const media = (attrs: Record<string, unknown>): AdfNode => ({
+      content: [{attrs: {collection: '', type: 'file', ...attrs}, type: 'media'}],
+      type: 'mediaSingle',
+    })
+    const attachments = [{content: 'https://x.test/rest/api/3/attachment/content/10001', filename: 'shot.png'}]
+
+    expect(adfToMarkdown(doc(media({alt: 'shot.png', id: 'uuid-1'})), {attachments})).to.equal(
+      '[attachment: shot.png](https://x.test/rest/api/3/attachment/content/10001)',
+    )
+    expect(adfToMarkdown(doc(media({alt: 'other.png', id: 'uuid-2'})), {attachments})).to.equal(
+      '[attachment: other.png]',
+    )
+    expect(adfToMarkdown(doc(media({id: 'uuid-3'})), {attachments})).to.equal('[media: uuid-3]')
+    expect(adfToMarkdown(doc(media({type: 'external', url: 'https://img.test/a.png'})))).to.equal(
+      '[attachment: https://img.test/a.png](https://img.test/a.png)',
+    )
+  })
+
   it('returns an empty string for missing documents', () => {
     expect(adfToMarkdown(null)).to.equal('')
     expect(adfToMarkdown(doc())).to.equal('')
