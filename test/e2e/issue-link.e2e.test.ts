@@ -1,6 +1,6 @@
 import {expect} from 'chai'
 
-import {cleanupRun, getIssueLinks, RUN_ID, seedIssue} from './fixtures.js'
+import {cleanupRun, getIssueCommentBodies, getIssueLinks, RUN_ID, seedIssue} from './fixtures.js'
 import {createConfigDir, removeConfigDir, runCli, runCliJson} from './helpers.js'
 
 describe('e2e: issue links', () => {
@@ -27,19 +27,20 @@ describe('e2e: issue links', () => {
     const {code} = await runCli(['jira', 'issue', 'link', blocker, blocked, '--type', 'Blocks'], configDir)
     expect(code).to.equal(0)
 
-    // Direction: the first issue blocks the second, so the blocker holds the
-    // outward end. In an issue's issuelinks array the inwardIssue/outwardIssue
-    // key names the OTHER end of the link, so the blocker's entry lists the
-    // blocked issue under inwardIssue and vice versa.
+    // Direction: the first issue blocks the second. In an issue's issuelinks
+    // array the inwardIssue/outwardIssue key names the OTHER end of the link,
+    // so the blocker's entry lists the blocked issue under outwardIssue
+    // ("blocks") and the blocked issue's entry lists the blocker under
+    // inwardIssue ("is blocked by").
     const onBlocker = await getIssueLinks(blocker)
     expect(
-      onBlocker.some((link) => link.type.name === 'Blocks' && link.inwardIssue?.key === blocked),
+      onBlocker.some((link) => link.type.name === 'Blocks' && link.outwardIssue?.key === blocked),
       `expected ${blocker} to link outward to ${blocked}`,
     ).to.be.true
 
     const onBlocked = await getIssueLinks(blocked)
     expect(
-      onBlocked.some((link) => link.type.name === 'Blocks' && link.outwardIssue?.key === blocker),
+      onBlocked.some((link) => link.type.name === 'Blocks' && link.inwardIssue?.key === blocker),
       `expected ${blocked} to link inward to ${blocker}`,
     ).to.be.true
   })
@@ -47,6 +48,7 @@ describe('e2e: issue links', () => {
   it('accepts a comment with the link', async () => {
     const blocker = await seedIssue({summary: `[e2e ${RUN_ID}] link comment blocker`})
     const blocked = await seedIssue({summary: `[e2e ${RUN_ID}] link comment blocked`})
+    const commentText = 'Blocked until the schema migration lands'
 
     const {code} = await runCli(
       [
@@ -58,7 +60,7 @@ describe('e2e: issue links', () => {
         '--type',
         'Blocks',
         '--comment',
-        'Blocked until the schema migration lands',
+        commentText,
       ],
       configDir,
     )
@@ -68,9 +70,22 @@ describe('e2e: issue links', () => {
     // format itself is pinned by the unit tests.
     const onBlocker = await getIssueLinks(blocker)
     expect(
-      onBlocker.some((link) => link.type.name === 'Blocks' && link.inwardIssue?.key === blocked),
+      onBlocker.some((link) => link.type.name === 'Blocks' && link.outwardIssue?.key === blocked),
       `expected ${blocker} to link outward to ${blocked}`,
     ).to.be.true
+
+    // Jira adds the link comment to the issue sent as inwardIssue, which is
+    // the first argument.
+    const onBlockerComments = await getIssueCommentBodies(blocker)
+    expect(
+      onBlockerComments.some((body) => body.includes(commentText)),
+      `expected the link comment on ${blocker}`,
+    ).to.be.true
+    const onBlockedComments = await getIssueCommentBodies(blocked)
+    expect(
+      onBlockedComments.some((body) => body.includes(commentText)),
+      `expected no link comment on ${blocked}`,
+    ).to.be.false
   })
 
   it('links issues by numeric issue ID', async () => {
@@ -90,7 +105,7 @@ describe('e2e: issue links', () => {
 
     const onBlocker = await getIssueLinks(blocker)
     expect(
-      onBlocker.some((link) => link.type.name === 'Relates' && link.inwardIssue?.key === blocked),
+      onBlocker.some((link) => link.type.name === 'Relates' && link.outwardIssue?.key === blocked),
       `expected ${blocker} (${blockerRead.data.id}) to link to ${blocked} (${blockedRead.data.id}) by numeric ID`,
     ).to.be.true
   })

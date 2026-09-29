@@ -26,7 +26,7 @@ $ npm install -g @hesed/jira
 $ jira COMMAND
 running command...
 $ jira (--version)
-@hesed/jira/1.2.0 linux-x64 node-v22.23.2
+@hesed/jira/1.2.0 darwin-arm64 node-v24.18.0
 $ jira --help [COMMAND]
 USAGE
   $ jira COMMAND

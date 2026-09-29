@@ -182,6 +182,23 @@ export async function getIssueLinks(key: string): Promise<IssueLinkEntry[]> {
 }
 
 /**
+ * Reads an issue's comment bodies straight from the REST API, each ADF body
+ * serialized to JSON so a caller can look for its text with `includes`.
+ *
+ * @param key The issue key.
+ * @returns One serialized ADF body per comment.
+ */
+export async function getIssueCommentBodies(key: string): Promise<string[]> {
+  const {body, status} = await call('GET', `/rest/api/3/issue/${key}/comment`)
+  if (status !== 200) {
+    throw new Error(`getIssueCommentBodies ${key} failed: ${status}`)
+  }
+
+  const {comments} = body as {comments: Array<{body: unknown}>}
+  return comments.map((comment) => JSON.stringify(comment.body))
+}
+
+/**
  * Deletes every issue in `keys`, tolerating individual failures until all
  * deletions have been attempted, then throwing if any actually failed.
  *

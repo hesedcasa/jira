@@ -638,7 +638,7 @@ describe('JiraApi', () => {
       expect(jiraApi.linkIssues).to.be.a('function')
     })
 
-    it('sends the outward/inward mapping and link type to the issueLink endpoint', async () => {
+    it('sends the issue carrying the link type as inwardIssue, as POST /issueLink expects', async () => {
       const fetched = interceptFetch({})
 
       try {
@@ -649,8 +649,8 @@ describe('JiraApi', () => {
         expect(fetched.requests[0].url).to.equal('https://test.atlassian.net/rest/api/3/issueLink')
         expect(fetched.requests[0].method).to.equal('POST')
         const body = fetched.requests[0].body as LinkWireBody
-        expect(body.outwardIssue?.key).to.equal('TEST-1')
-        expect(body.inwardIssue?.key).to.equal('TEST-2')
+        expect(body.inwardIssue?.key).to.equal('TEST-1')
+        expect(body.outwardIssue?.key).to.equal('TEST-2')
         expect(body.type?.name).to.equal('Blocks')
         expect(body).to.not.have.property('comment')
       } finally {
@@ -666,8 +666,8 @@ describe('JiraApi', () => {
 
         expect(result.success).to.equal(true)
         const body = fetched.requests[0].body as LinkWireBody
-        expect(body.outwardIssue?.id).to.equal('10700')
-        expect(body.inwardIssue?.id).to.equal('10701')
+        expect(body.inwardIssue?.id).to.equal('10700')
+        expect(body.outwardIssue?.id).to.equal('10701')
         expect(body.outwardIssue).to.not.have.property('key')
         expect(body.inwardIssue).to.not.have.property('key')
       } finally {
