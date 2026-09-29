@@ -1,6 +1,6 @@
 import {expect} from 'chai'
 
-import {cleanupRun, getIssueLinks, RUN_ID, seedIssue} from './fixtures.js'
+import {cleanupRun, getIssueCommentBodies, getIssueLinks, RUN_ID, seedIssue} from './fixtures.js'
 import {createConfigDir, removeConfigDir, runCli, runCliJson} from './helpers.js'
 
 describe('e2e: issue links', () => {
@@ -48,6 +48,7 @@ describe('e2e: issue links', () => {
   it('accepts a comment with the link', async () => {
     const blocker = await seedIssue({summary: `[e2e ${RUN_ID}] link comment blocker`})
     const blocked = await seedIssue({summary: `[e2e ${RUN_ID}] link comment blocked`})
+    const commentText = 'Blocked until the schema migration lands'
 
     const {code} = await runCli(
       [
@@ -59,7 +60,7 @@ describe('e2e: issue links', () => {
         '--type',
         'Blocks',
         '--comment',
-        'Blocked until the schema migration lands',
+        commentText,
       ],
       configDir,
     )
@@ -72,6 +73,19 @@ describe('e2e: issue links', () => {
       onBlocker.some((link) => link.type.name === 'Blocks' && link.outwardIssue?.key === blocked),
       `expected ${blocker} to link outward to ${blocked}`,
     ).to.be.true
+
+    // Jira adds the link comment to the issue sent as inwardIssue, which is
+    // the first argument.
+    const onBlockerComments = await getIssueCommentBodies(blocker)
+    expect(
+      onBlockerComments.some((body) => body.includes(commentText)),
+      `expected the link comment on ${blocker}`,
+    ).to.be.true
+    const onBlockedComments = await getIssueCommentBodies(blocked)
+    expect(
+      onBlockedComments.some((body) => body.includes(commentText)),
+      `expected no link comment on ${blocked}`,
+    ).to.be.false
   })
 
   it('links issues by numeric issue ID', async () => {

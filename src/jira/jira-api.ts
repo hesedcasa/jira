@@ -379,7 +379,8 @@ export class JiraApi {
    * link type describes: "PROJ-1 blocks PROJ-2" is outward=PROJ-1, inward=PROJ-2.
    * Each argument may be an issue key or a numeric issue ID. POST /issueLink
    * gives the outward wording to the issue sent as inwardIssue, so the two are
-   * swapped when sent.
+   * swapped when sent. Jira adds the optional comment to that inwardIssue,
+   * i.e. the first argument.
    */
   async linkIssues(
     outwardIssueIdOrKey: string,
