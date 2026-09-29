@@ -27,19 +27,20 @@ describe('e2e: issue links', () => {
     const {code} = await runCli(['jira', 'issue', 'link', blocker, blocked, '--type', 'Blocks'], configDir)
     expect(code).to.equal(0)
 
-    // Direction: the first issue blocks the second, so the blocker holds the
-    // outward end. In an issue's issuelinks array the inwardIssue/outwardIssue
-    // key names the OTHER end of the link, so the blocker's entry lists the
-    // blocked issue under inwardIssue and vice versa.
+    // Direction: the first issue blocks the second. In an issue's issuelinks
+    // array the inwardIssue/outwardIssue key names the OTHER end of the link,
+    // so the blocker's entry lists the blocked issue under outwardIssue
+    // ("blocks") and the blocked issue's entry lists the blocker under
+    // inwardIssue ("is blocked by").
     const onBlocker = await getIssueLinks(blocker)
     expect(
-      onBlocker.some((link) => link.type.name === 'Blocks' && link.inwardIssue?.key === blocked),
+      onBlocker.some((link) => link.type.name === 'Blocks' && link.outwardIssue?.key === blocked),
       `expected ${blocker} to link outward to ${blocked}`,
     ).to.be.true
 
     const onBlocked = await getIssueLinks(blocked)
     expect(
-      onBlocked.some((link) => link.type.name === 'Blocks' && link.outwardIssue?.key === blocker),
+      onBlocked.some((link) => link.type.name === 'Blocks' && link.inwardIssue?.key === blocker),
       `expected ${blocked} to link inward to ${blocker}`,
     ).to.be.true
   })
@@ -68,7 +69,7 @@ describe('e2e: issue links', () => {
     // format itself is pinned by the unit tests.
     const onBlocker = await getIssueLinks(blocker)
     expect(
-      onBlocker.some((link) => link.type.name === 'Blocks' && link.inwardIssue?.key === blocked),
+      onBlocker.some((link) => link.type.name === 'Blocks' && link.outwardIssue?.key === blocked),
       `expected ${blocker} to link outward to ${blocked}`,
     ).to.be.true
   })
@@ -90,7 +91,7 @@ describe('e2e: issue links', () => {
 
     const onBlocker = await getIssueLinks(blocker)
     expect(
-      onBlocker.some((link) => link.type.name === 'Relates' && link.inwardIssue?.key === blocked),
+      onBlocker.some((link) => link.type.name === 'Relates' && link.outwardIssue?.key === blocked),
       `expected ${blocker} (${blockerRead.data.id}) to link to ${blocked} (${blockedRead.data.id}) by numeric ID`,
     ).to.be.true
   })
