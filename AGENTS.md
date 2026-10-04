@@ -53,7 +53,7 @@ There is no `src/config.ts` and no `src/format.ts` — config, profiles, TOON fo
 - `formatAsToon(data)`, `buildAuthHeader(config)`, the `ApiResult` / `AuthConfig` types
 - `createAuthAddCommand` / `…List` / `…Profile` / `…Test` / `…Delete` / `…Update` — each `src/commands/jira/auth/*.ts` is just a factory call passing `configFile: 'jira-config.json'` plus this repo's `testConnection`/`clearClients`
 
-When changing behaviour that looks like it belongs to config or formatting, check whether it actually lives in `node_modules/@hesed/plugin-lib` first.
+When changing behaviour that looks like it belongs to config or formatting, check whether it actually lives in `node_modules/@hesed/plugin-lib` first — and change it there upstream, never by editing `node_modules/` or the generated `dist/`.
 
 ### Three tiers
 
@@ -163,7 +163,7 @@ static override args = {
 
 The legacy single `{"auth": {...}}` shape is still read and surfaces as the `default` profile. Values pass through plugin-lib's `resolveSecrets`, so an `apiToken` may be a Vault or Infisical reference rather than a literal. Manage all of this with `jira auth add|update|list|profile|delete|test` — don't hand-edit or write config from command code.
 
-**Nothing in this repo loads `.env`** — there is no dotenv dependency, so the variables must already be in the process environment. Export them before running any command that talks to Jira:
+**Nothing in this repo loads `.env`** (it is gitignored; never commit it or any token) — there is no dotenv dependency, so the variables must already be in the process environment. Export them before running any command that talks to Jira:
 
 ```bash
 set -a; . ./.env; set +a
