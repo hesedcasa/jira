@@ -3,17 +3,24 @@
 # the built standalone CLI, then again through the latest sdkck host CLI with
 # this build packed and installed as its @hesed/jira plugin.
 #
-# The credentials come from Infisical, so run it under `infisical run`:
+# The credentials come from Infisical: when they aren't already exported, the
+# script re-runs itself under `infisical run` (needs a one-time login).
 #
-#   infisical run -- npm run test:e2e
-#   infisical run -- npm run test:e2e -- --keep            # skip the post-run sweep
-#   infisical run -- npm run test:e2e -- --grep "comment"  # extra args go to mocha
+#   npm run test:e2e
+#   npm run test:e2e -- --keep            # skip the post-run sweep
+#   npm run test:e2e -- --grep "comment"  # extra args go through to mocha
 #
 # There is no container to start: Jira Cloud has no Docker image, so the
 # sandbox instance plays the role mysql's disposable container plays there.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+
+# E2E_VIA_INFISICAL stops a second re-exec when Infisical lacks a secret.
+if [ -z "${ATLASSIAN_API_TOKEN:-}" ] && [ -z "${E2E_VIA_INFISICAL:-}" ] &&
+  command -v infisical >/dev/null; then
+  E2E_VIA_INFISICAL=1 exec infisical run --silent -- "$0" "$@"
+fi
 
 KEEP=0
 MOCHA_ARGS=()
@@ -34,7 +41,8 @@ done
 
 if [ "${#missing[@]}" -gt 0 ]; then
   echo "error: missing credentials: ${missing[*]}" >&2
-  echo "Run it under Infisical:  infisical run -- npm run test:e2e" >&2
+  echo "Check they exist in Infisical's dev environment and that the" >&2
+  echo "Infisical CLI is installed and logged in (infisical login)." >&2
   exit 1
 fi
 

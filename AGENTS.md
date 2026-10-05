@@ -183,11 +183,11 @@ infisical run -- ./bin/dev.js jira auth test
 
 ### End-to-end tests
 
-`test/e2e/**` runs the built `bin/run.js` as a real subprocess against the live Jira sandbox. `npm run test:e2e` then reruns the same suite through the latest sdkck host CLI with the current build packed and installed as its plugin — the host switch (`E2E_HOST_CLI=sdkck` + `E2E_SDKCK_HOME`, set by `scripts/e2e.sh` and the CI workflow) lives in `test/e2e/helpers.ts`; the plugin must be installed before any `sdkck jira` call, or sdkck auto-installs the published release, and the tarball must be a `file:` URL (bare paths read as GitHub org/repo). It is excluded from `npm test` and needs the credentials injected by `infisical run --`:
+`test/e2e/**` runs the built `bin/run.js` as a real subprocess against the live Jira sandbox. `npm run test:e2e` then reruns the same suite through the latest sdkck host CLI with the current build packed and installed as its plugin — the host switch (`E2E_HOST_CLI=sdkck` + `E2E_SDKCK_HOME`, set by `scripts/e2e.sh` and the CI workflow) lives in `test/e2e/helpers.ts`; the plugin must be installed before any `sdkck jira` call, or sdkck auto-installs the published release, and the tarball must be a `file:` URL (bare paths read as GitHub org/repo). It is excluded from `npm test`; `scripts/e2e.sh` re-runs itself under `infisical run` when the credentials aren't exported, but the other scripts need the wrapper:
 
 ```bash
-infisical run -- npm run test:e2e              # build, run, then sweep
-infisical run -- npm run test:e2e -- --keep    # leave fixtures behind for inspection
+npm run test:e2e                               # build, run, then sweep
+npm run test:e2e -- --keep                     # leave fixtures behind for inspection
 infisical run -- npm run e2e:mocha             # run without rebuilding
 infisical run -- npm run e2e:sweep             # delete fixtures older than an hour
 ```
