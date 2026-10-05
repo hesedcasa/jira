@@ -19,6 +19,11 @@ jobs:
     # Two legs (standalone CLI, then the same suite via sdkck) at up to 2
     # minutes per test.
     timeout-minutes: 45
+    # id-token lets the Infisical action exchange GitHub's OIDC token for the
+    # sandbox credentials, so no Infisical secret is stored in the repo.
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -42,21 +47,10 @@ jobs:
       - name: Build the CLI
         run: npm run build
 
-      # The sandbox credentials are scoped to the two steps that actually talk
-      # to Jira, so nothing before them — actions, `npm ci` lifecycle scripts,
-      # the build — ever has them in its environment.
-      - name: Run end-to-end tests
-        run: npm run e2e:mocha
-        env:
-          ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
-          ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
-          ATLASSIAN_URL: ${{ secrets.ATLASSIAN_URL }}
-          E2E_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
-
-      # Second leg: the same suite through the latest sdkck host CLI with this
-      # build packed and installed as its @hesed/jira plugin — covering the
-      # `prepack` artifacts (oclif.manifest.json, README) and plugin dispatch
-      # under a host. The plugin is installed before any `sdkck jira` call so
+      # For the second leg: the same suite through the latest sdkck host CLI
+      # with this build packed and installed as its @hesed/jira plugin —
+      # covering the `prepack` artifacts (oclif.manifest.json, README) and
+      # plugin dispatch under a host. The plugin is installed before any `sdkck jira` call so
       # sdkck's first-use auto-installer cannot fetch the published release
       # over this build. The throwaway sdkck home (mktemp -d) keeps the
       # install, config and caches out of the runner's real sdkck setup; the
@@ -75,12 +69,27 @@ jobs:
           SDKCK_DATA_DIR="$home/data" \
             ./node_modules/.bin/sdkck plugins install "file:$home/$tgz"
 
+      # The Infisical action exports the sandbox credentials to $GITHUB_ENV, so
+      # every later step sees them. It therefore runs only after everything
+      # that doesn't talk to Jira — actions, `npm ci` and `npm install sdkck`
+      # lifecycle scripts, the build and pack — so none of those ever has them
+      # in its environment.
+      - name: Fetch sandbox credentials from Infisical
+        uses: Infisical/secrets-action@v1.0.16
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_IDENTITY_ID }}
+          project-slug: ${{ vars.INFISICAL_PROJECT_SLUG }}
+          env-slug: dev
+
+      - name: Run end-to-end tests
+        run: npm run e2e:mocha
+        env:
+          E2E_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+
       - name: Run end-to-end tests via sdkck
         run: npm run e2e:mocha
         env:
-          ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
-          ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
-          ATLASSIAN_URL: ${{ secrets.ATLASSIAN_URL }}
           E2E_HOST_CLI: sdkck
           E2E_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
           E2E_SDKCK_HOME: ${{ env.E2E_SDKCK_HOME }}
@@ -93,7 +102,4 @@ jobs:
         if: always()
         run: npm run e2e:sweep
         env:
-          ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
-          ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
-          ATLASSIAN_URL: ${{ secrets.ATLASSIAN_URL }}
           E2E_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
