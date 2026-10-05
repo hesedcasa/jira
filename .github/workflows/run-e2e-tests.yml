@@ -105,9 +105,10 @@ jobs:
     name: End-to-end tests against the Jira sandbox
     needs: build
     runs-on: ubuntu-latest
-    # Two legs (standalone CLI, then the same suite via sdkck) at up to 2
-    # minutes per test.
-    timeout-minutes: 45
+    # Two legs (standalone CLI, then the same suite via sdkck) of up to 20
+    # minutes each, plus up to 10 minutes of setup (checkout, unpack, the
+    # credential fetch), so a slow setup cannot cut the sdkck leg short.
+    timeout-minutes: 50
     # id-token lets the Infisical action exchange GitHub's OIDC token for the
     # sandbox credentials, so no Infisical secret is stored in the repo. Only
     # this job and the sweep have it, and nothing in either installs packages.
@@ -152,13 +153,18 @@ jobs:
           project-slug: ${{ vars.INFISICAL_PROJECT_SLUG }}
           env-slug: dev
 
+      # Step-level timeouts, not just the job's: a hung standalone run fails
+      # only its own step, so the sdkck leg (which runs unless cancelled) still
+      # gets its turn. The job-level timeout stays as the outer backstop.
       - name: Run end-to-end tests
+        timeout-minutes: 20
         run: npm run e2e:mocha
         env:
           E2E_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Run end-to-end tests via sdkck
         if: ${{ !cancelled() && needs.build.outputs.sdkck-setup == 'success' }}
+        timeout-minutes: 20
         run: npm run e2e:mocha
         env:
           E2E_HOST_CLI: sdkck
