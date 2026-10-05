@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/hesedcasa/jira/compare/v1.2.0...v1.2.1) (2026-10-04)
+
+
+### 🛠️ Fixes
+
+* **issue:** create links in the documented direction ([#158](https://github.com/hesedcasa/jira/issues/158)) ([f6cd952](https://github.com/hesedcasa/jira/commit/f6cd95271186bfccf2e27fadca8b86041d950286))
+
 ## [1.2.0](https://github.com/hesedcasa/jira/compare/v1.1.1...v1.2.0) (2026-09-28)
 
 
