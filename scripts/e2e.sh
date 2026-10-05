@@ -3,12 +3,11 @@
 # the built standalone CLI, then again through the latest sdkck host CLI with
 # this build packed and installed as its @hesed/jira plugin.
 #
-# Nothing in this repo loads .env, so export the credentials first:
+# The credentials come from Infisical, so run it under `infisical run`:
 #
-#   set -a; . ./.env; set +a
-#   npm run test:e2e
-#   npm run test:e2e -- --keep            # skip the post-run sweep
-#   npm run test:e2e -- --grep "comment"  # extra args go through to mocha
+#   infisical run -- npm run test:e2e
+#   infisical run -- npm run test:e2e -- --keep            # skip the post-run sweep
+#   infisical run -- npm run test:e2e -- --grep "comment"  # extra args go to mocha
 #
 # There is no container to start: Jira Cloud has no Docker image, so the
 # sandbox instance plays the role mysql's disposable container plays there.
@@ -35,7 +34,7 @@ done
 
 if [ "${#missing[@]}" -gt 0 ]; then
   echo "error: missing credentials: ${missing[*]}" >&2
-  echo "Nothing in this repo loads .env. Run:  set -a; . ./.env; set +a" >&2
+  echo "Run it under Infisical:  infisical run -- npm run test:e2e" >&2
   exit 1
 fi
 
