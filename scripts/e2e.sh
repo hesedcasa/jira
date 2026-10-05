@@ -110,7 +110,9 @@ run_mocha() {
 }
 
 echo "==> Building the CLI"
-npm run build
+# The build and the pack below run repository and dependency scripts that never
+# need the credentials, so they are stripped there as for the sdkck installs.
+env -u ATLASSIAN_URL -u ATLASSIAN_EMAIL -u ATLASSIAN_API_TOKEN npm run build
 
 echo "==> Running end-to-end tests against ${ATLASSIAN_URL}"
 run_mocha
@@ -138,7 +140,8 @@ echo "==> Packing the current build and installing it as an sdkck plugin"
 # the real install artifact, not just the working tree. Packing straight into
 # the throwaway home keeps the tarball out of the repo root; the EXIT trap
 # removes it with the rest of the home.
-TGZ="$(npm pack --pack-destination "$SDKCK_HOME" | tail -n 1)"
+TGZ="$(env -u ATLASSIAN_URL -u ATLASSIAN_EMAIL -u ATLASSIAN_API_TOKEN \
+  npm pack --pack-destination "$SDKCK_HOME" | tail -n 1)"
 
 # Installing here — before any `sdkck jira` invocation — stops sdkck's
 # first-use auto-installer from pulling the published @hesed/jira release over
