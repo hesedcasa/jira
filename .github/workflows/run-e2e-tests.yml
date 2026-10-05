@@ -75,11 +75,17 @@ jobs:
       # A tarball rather than the artifact's own zip, which drops executable
       # bits and node_modules/.bin symlinks. Absolute paths are kept because
       # the sdkck install records them, and hosted runners share one layout.
-      - name: Pack the workspace and sdkck home
+      # Only the build outputs travel: the test job checks out the repository
+      # itself, so a lifecycle script that edits or adds a source, test or
+      # script file here cannot get it run with the credentials there.
+      # node_modules and the sdkck plugin are still installed code — the tests
+      # cannot run without them — so this narrows, not removes, that trust.
+      - name: Pack the build outputs and sdkck home
         run: |
           mkdir -p "$RUNNER_TEMP/sdkck-home"
           tar -czf "$RUNNER_TEMP/e2e-workspace.tgz" -C / \
-            "${GITHUB_WORKSPACE#/}" "${RUNNER_TEMP#/}/sdkck-home"
+            "${GITHUB_WORKSPACE#/}/node_modules" "${GITHUB_WORKSPACE#/}/dist" \
+            "${RUNNER_TEMP#/}/sdkck-home"
 
       - name: Upload the workspace
         uses: actions/upload-artifact@v7
@@ -102,15 +108,26 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - name: Download the workspace
+      # A fresh checkout of the dispatched commit, not the build job's copy:
+      # see "Pack the build outputs and sdkck home".
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Download the build outputs
         uses: actions/download-artifact@v8
         with:
           name: e2e-workspace
           path: ${{ runner.temp }}
 
-      - name: Unpack the workspace and sdkck home
+      # Extracts only the named members, so nothing else in the archive can
+      # land over the checkout.
+      - name: Unpack the build outputs and sdkck home
         run: |
-          tar -xzf "$RUNNER_TEMP/e2e-workspace.tgz" -C /
+          tar -xzf "$RUNNER_TEMP/e2e-workspace.tgz" -C / \
+            "${GITHUB_WORKSPACE#/}/node_modules" "${GITHUB_WORKSPACE#/}/dist" \
+            "${RUNNER_TEMP#/}/sdkck-home"
           echo "E2E_SDKCK_HOME=$RUNNER_TEMP/sdkck-home" >> "$GITHUB_ENV"
 
       - name: Set up Node.js
