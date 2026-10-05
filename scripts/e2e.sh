@@ -16,10 +16,12 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# E2E_VIA_INFISICAL stops a second re-exec when Infisical lacks a secret.
-if [ -z "${ATLASSIAN_API_TOKEN:-}" ] && [ -z "${E2E_VIA_INFISICAL:-}" ] &&
+# E2E_VIA_INFISICAL stops a second re-exec when Infisical lacks a secret. The
+# absolute path matters: $0 may be relative to the directory we just left.
+if { [ -z "${ATLASSIAN_URL:-}" ] || [ -z "${ATLASSIAN_EMAIL:-}" ] ||
+  [ -z "${ATLASSIAN_API_TOKEN:-}" ]; } && [ -z "${E2E_VIA_INFISICAL:-}" ] &&
   command -v infisical >/dev/null; then
-  E2E_VIA_INFISICAL=1 exec infisical run --silent -- "$0" "$@"
+  E2E_VIA_INFISICAL=1 exec infisical run --silent -- "$PWD/scripts/e2e.sh" "$@"
 fi
 
 KEEP=0
