@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/hesedcasa/jira/compare/v1.3.0...v1.3.1) (2026-10-05)
+
+
+### 🛠️ Fixes
+
+* **ci:** keep install-time edits and the client secret away from credentials ([#169](https://github.com/hesedcasa/jira/issues/169)) ([fb44a1f](https://github.com/hesedcasa/jira/commit/fb44a1f99268c2d7c4c178f2fe3af2baf017b3d9))
+
 ## [1.3.0](https://github.com/hesedcasa/jira/compare/v1.2.1...v1.3.0) (2026-10-05)
 
 
