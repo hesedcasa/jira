@@ -13,12 +13,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  run-e2e-tests:
-    name: End-to-end tests against the Jira sandbox
+  # Everything that installs or builds runs here, with no OIDC permission: a
+  # compromised `npm ci` or `npm install sdkck` lifecycle script can neither
+  # read the sandbox credentials nor request a token to fetch them itself.
+  build:
+    name: Build the CLI and install the sdkck host
     runs-on: ubuntu-latest
-    # Two legs (standalone CLI, then the same suite via sdkck) at up to 2
-    # minutes per test.
-    timeout-minutes: 45
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      sdkck-setup: ${{ steps.sdkck.outcome }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -42,30 +47,22 @@ jobs:
       - name: Build the CLI
         run: npm run build
 
-      # The sandbox credentials are scoped to the two steps that actually talk
-      # to Jira, so nothing before them — actions, `npm ci` lifecycle scripts,
-      # the build — ever has them in its environment.
-      - name: Run end-to-end tests
-        run: npm run e2e:mocha
-        env:
-          ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
-          ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
-          ATLASSIAN_URL: ${{ secrets.ATLASSIAN_URL }}
-          E2E_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
-
-      # Second leg: the same suite through the latest sdkck host CLI with this
-      # build packed and installed as its @hesed/jira plugin — covering the
-      # `prepack` artifacts (oclif.manifest.json, README) and plugin dispatch
-      # under a host. The plugin is installed before any `sdkck jira` call so
-      # sdkck's first-use auto-installer cannot fetch the published release
-      # over this build. The throwaway sdkck home (mktemp -d) keeps the
+      # For the second leg: the same suite through the latest sdkck host CLI
+      # with this build packed and installed as its @hesed/jira plugin —
+      # covering the `prepack` artifacts (oclif.manifest.json, README) and
+      # plugin dispatch under a host. The plugin is installed before any
+      # `sdkck jira` call so sdkck's first-use auto-installer cannot fetch the
+      # published release over this build. The throwaway sdkck home keeps the
       # install, config and caches out of the runner's real sdkck setup; the
-      # test side finds it via E2E_SDKCK_HOME.
+      # test side finds it via E2E_SDKCK_HOME. `continue-on-error`, so a
+      # broken sdkck release still lets the standalone leg run.
       - name: Install the latest sdkck and the packed plugin
+        id: sdkck
+        continue-on-error: true
         run: |
           npm install --no-save sdkck
-          home="$(mktemp -d)"
-          echo "E2E_SDKCK_HOME=$home" >> "$GITHUB_ENV"
+          home="$RUNNER_TEMP/sdkck-home"
+          mkdir -p "$home"
           # A `file:` URL is required: sdkck resolves any bare path containing
           # a slash as a GitHub org/repo. Packing into the throwaway home
           # keeps the tarball out of the workspace.
@@ -75,15 +72,73 @@ jobs:
           SDKCK_DATA_DIR="$home/data" \
             ./node_modules/.bin/sdkck plugins install "file:$home/$tgz"
 
-      - name: Run end-to-end tests via sdkck
+      # A tarball rather than the artifact's own zip, which drops executable
+      # bits and node_modules/.bin symlinks. Absolute paths are kept because
+      # the sdkck install records them, and hosted runners share one layout.
+      - name: Pack the workspace and sdkck home
+        run: |
+          mkdir -p "$RUNNER_TEMP/sdkck-home"
+          tar -czf "$RUNNER_TEMP/e2e-workspace.tgz" -C / \
+            "${GITHUB_WORKSPACE#/}" "${RUNNER_TEMP#/}/sdkck-home"
+
+      - name: Upload the workspace
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-workspace
+          path: ${{ runner.temp }}/e2e-workspace.tgz
+          retention-days: 1
+
+  run-e2e-tests:
+    name: End-to-end tests against the Jira sandbox
+    needs: build
+    runs-on: ubuntu-latest
+    # Two legs (standalone CLI, then the same suite via sdkck) at up to 2
+    # minutes per test.
+    timeout-minutes: 45
+    # id-token lets the Infisical action exchange GitHub's OIDC token for the
+    # sandbox credentials, so no Infisical secret is stored in the repo. Only
+    # this job has it, and nothing in it installs packages.
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download the workspace
+        uses: actions/download-artifact@v8
+        with:
+          name: e2e-workspace
+          path: ${{ runner.temp }}
+
+      - name: Unpack the workspace and sdkck home
+        run: |
+          tar -xzf "$RUNNER_TEMP/e2e-workspace.tgz" -C /
+          echo "E2E_SDKCK_HOME=$RUNNER_TEMP/sdkck-home" >> "$GITHUB_ENV"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+
+      # The Infisical action exports the sandbox credentials to $GITHUB_ENV, so
+      # every later step sees them; the steps before it never do.
+      - name: Fetch sandbox credentials from Infisical
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_IDENTITY_ID }}
+          project-slug: ${{ vars.INFISICAL_PROJECT_SLUG }}
+          env-slug: dev
+
+      - name: Run end-to-end tests
         run: npm run e2e:mocha
         env:
-          ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
-          ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
-          ATLASSIAN_URL: ${{ secrets.ATLASSIAN_URL }}
+          E2E_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Run end-to-end tests via sdkck
+        if: ${{ !cancelled() && needs.build.outputs.sdkck-setup == 'success' }}
+        run: npm run e2e:mocha
+        env:
           E2E_HOST_CLI: sdkck
           E2E_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
-          E2E_SDKCK_HOME: ${{ env.E2E_SDKCK_HOME }}
 
       # `always()`, so a killed mocha run (the job timeout above skips its
       # `after` hooks) still gets its fixtures reclaimed. E2E_RUN_ID is what
@@ -93,7 +148,13 @@ jobs:
         if: always()
         run: npm run e2e:sweep
         env:
-          ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
-          ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
-          ATLASSIAN_URL: ${{ secrets.ATLASSIAN_URL }}
           E2E_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+
+      # The build job tolerated a failed sdkck setup so the standalone leg
+      # could still run; fail here so the run doesn't pass without the sdkck
+      # leg.
+      - name: Fail if sdkck setup failed
+        if: ${{ always() && needs.build.outputs.sdkck-setup != 'success' }}
+        run: |
+          echo "::error::sdkck setup failed in the build job; sdkck leg skipped"
+          exit 1
