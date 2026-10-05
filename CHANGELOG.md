@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/hesedcasa/jira/compare/v1.2.1...v1.3.0) (2026-10-05)
+
+
+### 🎉 Features
+
+* let e2e script fetch credentials with an Infisical machine identity ([a499c5c](https://github.com/hesedcasa/jira/commit/a499c5cc6d210dffc9b73a58bc7343d47d0e7a49))
+
 ## [1.2.1](https://github.com/hesedcasa/jira/compare/v1.2.0...v1.2.1) (2026-10-04)
 
 
