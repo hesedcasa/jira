@@ -10,7 +10,7 @@
   "dependencies": {
     "@hesed/plugin-lib": "^0.13.0",
     "@inquirer/prompts": "^8.2.0",
-    "@oclif/core": "^4",
+    "@oclif/core": "^5",
     "fs-extra": "^11.3.3",
     "jira.js": "^6.1.0",
     "marked": "^18.0.10",
