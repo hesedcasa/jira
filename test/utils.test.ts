@@ -20,6 +20,16 @@ describe('utils', () => {
   })
 
   describe('processIssueRenderedAndFields', () => {
+    it('keeps Date values (jira.js 6.3 parses timestamps) intact', () => {
+      const created = new Date('2026-01-02T03:04:05.000Z')
+      const issue = {fields: {created, updated: created}} as unknown as Issue
+
+      processIssueRenderedAndFields(issue)
+
+      expect(issue.fields?.created).to.equal(created)
+      expect(issue.fields?.updated).to.equal(created)
+    })
+
     it('merges renderedFields into fields', () => {
       const issue = {
         fields: {},
