@@ -6,6 +6,7 @@ import {type Client, createClient} from 'jira.js/core'
 import {Buffer} from 'node:buffer'
 import path from 'node:path'
 
+import {callJira, errorToApiResult} from '../api-result.js'
 import {markdownToAdfDocument} from '../markdown.js'
 import {configureFetchProxy} from '../proxy.js'
 import {defaultFields, duplicateFieldsError, processIssueRenderedAndFields} from '../utils.js'
@@ -60,24 +61,22 @@ export class JiraApi {
       const fileContent = fs.readFileSync(filePath)
       const fileName = path.basename(filePath)
 
-      const response = await client.issueAttachments.addAttachment({
-        attachments: {
-          content: fileContent,
-          filename: fileName,
-        },
-        issueIdOrKey,
-      })
+      const response = await callJira(async () =>
+        client.issueAttachments.addAttachment({
+          attachments: {
+            content: fileContent,
+            filename: fileName,
+          },
+          issueIdOrKey,
+        }),
+      )
 
       return {
         data: response,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -95,11 +94,7 @@ export class JiraApi {
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -171,8 +166,7 @@ export class JiraApi {
 
       return {data: response, success: true}
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {error: errorMessage, success: false}
+      return errorToApiResult(error)
     }
   }
 
@@ -182,18 +176,14 @@ export class JiraApi {
   async assignIssue(accountId: string, issueIdOrKey: string): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      await client.issues.assignIssue({accountId, issueIdOrKey})
+      await callJira(async () => client.issues.assignIssue({accountId, issueIdOrKey}))
 
       return {
         data: true,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -216,7 +206,9 @@ export class JiraApi {
     if (customFieldIds.length === 0) return adfFieldIds
 
     try {
-      const page = await this.getClient().issueFields.getFieldsPaginated({id: customFieldIds, type: ['custom']})
+      const page = await callJira(async () =>
+        this.getClient().issueFields.getFieldsPaginated({id: customFieldIds, type: ['custom']}),
+      )
       const adfFields = (page.values ?? []).filter(
         (f) =>
           f.schema?.type === 'any' ||
@@ -275,18 +267,14 @@ export class JiraApi {
         processedFields[key] = adfFieldIds.has(key) ? markdownToAdfDocument(value) : value
       }
 
-      const response = await client.issues.createIssue({fields: processedFields})
+      const response = await callJira(async () => client.issues.createIssue({fields: processedFields}))
 
       return {
         data: response,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -296,18 +284,14 @@ export class JiraApi {
   async deleteComment(id: string, issueIdOrKey: string): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      await client.issueComments.deleteComment({id, issueIdOrKey})
+      await callJira(async () => client.issueComments.deleteComment({id, issueIdOrKey}))
 
       return {
         data: true,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -317,18 +301,14 @@ export class JiraApi {
   async deleteIssue(issueIdOrKey: string): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      await client.issues.deleteIssue({issueIdOrKey})
+      await callJira(async () => client.issues.deleteIssue({issueIdOrKey}))
 
       return {
         data: true,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -338,18 +318,14 @@ export class JiraApi {
   async deleteWorklog(id: string, issueIdOrKey: string): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      await client.issueWorklogs.deleteWorklog({id, issueIdOrKey})
+      await callJira(async () => client.issueWorklogs.deleteWorklog({id, issueIdOrKey}))
 
       return {
         data: true,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -359,18 +335,14 @@ export class JiraApi {
   async doTransition(issueIdOrKey: string, transitionId: string): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      await client.issues.doTransition({issueIdOrKey, transition: {id: transitionId}})
+      await callJira(async () => client.issues.doTransition({issueIdOrKey, transition: {id: transitionId}}))
 
       return {
         data: true,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -390,23 +362,21 @@ export class JiraApi {
   ): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      await client.issueLinks.linkIssues({
-        comment: comment === undefined ? undefined : {body: markdownToAdfDocument(comment)},
-        inwardIssue: issueRef(outwardIssueIdOrKey),
-        outwardIssue: issueRef(inwardIssueIdOrKey),
-        type: {name: linkTypeName},
-      })
+      await callJira(async () =>
+        client.issueLinks.linkIssues({
+          comment: comment === undefined ? undefined : {body: markdownToAdfDocument(comment)},
+          inwardIssue: issueRef(outwardIssueIdOrKey),
+          outwardIssue: issueRef(inwardIssueIdOrKey),
+          type: {name: linkTypeName},
+        }),
+      )
 
       return {
         data: true,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -418,7 +388,7 @@ export class JiraApi {
       const client = this.getClient()
 
       // Get attachment metadata
-      const attachment = await client.issueAttachments.getAttachment({id: attachmentId})
+      const attachment = await callJira(async () => client.issueAttachments.getAttachment({id: attachmentId}))
 
       if (!attachment.content) {
         return {
@@ -462,11 +432,7 @@ export class JiraApi {
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -476,18 +442,14 @@ export class JiraApi {
   async findAssignableUsers(issueKey: string, query?: string): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      const users = await client.userSearch.findAssignableUsers({issueKey, query})
+      const users = await callJira(async () => client.userSearch.findAssignableUsers({issueKey, query}))
 
       return {
         data: users,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -530,7 +492,7 @@ export class JiraApi {
   async getIssue(issueIdOrKey: string): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      const issue = await client.issues.getIssue({issueIdOrKey})
+      const issue = await callJira(async () => client.issues.getIssue({issueIdOrKey}))
       await this.loadAllComments(issueIdOrKey, issue)
 
       processIssueRenderedAndFields(issue)
@@ -540,11 +502,7 @@ export class JiraApi {
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -561,12 +519,14 @@ export class JiraApi {
     const comments: unknown[] = []
     for (;;) {
       // eslint-disable-next-line no-await-in-loop
-      const page = await client.issueComments.getComments({
-        issueIdOrKey,
-        maxResults: 100,
-        orderBy: 'created',
-        startAt: comments.length,
-      })
+      const page = await callJira(async () =>
+        client.issueComments.getComments({
+          issueIdOrKey,
+          maxResults: 100,
+          orderBy: 'created',
+          startAt: comments.length,
+        }),
+      )
       const values = page.comments ?? []
       comments.push(...values)
       // A page without `total` falls back to the embedded total, so paging does not stop after one page.
@@ -611,11 +571,7 @@ export class JiraApi {
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -625,22 +581,20 @@ export class JiraApi {
   async getIssueWorklog(issueIdOrKey: string, maxResults = 10, startAt?: number): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      const worklogs = await client.issueWorklogs.getIssueWorklog({
-        issueIdOrKey,
-        maxResults,
-        startAt,
-      })
+      const worklogs = await callJira(async () =>
+        client.issueWorklogs.getIssueWorklog({
+          issueIdOrKey,
+          maxResults,
+          startAt,
+        }),
+      )
 
       return {
         data: worklogs,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -650,18 +604,14 @@ export class JiraApi {
   async getProject(projectIdOrKey: string): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      const project = await client.projects.getProject({projectIdOrKey})
+      const project = await callJira(async () => client.projects.getProject({projectIdOrKey}))
 
       return {
         data: project,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -671,18 +621,14 @@ export class JiraApi {
   async getTransitions(issueIdOrKey: string): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      const transitions = await client.issues.getTransitions({issueIdOrKey})
+      const transitions = await callJira(async () => client.issues.getTransitions({issueIdOrKey}))
 
       return {
         data: transitions,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -694,14 +640,14 @@ export class JiraApi {
       const client = this.getClient()
 
       if (accountId === undefined && query === undefined) {
-        const currentUser = await client.myself.getCurrentUser()
+        const currentUser = await callJira(async () => client.myself.getCurrentUser())
         return {
           data: currentUser,
           success: true,
         }
       }
 
-      const users = await client.userSearch.findUsers({accountId, query})
+      const users = await callJira(async () => client.userSearch.findUsers({accountId, query}))
 
       if (users) {
         // accountId identifies a single user, so unwrap it; a text query can match
@@ -712,17 +658,13 @@ export class JiraApi {
         }
       }
 
-      const user = await client.myself.getCurrentUser()
+      const user = await callJira(async () => client.myself.getCurrentUser())
       return {
         data: user,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -732,7 +674,7 @@ export class JiraApi {
   async listProjects(): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      const response = await client.projects.searchProjects()
+      const response = await callJira(async () => client.projects.searchProjects())
 
       // Simplify project data for display
       const projects = response.values || []
@@ -750,11 +692,7 @@ export class JiraApi {
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -765,13 +703,15 @@ export class JiraApi {
     try {
       const finalFields = [...new Set<string>([...(fields ?? []), ...defaultFields])]
       const client = this.getClient()
-      const result = await client.issueSearch.searchAndReconsileIssuesUsingJql({
-        failFast: true,
-        fields: finalFields,
-        jql,
-        maxResults,
-        nextPageToken,
-      })
+      const result = await callJira(async () =>
+        client.issueSearch.searchAndReconsileIssuesUsingJql({
+          failFast: true,
+          fields: finalFields,
+          jql,
+          maxResults,
+          nextPageToken,
+        }),
+      )
 
       if (result.issues) {
         for (const issue of result.issues) {
@@ -788,11 +728,7 @@ export class JiraApi {
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -802,18 +738,15 @@ export class JiraApi {
   async testConnection(): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      const serverInfo = await client.serverInfo.getServerInfo()
-      const currentUser = await client.myself.getCurrentUser()
+      const serverInfo = await callJira(async () => client.serverInfo.getServerInfo())
+      const currentUser = await callJira(async () => client.myself.getCurrentUser())
 
       return {
         data: {currentUser, serverInfo},
         success: true,
       }
     } catch (error: unknown) {
-      return {
-        error: error instanceof Error ? error.message : error,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -826,22 +759,20 @@ export class JiraApi {
       // Convert Markdown body to Jira ADF
       const bodyContent = markdownToAdfDocument(body)
 
-      const response = await client.issueComments.updateComment({
-        body: {body: bodyContent},
-        id,
-        issueIdOrKey,
-      })
+      const response = await callJira(async () =>
+        client.issueComments.updateComment({
+          body: {body: bodyContent},
+          id,
+          issueIdOrKey,
+        }),
+      )
 
       return {
         data: response,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -889,18 +820,14 @@ export class JiraApi {
         processedFields[key] = adfFieldIds.has(key) ? markdownToAdfDocument(value) : value
       }
 
-      await client.issues.editIssue({fields: processedFields, issueIdOrKey})
+      await callJira(async () => client.issues.editIssue({fields: processedFields, issueIdOrKey}))
 
       return {
         data: true,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -938,14 +865,16 @@ export class JiraApi {
    */
   private async postComment(issueIdOrKey: string, body: Document, parentId?: string): Promise<unknown> {
     if (!parentId) {
-      return this.getClient().issueComments.addComment({body, issueIdOrKey})
+      return callJira(async () => this.getClient().issueComments.addComment({body, issueIdOrKey}))
     }
 
-    return this.getHttpClient().sendRequest({
-      body: {body, parentId},
-      method: 'POST',
-      url: `/rest/api/3/issue/${issueIdOrKey}/comment`,
-    })
+    return callJira(async () =>
+      this.getHttpClient().sendRequest({
+        body: {body, parentId},
+        method: 'POST',
+        url: `/rest/api/3/issue/${issueIdOrKey}/comment`,
+      }),
+    )
   }
 
   /**
@@ -957,23 +886,21 @@ export class JiraApi {
       // Convert Markdown body to Jira ADF
       const bodyContent = body ? markdownToAdfDocument(body) : undefined
 
-      const response = await client.issueWorklogs.addWorklog({
-        comment: bodyContent,
-        issueIdOrKey,
-        started,
-        timeSpent,
-      })
+      const response = await callJira(async () =>
+        client.issueWorklogs.addWorklog({
+          comment: bodyContent,
+          issueIdOrKey,
+          started,
+          timeSpent,
+        }),
+      )
 
       return {
         data: response,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
