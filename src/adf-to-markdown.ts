@@ -230,7 +230,7 @@ function renderInline(nodes: AdfNode[]): string {
     active = marks
   }
 
-  for (const node of nodes) {
+  for (const [index, node] of nodes.entries()) {
     // Marks already open stay outermost, so a run of bold text is not split by a link inside it.
     const wanted = WRAPPING_MARKS.flatMap((type) => (node.marks ?? []).filter((mark) => mark.type === type))
     const kept = active.filter((mark) => wanted.some((other) => markKey(other) === markKey(mark)))
@@ -239,9 +239,15 @@ function renderInline(nodes: AdfNode[]): string {
     let text = node.type === 'text' ? (node.text ?? '') : renderInlineAtom(node)
 
     if (node.type === 'hardBreak') {
-      // A line break closes nothing; keep it inside whatever is open.
-      out += pendingSpace + text
-      pendingSpace = ''
+      // A line break keeps open only the marks the text after it continues, so
+      // `**a**\nb` does not read back as `**a\n**b`. It never opens one: an
+      // opener right before a newline is not a delimiter.
+      const next = nodes.slice(index + 1).find((other) => other.type !== 'hardBreak')
+      const continued = new Set((next?.marks ?? []).map((mark) => markKey(mark)))
+      let keep = 0
+      while (keep < active.length && continued.has(markKey(active[keep]))) keep++
+      transition(active.slice(0, keep))
+      out += text
       continue
     }
 
