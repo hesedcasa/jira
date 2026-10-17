@@ -123,21 +123,36 @@ export const processIssueRenderedAndFields = (issue: Issue): void => {
   issue.renderedFields = {}
 }
 
+// Keyed by the stream, so every `@-` in one command gets the same text instead
+// of the second finding stdin already drained (and sending an empty field).
+const stdinText = new WeakMap<NodeJS.ReadableStream, Promise<string>>()
+
+const readStdin = async (stdin: NodeJS.ReadableStream): Promise<string> => {
+  stdin.setEncoding('utf8')
+  let text = ''
+  for await (const chunk of stdin) text += chunk as string
+  return text
+}
+
 /**
  * Read a text file, or stdin when `path` is `-`. Large text goes through a file
  * rather than argv because endpoint security agents (e.g. SentinelOne) block
  * processes with huge command lines — which is what `"$(cat file)"` produces.
  *
- * stdin is read as a stream: a synchronous read of fd 0 fails with EAGAIN once
- * anything has put it into non-blocking mode.
+ * stdin is read once, as a stream: a synchronous read of fd 0 fails with EAGAIN
+ * once anything has put it into non-blocking mode.
  */
 const readTextFile = async (path: string): Promise<string> => {
   try {
     if (path !== '-') return await readFile(path, 'utf8')
-    process.stdin.setEncoding('utf8')
-    let text = ''
-    for await (const chunk of process.stdin) text += chunk as string
-    return text
+    const {stdin} = process
+    let text = stdinText.get(stdin)
+    if (!text) {
+      text = readStdin(stdin)
+      stdinText.set(stdin, text)
+    }
+
+    return await text
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error)
     throw new Error(`Could not read ${path === '-' ? 'stdin' : path}: ${reason}`, {cause: error})
@@ -160,7 +175,7 @@ export const parseKeyValuePairs = async (pairs: readonly string[] = []): Promise
   const result: Record<string, string> = {}
   for (const pair of pairs) {
     const [key, ...valueParts] = pair.split('=')
-    // eslint-disable-next-line no-await-in-loop -- sequential, so a single @- consumes stdin once
+    // eslint-disable-next-line no-await-in-loop -- read files in flag order
     const value = await readTextValue(valueParts.join('='))
     // defineProperty, not assignment: a key such as `__proto__` must stay an ordinary own property.
     Object.defineProperty(result, key, {

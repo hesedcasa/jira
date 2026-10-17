@@ -13,6 +13,7 @@ import {
   processIssueRenderedAndFields,
   readTextValue,
 } from '../src/utils.js'
+import {mockStdin} from './helpers/stdin-mock.js'
 
 describe('utils', () => {
   describe('defaultFields', () => {
@@ -398,6 +399,18 @@ describe('utils', () => {
         description: 'from file',
         summary: 'plain',
       })
+    })
+
+    it('parseKeyValuePairs gives every @- the same piped text', async () => {
+      const restore = mockStdin('piped ', 'text')
+      try {
+        expect(await parseKeyValuePairs(['summary=@-', 'environment=@-'])).to.deep.equal({
+          environment: 'piped text',
+          summary: 'piped text',
+        })
+      } finally {
+        restore()
+      }
     })
 
     it('parseKeyValuePairs keeps a literal leading @ escaped as @@', async () => {

@@ -7,6 +7,7 @@ import {tmpdir} from 'node:os'
 import path from 'node:path'
 
 import {createMockConfig} from '../../../helpers/config-mock.js'
+import {mockStdin} from '../../../helpers/stdin-mock.js'
 
 describe('issue:add-comment', () => {
   let IssueAddComment: any
@@ -238,6 +239,17 @@ describe('issue:add-comment', () => {
       await new IssueAddComment.default(['TEST-123', `@${file}`], createMockConfig()).run()
 
       expect(capturedBody).to.equal('# Long comment\n\nbody')
+    })
+
+    it('reads the whole comment from @- when stdin arrives in chunks', async () => {
+      const restore = mockStdin('# Piped\n\n', 'first chunk, ', 'second chunk')
+      try {
+        await new IssueAddComment.default(['TEST-123', '@-'], createMockConfig()).run()
+      } finally {
+        restore()
+      }
+
+      expect(capturedBody).to.equal('# Piped\n\nfirst chunk, second chunk')
     })
 
     it('keeps a literal leading @ escaped as @@', async () => {
