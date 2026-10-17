@@ -23,6 +23,7 @@ export const defaultFields = [
 const convertAdf = (value: unknown, attachments: readonly AdfAttachment[]): unknown => {
   if (isAdfDocument(value)) return adfToMarkdown(value, {attachments})
   if (Array.isArray(value)) return value.map((item) => convertAdf(item, attachments))
+  if (value instanceof Date) return value
   if (typeof value === 'object' && value !== null) {
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, convertAdf(item, attachments)]))
   }
@@ -80,7 +81,7 @@ const isEmptyCustomField = (key: string, value: unknown): boolean =>
  */
 export const processIssueRenderedAndFields = (issue: Issue): void => {
   const fieldsObj = (issue.fields || {}) as Record<string, unknown>
-  const renderedFields = (issue.renderedFields ?? {}) as Record<string, unknown>
+  const renderedFields = issue.renderedFields ?? {}
   const merged: Record<string, unknown> = {}
   const attachments = attachmentsOf(fieldsObj)
 
@@ -118,7 +119,7 @@ export const processIssueRenderedAndFields = (issue: Issue): void => {
     merged.description = ''
   }
 
-  issue.fields = merged as typeof issue.fields
+  issue.fields = merged
   issue.renderedFields = {}
 }
 

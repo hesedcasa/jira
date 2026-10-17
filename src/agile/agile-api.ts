@@ -6,15 +6,6 @@ import {configureFetchProxy} from '../proxy.js'
 import {defaultFields, processIssueRenderedAndFields} from '../utils.js'
 
 /**
- * The `fields` query parameter of the board issue endpoints. The generator types it as
- * an array of objects, which is an artefact of Atlassian's specification — the endpoints
- * take a list of field names, and the value is serialised straight into the query string
- * as repeated `fields=` entries. The cast below is to the declared type, not around a
- * real mismatch.
- */
-type FieldsParameter = NonNullable<Parameters<AgileClient['board']['getIssuesForBacklog']>[0]['fields']>
-
-/**
  * Agile API Utility Module
  * Provides core Agile API operations with formatting
  */
@@ -127,7 +118,7 @@ export class AgileApi {
       const finalFields = [...new Set<string>([...(fields ?? []), ...defaultFields])]
       const result = await client.board.getBoardIssuesForSprint({
         boardId,
-        fields: finalFields as unknown as FieldsParameter,
+        fields: finalFields,
         jql,
         maxResults,
         nextPageToken,
@@ -195,7 +186,7 @@ export class AgileApi {
       const finalFields = [...new Set<string>([...(fields ?? []), ...defaultFields])]
       const result = await client.board.getIssuesForBacklog({
         boardId,
-        fields: finalFields as unknown as FieldsParameter,
+        fields: finalFields,
         jql,
         maxResults,
         nextPageToken,

@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.3](https://github.com/hesedcasa/jira/compare/v1.3.2...v1.3.3) (2026-10-05)
+
+
+### 🛠️ Fixes
+
+* **ci:** add e2e step timeouts and strip credentials from build and pack ([#173](https://github.com/hesedcasa/jira/issues/173)) ([a578d3d](https://github.com/hesedcasa/jira/commit/a578d3d898f44e6f1d93670748b84a200907ff4e))
+
+## [1.3.2](https://github.com/hesedcasa/jira/compare/v1.3.1...v1.3.2) (2026-10-05)
+
+
+### 🛠️ Fixes
+
+* **ci:** gate e2e to the default branch and sweep in a separate job ([#171](https://github.com/hesedcasa/jira/issues/171)) ([410b8b1](https://github.com/hesedcasa/jira/commit/410b8b14dc5bb3a2778704423e4d031f3e23e627))
+
 ## [1.3.1](https://github.com/hesedcasa/jira/compare/v1.3.0...v1.3.1) (2026-10-05)
 
 
