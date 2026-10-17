@@ -14,7 +14,7 @@ export default class IssueUpdate extends BaseCommand {
   static override examples = [
     "<%= config.bin %> <%= command.id %> PROJ-123 --fields summary='New summary' description='New description'",
     "<%= config.bin %> <%= command.id %> PROJ-123 --fields description='\n# Header\n## Sub-header\n- Item 1\n- Item 2\n```bash\nls -a\n```'",
-    '<%= config.bin %> <%= command.id %> PROJ-123 --fields description="$(cat content.md)"',
+    '<%= config.bin %> <%= command.id %> PROJ-123 --fields description=@content.md',
     '<%= config.bin %> <%= command.id %> PROJ-123 --fields timetracking=\'{"originalEstimate": "5h"}\'',
     '<%= config.bin %> <%= command.id %> PROJ-123 --text-fields \'summary={"fix":"login"}\'',
   ]
@@ -22,14 +22,14 @@ export default class IssueUpdate extends BaseCommand {
   static override flags = {
     fields: Flags.string({
       description:
-        'Issue fields to update in key=value format. Values starting with { or [ are parsed as JSON. At least one of --fields or --text-fields is required',
+        'Issue fields to update in key=value format. Values starting with { or [ are parsed as JSON. A value of @<path> is read from that file (@- for stdin; @@ for a literal @). At least one of --fields or --text-fields is required',
       multiple: true,
       required: false,
     }),
     profile: Flags.string({char: 'p', description: 'Authentication profile name', required: false}),
     'text-fields': Flags.string({
       description:
-        'Issue fields to update in key=value format, sent as literal strings: the value is never JSON-parsed. Rich-text fields (description, ADF custom fields) are still converted from Markdown. A key may not appear in both --fields and --text-fields',
+        'Issue fields to update in key=value format, sent as literal strings: the value is never JSON-parsed. Rich-text fields (description, ADF custom fields) are still converted from Markdown. @<path> reads the value from a file. A key may not appear in both --fields and --text-fields',
       multiple: true,
       required: false,
     }),
@@ -43,8 +43,8 @@ export default class IssueUpdate extends BaseCommand {
       this.error(`Missing authentication config.`)
     }
 
-    const fields = parseKeyValuePairs(flags.fields)
-    const textFields = parseKeyValuePairs(flags['text-fields'])
+    const fields = await parseKeyValuePairs(flags.fields)
+    const textFields = await parseKeyValuePairs(flags['text-fields'])
 
     if (Object.keys(fields).length === 0 && Object.keys(textFields).length === 0) {
       this.error('At least one of --fields or --text-fields is required')

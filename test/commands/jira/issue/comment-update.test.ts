@@ -2,6 +2,9 @@
 /* eslint-disable new-cap */
 import {expect} from 'chai'
 import esmock from 'esmock'
+import {mkdtempSync, rmSync, writeFileSync} from 'node:fs'
+import {tmpdir} from 'node:os'
+import path from 'node:path'
 
 import {createMockConfig} from '../../../helpers/config-mock.js'
 
@@ -130,5 +133,31 @@ describe('issue:comment-update', () => {
     await command.run()
 
     expect(clearClientsCalled).to.be.true
+  })
+
+  it('reads the comment text from an @<path> body', async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'jira-comment-update-'))
+    const file = path.join(dir, 'body.md')
+    writeFileSync(file, 'updated from file')
+    let capturedBody: string | undefined
+
+    IssueUpdateComment = await esmock('../../../../src/commands/jira/issue/comment-update.js', {
+      '../../../../src/jira/jira-client.js': {
+        clearClients: mockClearClients,
+        async updateComment(_config: any, _id: string, _issueId: string, body: string) {
+          capturedBody = body
+          return {data: {id: '10001'}, success: true}
+        },
+      },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
+    })
+
+    try {
+      await new IssueUpdateComment.default(['TEST-123', '10001', `@${file}`], createMockConfig()).run()
+    } finally {
+      rmSync(dir, {force: true, recursive: true})
+    }
+
+    expect(capturedBody).to.equal('updated from file')
   })
 })

@@ -3,19 +3,24 @@ import {Args, Flags} from '@oclif/core'
 
 import {BaseCommand} from '../../../base-command.js'
 import {addComment, addCommentWithMedia, clearClients} from '../../../jira/jira-client.js'
+import {readTextValue} from '../../../utils.js'
 
 export default class IssueAddComment extends BaseCommand {
   /* eslint-disable perfectionist/sort-objects -- issueId must be first arg per CLAUDE.md convention */
   static override args = {
     issueId: Args.string({description: 'Issue ID or issue key', required: true}),
-    body: Args.string({description: 'Comment text content', required: true}),
+    body: Args.string({
+      description: 'Comment text content. @<path> reads it from that file (@- for stdin; @@ for a literal @)',
+      required: true,
+    }),
   }
 
   /* eslint-enable perfectionist/sort-objects */
   static override description = 'Add a comment to an issue'
   static override examples = [
     '<%= config.bin %> <%= command.id %> PROJ-123 "# Header\n- Item 1"',
-    '<%= config.bin %> <%= command.id %> PROJ-123 "$(cat content.md)"',
+    '<%= config.bin %> <%= command.id %> PROJ-123 @content.md',
+    'generate-report | <%= config.bin %> <%= command.id %> PROJ-123 @-',
     '<%= config.bin %> <%= command.id %> PROJ-123 "Here is the [bug](https://example.com/bug):\n\n![screenshot](./screenshot.png)" --attach ./screenshot.png',
     '<%= config.bin %> <%= command.id %> PROJ-123 "Step 1:\n\n![step1](./step1.png)\n\nStep 2:\n\n![step2](./step2.png)" --attach ./step1.png --attach ./step2.mp4',
     '<%= config.bin %> <%= command.id %> PROJ-123 "See also" --attach ./extra.png',
@@ -34,6 +39,7 @@ export default class IssueAddComment extends BaseCommand {
 
   public async run(): Promise<ApiResult> {
     const {args, flags} = await this.parse(IssueAddComment)
+    const body = await readTextValue(args.body)
     const {loadAuthConfig} = createProfileManager(this.config, flags.profile, 'jira-config.json')
     const auth = await loadAuthConfig()
     if (!auth) {
@@ -42,8 +48,8 @@ export default class IssueAddComment extends BaseCommand {
 
     const result =
       flags.attach && flags.attach.length > 0
-        ? await addCommentWithMedia(auth, args.issueId, args.body, flags.attach, flags.parent)
-        : await addComment(auth, args.issueId, args.body, flags.parent)
+        ? await addCommentWithMedia(auth, args.issueId, body, flags.attach, flags.parent)
+        : await addComment(auth, args.issueId, body, flags.parent)
     clearClients()
 
     if (flags.toon) {

@@ -2,8 +2,12 @@
 /* eslint-disable new-cap */
 import {expect} from 'chai'
 import esmock from 'esmock'
+import {mkdtempSync, rmSync, writeFileSync} from 'node:fs'
+import {tmpdir} from 'node:os'
+import path from 'node:path'
 
 import {createMockConfig} from '../../../helpers/config-mock.js'
+import {mockStdin} from '../../../helpers/stdin-mock.js'
 
 describe('issue:add-comment', () => {
   let IssueAddComment: any
@@ -202,5 +206,68 @@ describe('issue:add-comment', () => {
     await command.run()
 
     expect(capturedFilePaths).to.deep.equal(['./image.png', './video.mp4'])
+  })
+
+  describe('@<path> body', () => {
+    let dir: string
+    let capturedBody: string | undefined
+
+    beforeEach(async () => {
+      dir = mkdtempSync(path.join(tmpdir(), 'jira-comment-'))
+      capturedBody = undefined
+      IssueAddComment = await esmock('../../../../src/commands/jira/issue/comment.js', {
+        '../../../../src/jira/jira-client.js': {
+          async addComment(_config: any, _issueId: string, body: string) {
+            capturedBody = body
+            return {data: {id: '10001'}, success: true}
+          },
+          addCommentWithMedia: mockAddCommentWithMedia,
+          clearClients: mockClearClients,
+        },
+        '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
+      })
+    })
+
+    afterEach(() => {
+      rmSync(dir, {force: true, recursive: true})
+    })
+
+    it('reads the comment text from the file', async () => {
+      const file = path.join(dir, 'body.md')
+      writeFileSync(file, '# Long comment\n\nbody')
+
+      await new IssueAddComment.default(['TEST-123', `@${file}`], createMockConfig()).run()
+
+      expect(capturedBody).to.equal('# Long comment\n\nbody')
+    })
+
+    it('reads the whole comment from @- when stdin arrives in chunks', async () => {
+      const restore = mockStdin('# Piped\n\n', 'first chunk, ', 'second chunk')
+      try {
+        await new IssueAddComment.default(['TEST-123', '@-'], createMockConfig()).run()
+      } finally {
+        restore()
+      }
+
+      expect(capturedBody).to.equal('# Piped\n\nfirst chunk, second chunk')
+    })
+
+    it('keeps a literal leading @ escaped as @@', async () => {
+      await new IssueAddComment.default(['TEST-123', '@@team please review'], createMockConfig()).run()
+
+      expect(capturedBody).to.equal('@team please review')
+    })
+
+    it('names the path when the file cannot be read', async () => {
+      const error = await new IssueAddComment.default(
+        ['TEST-123', `@${path.join(dir, 'missing.md')}`],
+        createMockConfig(),
+      )
+        .run()
+        .catch((error_: Error) => error_)
+
+      expect(error.message).to.include('missing.md')
+      expect(capturedBody).to.be.undefined
+    })
   })
 })
