@@ -22,6 +22,10 @@ export const defaultFields = [
 const convertAdf = (value: unknown, attachments: readonly AdfAttachment[]): unknown => {
   if (isAdfDocument(value)) return adfToMarkdown(value, {attachments})
   if (Array.isArray(value)) return value.map((item) => convertAdf(item, attachments))
+  // jira.js 6.3's zod schemas parse datetime fields (created, updated, …) into Date
+  // objects. A Date has no enumerable own properties, so the object walk below would
+  // silently erase it to {}; return it untouched instead.
+  if (value instanceof Date) return value
   if (typeof value === 'object' && value !== null) {
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, convertAdf(item, attachments)]))
   }
