@@ -80,7 +80,7 @@ const isEmptyCustomField = (key: string, value: unknown): boolean =>
  */
 export const processIssueRenderedAndFields = (issue: Issue): void => {
   const fieldsObj = (issue.fields || {}) as Record<string, unknown>
-  const renderedFields = (issue.renderedFields ?? {}) as Record<string, unknown>
+  const renderedFields = issue.renderedFields ?? {}
   const merged: Record<string, unknown> = {}
   const attachments = attachmentsOf(fieldsObj)
 
@@ -118,7 +118,7 @@ export const processIssueRenderedAndFields = (issue: Issue): void => {
     merged.description = ''
   }
 
-  issue.fields = merged as typeof issue.fields
+  issue.fields = merged
   issue.renderedFields = {}
 }
 

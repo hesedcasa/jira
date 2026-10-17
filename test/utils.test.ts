@@ -1,6 +1,7 @@
 import type {Issue} from 'jira.js/cloud'
 
 import {expect} from 'chai'
+import {IssueSchema} from 'jira.js/cloud/models'
 
 import {defaultFields, duplicateFieldsError, parseKeyValuePairs, processIssueRenderedAndFields} from '../src/utils.js'
 
@@ -248,6 +249,29 @@ describe('utils', () => {
         updated: '2026-09-29T00:02:40.373+0800',
       })
       expect(issue.renderedFields).to.be.empty
+    })
+
+    it('keeps the Date objects jira.js 6.3 parses into created/updated', () => {
+      // jira.js 6.3 validates responses through zod, whose schemas coerce datetime fields
+      // into Date instances. A Date has no enumerable own properties, so the object walk
+      // in the converter must not treat it as a plain object to rebuild.
+      const issue = IssueSchema.parse({
+        fields: {
+          created: '2026-09-25T16:32:00.000+0800',
+          summary: 'Test summary',
+          updated: '2026-09-29T00:02:40.373+0800',
+        },
+        id: '10001',
+        key: 'TEST-1',
+      }) as unknown as Issue
+
+      processIssueRenderedAndFields(issue)
+
+      const fields = issue.fields as unknown as Record<string, unknown>
+      expect(fields.created).to.be.an.instanceOf(Date)
+      expect(fields.created).to.deep.equal(new Date('2026-09-25T08:32:00.000Z'))
+      expect(fields.updated).to.be.an.instanceOf(Date)
+      expect(fields.updated).to.deep.equal(new Date('2026-09-28T16:02:40.373Z'))
     })
 
     it('links embedded media in the description to the issue attachment', () => {

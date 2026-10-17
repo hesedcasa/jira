@@ -208,7 +208,8 @@ describe('AgileApi', () => {
         const url = new URL(fetched.urls[0])
         expect(url.pathname).to.equal('/rest/software/1.0/board/1/backlog')
         expect(url.searchParams.get('nextPageToken')).to.equal('page-1')
-        expect(url.searchParams.getAll('fields')).to.include('summary')
+        // jira.js 6.3 serialises the fields list as one comma-separated query value.
+        expect(url.searchParams.get('fields')?.split(',')).to.include('summary')
       } finally {
         fetched.restore()
       }
