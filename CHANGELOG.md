@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.0](https://github.com/hesedcasa/jira/compare/v1.3.3...v1.4.0) (2026-10-17)
+
+
+### 🎉 Features
+
+* **issue:** read long text from a file instead of argv ([#186](https://github.com/hesedcasa/jira/issues/186)) ([a271865](https://github.com/hesedcasa/jira/commit/a271865d51670471ddaf99fd91e1e630b4c1f657))
+
+
+### 🛠️ Fixes
+
+* **markdown:** close bold before a line break the next line doesn't continue ([#188](https://github.com/hesedcasa/jira/issues/188)) ([66aa2f7](https://github.com/hesedcasa/jira/commit/66aa2f765008d4df06c583341ece72886f73ef5f))
+
 ## [1.3.3](https://github.com/hesedcasa/jira/compare/v1.3.2...v1.3.3) (2026-10-05)
 
 
