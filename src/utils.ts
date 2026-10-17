@@ -1,4 +1,5 @@
 import {type Issue} from 'jira.js/cloud'
+import {readFile} from 'node:fs/promises'
 import TurndownService from 'turndown'
 
 import {type AdfAttachment, adfToMarkdown, codeSpan, isAdfDocument} from './adf-to-markdown.js'
@@ -122,18 +123,49 @@ export const processIssueRenderedAndFields = (issue: Issue): void => {
 }
 
 /**
- * Parse repeated `key=value` flag values into a map, splitting on the first `=`
- * so a value may itself contain `=`.
+ * Read a text file, or stdin when `path` is `-`. Large text goes through a file
+ * rather than argv because endpoint security agents (e.g. SentinelOne) block
+ * processes with huge command lines — which is what `"$(cat file)"` produces.
+ *
+ * stdin is read as a stream: a synchronous read of fd 0 fails with EAGAIN once
+ * anything has put it into non-blocking mode.
  */
-export const parseKeyValuePairs = (pairs: readonly string[] = []): Record<string, string> => {
+const readTextFile = async (path: string): Promise<string> => {
+  try {
+    if (path !== '-') return await readFile(path, 'utf8')
+    process.stdin.setEncoding('utf8')
+    let text = ''
+    for await (const chunk of process.stdin) text += chunk as string
+    return text
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error)
+    throw new Error(`Could not read ${path === '-' ? 'stdin' : path}: ${reason}`, {cause: error})
+  }
+}
+
+/**
+ * The value itself, or the contents of `<path>` when it is `@<path>` (`@-` reads
+ * stdin, see {@link readTextFile}), as conni's `--fields` does; `@@` escapes a
+ * literal leading `@`.
+ */
+export const readTextValue = async (value: string): Promise<string> =>
+  value.startsWith('@@') ? value.slice(1) : value.startsWith('@') ? readTextFile(value.slice(1)) : value
+
+/**
+ * Parse repeated `key=value` flag values into a map, splitting on the first `=`
+ * so a value may itself contain `=`. Each value goes through {@link readTextValue}.
+ */
+export const parseKeyValuePairs = async (pairs: readonly string[] = []): Promise<Record<string, string>> => {
   const result: Record<string, string> = {}
   for (const pair of pairs) {
     const [key, ...valueParts] = pair.split('=')
+    // eslint-disable-next-line no-await-in-loop -- sequential, so a single @- consumes stdin once
+    const value = await readTextValue(valueParts.join('='))
     // defineProperty, not assignment: a key such as `__proto__` must stay an ordinary own property.
     Object.defineProperty(result, key, {
       configurable: true,
       enumerable: true,
-      value: valueParts.join('='),
+      value,
       writable: true,
     })
   }

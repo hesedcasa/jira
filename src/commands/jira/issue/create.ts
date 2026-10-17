@@ -12,12 +12,13 @@ export default class IssueCreate extends BaseCommand {
     '<%= config.bin %> <%= command.id %> --fields project=\'{"key":"PROJ"}\' summary="New summary" description="New description" issuetype=\'{"name":"Dev Task"}\'',
     '<%= config.bin %> <%= command.id %> --fields project=\'{"key":"PROJ"}\' summary="New summary" timetracking=\'{"originalEstimate": "5h"}\' issuetype=\'{"name":"Task"}\' description=\'\n# Header\n## Sub-header\n- Item 1\n- Item 2\n```bash\nls -a\n```\'',
     '<%= config.bin %> <%= command.id %> --fields project=\'{"key":"PROJ"}\' issuetype=\'{"name":"Task"}\' --text-fields \'summary=[1, 2] is a list\' \'description=[1, 2]\'',
+    '<%= config.bin %> <%= command.id %> --fields project=\'{"key":"PROJ"}\' summary="New summary" description=@description.md issuetype=\'{"name":"Task"}\'',
   ]
 
   static override flags = {
     fields: Flags.string({
       description:
-        'Minimum fields required (from --fields or --text-fields): project, summary, description & issuetype. Values starting with { or [ are parsed as JSON',
+        'Minimum fields required (from --fields or --text-fields): project, summary, description & issuetype. Values starting with { or [ are parsed as JSON. A value of @<path> is read from that file (@- for stdin; @@ for a literal @)',
       multiple: true,
       required: false,
       summary: 'Issue fields in key=value format',
@@ -41,8 +42,8 @@ export default class IssueCreate extends BaseCommand {
       this.error(`Missing authentication config.`)
     }
 
-    const fields = parseKeyValuePairs(flags.fields)
-    const textFields = parseKeyValuePairs(flags['text-fields'])
+    const fields = await parseKeyValuePairs(flags.fields)
+    const textFields = await parseKeyValuePairs(flags['text-fields'])
 
     const duplicateError = duplicateFieldsError(fields, textFields)
     if (duplicateError) {

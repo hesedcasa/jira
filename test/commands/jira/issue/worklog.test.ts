@@ -2,6 +2,9 @@
 /* eslint-disable new-cap */
 import {expect} from 'chai'
 import esmock from 'esmock'
+import {mkdtempSync, rmSync, writeFileSync} from 'node:fs'
+import {tmpdir} from 'node:os'
+import path from 'node:path'
 
 import {createMockConfig} from '../../../helpers/config-mock.js'
 
@@ -145,5 +148,34 @@ describe('issue:worklog', () => {
     await command.run()
 
     expect(clearClientsCalled).to.be.true
+  })
+
+  it('reads the worklog comment from an @<path> comment', async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'jira-worklog-'))
+    const file = path.join(dir, 'notes.md')
+    writeFileSync(file, 'notes from file')
+    let capturedComment: string | undefined
+
+    IssueWorklog = await esmock('../../../../src/commands/jira/issue/worklog.js', {
+      '../../../../src/jira/jira-client.js': {
+        clearClients: mockClearClients,
+        async worklog(...args: any[]) {
+          capturedComment = args[4]
+          return {data: {id: '10001'}, success: true}
+        },
+      },
+      '@hesed/plugin-lib': {createProfileManager: mockCreateProfileManager},
+    })
+
+    try {
+      await new IssueWorklog.default(
+        ['TEST-123', '2024-01-01T10:00:00.000+0000', '1h', `@${file}`],
+        createMockConfig(),
+      ).run()
+    } finally {
+      rmSync(dir, {force: true, recursive: true})
+    }
+
+    expect(capturedComment).to.equal('notes from file')
   })
 })

@@ -1,8 +1,17 @@
 import type {Issue} from 'jira.js/cloud'
 
 import {expect} from 'chai'
+import {mkdtempSync, rmSync, writeFileSync} from 'node:fs'
+import {tmpdir} from 'node:os'
+import path from 'node:path'
 
-import {defaultFields, duplicateFieldsError, parseKeyValuePairs, processIssueRenderedAndFields} from '../src/utils.js'
+import {
+  defaultFields,
+  duplicateFieldsError,
+  parseKeyValuePairs,
+  processIssueRenderedAndFields,
+  readTextValue,
+} from '../src/utils.js'
 
 describe('utils', () => {
   describe('defaultFields', () => {
@@ -307,20 +316,20 @@ describe('utils', () => {
     })
   })
 
-  describe('parseKeyValuePairs', () => {
-    it('splits on the first = only', () => {
-      expect(parseKeyValuePairs(['summary=a=b', 'labels=["a"]'])).to.deep.equal({labels: '["a"]', summary: 'a=b'})
+  describe('parseKeyValuePairs', async () => {
+    it('splits on the first = only', async () => {
+      expect(await parseKeyValuePairs(['summary=a=b', 'labels=["a"]'])).to.deep.equal({labels: '["a"]', summary: 'a=b'})
     })
 
-    it('keeps a __proto__ key as an ordinary own property', () => {
-      const parsed = parseKeyValuePairs(['__proto__=x'])
+    it('keeps a __proto__ key as an ordinary own property', async () => {
+      const parsed = await parseKeyValuePairs(['__proto__=x'])
       expect(Object.hasOwn(parsed, '__proto__')).to.be.true
       expect(Object.keys(parsed)).to.deep.equal(['__proto__'])
-      expect(duplicateFieldsError(parsed, parseKeyValuePairs(['__proto__=y']))).to.include('__proto__')
+      expect(duplicateFieldsError(parsed, await parseKeyValuePairs(['__proto__=y']))).to.include('__proto__')
     })
 
-    it('returns an empty map when no pairs are given', () => {
-      expect(parseKeyValuePairs()).to.deep.equal({})
+    it('returns an empty map when no pairs are given', async () => {
+      expect(await parseKeyValuePairs()).to.deep.equal({})
     })
   })
 
@@ -333,6 +342,46 @@ describe('utils', () => {
 
     it('is undefined when the maps do not overlap', () => {
       expect(duplicateFieldsError({a: '1'}, {b: '2'})).to.be.undefined
+    })
+  })
+
+  describe('file input', () => {
+    let dir: string
+    let file: string
+
+    beforeEach(() => {
+      dir = mkdtempSync(path.join(tmpdir(), 'jira-utils-'))
+      file = path.join(dir, 'value.md')
+      writeFileSync(file, 'from file')
+    })
+
+    afterEach(() => {
+      rmSync(dir, {force: true, recursive: true})
+    })
+
+    it('parseKeyValuePairs reads an @<path> value from the file', async () => {
+      expect(await parseKeyValuePairs([`description=@${file}`, 'summary=plain'])).to.deep.equal({
+        description: 'from file',
+        summary: 'plain',
+      })
+    })
+
+    it('parseKeyValuePairs keeps a literal leading @ escaped as @@', async () => {
+      expect(await parseKeyValuePairs(['description=@@team please review'])).to.deep.equal({
+        description: '@team please review',
+      })
+    })
+
+    it('readTextValue names the path when it cannot be read', async () => {
+      const error = await readTextValue(`@${path.join(dir, 'missing.md')}`).catch((error_: Error) => error_)
+      expect(error).to.be.instanceOf(Error)
+      expect((error as Error).message).to.include('missing.md')
+    })
+
+    it('readTextValue reads @<path>, unescapes @@ and passes anything else through', async () => {
+      expect(await readTextValue(`@${file}`)).to.equal('from file')
+      expect(await readTextValue('@@team')).to.equal('@team')
+      expect(await readTextValue('plain @ text')).to.equal('plain @ text')
     })
   })
 })
