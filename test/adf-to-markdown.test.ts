@@ -261,5 +261,11 @@ describe('adfToMarkdown', () => {
     it('keeps typed line breaks as newlines', () => {
       expect(roundTrip('alpha\nbravo')).to.equal('alpha\nbravo')
     })
+
+    it('closes a mark before a line break when the next line does not continue it', () => {
+      expect(roundTrip('From **stdin**\nsecond line')).to.equal('From **stdin**\nsecond line')
+      expect(roundTrip('***both***\n*em only*')).to.equal('***both***\n*em only*')
+      expect(roundTrip('**bold** \nnext')).to.equal('**bold**\nnext')
+    })
   })
 })
