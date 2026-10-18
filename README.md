@@ -26,7 +26,7 @@ $ npm install -g @hesed/jira
 $ jira COMMAND
 running command...
 $ jira (--version)
-@hesed/jira/1.3.3 linux-x64 node-v22.23.3
+@hesed/jira/1.4.0 linux-x64 node-v22.23.3
 $ jira --help [COMMAND]
 USAGE
   $ jira COMMAND
@@ -97,7 +97,7 @@ EXAMPLES
   $ jira jira auth add -p prod
 ```
 
-_See code: [src/commands/jira/auth/add.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/auth/add.ts)_
+_See code: [src/commands/jira/auth/add.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/auth/add.ts)_
 
 ## `jira jira auth delete`
 
@@ -122,7 +122,7 @@ EXAMPLES
   $ jira jira auth delete -p prod
 ```
 
-_See code: [src/commands/jira/auth/delete.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/auth/delete.ts)_
+_See code: [src/commands/jira/auth/delete.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/auth/delete.ts)_
 
 ## `jira jira auth list`
 
@@ -142,7 +142,7 @@ EXAMPLES
   $ jira jira auth list
 ```
 
-_See code: [src/commands/jira/auth/list.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/auth/list.ts)_
+_See code: [src/commands/jira/auth/list.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/auth/list.ts)_
 
 ## `jira jira auth profile`
 
@@ -167,7 +167,7 @@ EXAMPLES
   $ jira jira auth profile --default test
 ```
 
-_See code: [src/commands/jira/auth/profile.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/auth/profile.ts)_
+_See code: [src/commands/jira/auth/profile.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/auth/profile.ts)_
 
 ## `jira jira auth test`
 
@@ -192,7 +192,7 @@ EXAMPLES
   $ jira jira auth test -p prod
 ```
 
-_See code: [src/commands/jira/auth/test.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/auth/test.ts)_
+_See code: [src/commands/jira/auth/test.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/auth/test.ts)_
 
 ## `jira jira auth update`
 
@@ -220,7 +220,7 @@ EXAMPLES
   $ jira jira auth update -p test
 ```
 
-_See code: [src/commands/jira/auth/update.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/auth/update.ts)_
+_See code: [src/commands/jira/auth/update.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/auth/update.ts)_
 
 ## `jira jira board [PROJECTID]`
 
@@ -248,7 +248,7 @@ EXAMPLES
   $ jira jira board PROJ
 ```
 
-_See code: [src/commands/jira/board/index.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/board/index.ts)_
+_See code: [src/commands/jira/board/index.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/board/index.ts)_
 
 ## `jira jira board backlogs BOARDID [JQL]`
 
@@ -280,7 +280,7 @@ EXAMPLES
   $ jira jira board backlogs 123 'timeestimate > 4h' --fields comment,creator,timeestimate
 ```
 
-_See code: [src/commands/jira/board/backlogs.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/board/backlogs.ts)_
+_See code: [src/commands/jira/board/backlogs.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/board/backlogs.ts)_
 
 ## `jira jira board sprint-issues BOARDID SPRINTID [JQL]`
 
@@ -314,7 +314,7 @@ EXAMPLES
   $ jira jira board sprint-issues 123 3068 'timeestimate > 4h' --fields comment,creator,timeestimate
 ```
 
-_See code: [src/commands/jira/board/sprint-issues.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/board/sprint-issues.ts)_
+_See code: [src/commands/jira/board/sprint-issues.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/board/sprint-issues.ts)_
 
 ## `jira jira board sprints BOARDID`
 
@@ -343,7 +343,7 @@ EXAMPLES
   $ jira jira board sprints 123 --state active
 ```
 
-_See code: [src/commands/jira/board/sprints.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/board/sprints.ts)_
+_See code: [src/commands/jira/board/sprints.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/board/sprints.ts)_
 
 ## `jira jira board versions BOARDID`
 
@@ -372,7 +372,7 @@ EXAMPLES
   $ jira jira board versions 123 --released false
 ```
 
-_See code: [src/commands/jira/board/versions.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/board/versions.ts)_
+_See code: [src/commands/jira/board/versions.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/board/versions.ts)_
 
 ## `jira jira issue ISSUEID`
 
@@ -396,7 +396,7 @@ EXAMPLES
   $ jira jira issue PROJ-123
 ```
 
-_See code: [src/commands/jira/issue/index.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/index.ts)_
+_See code: [src/commands/jira/issue/index.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/index.ts)_
 
 ## `jira jira issue assign ISSUEID ACCOUNTID`
 
@@ -420,7 +420,7 @@ EXAMPLES
   $ jira jira issue assign PROJ-123 5b10ac8d82e05b22cc7d4ef5
 ```
 
-_See code: [src/commands/jira/issue/assign.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/assign.ts)_
+_See code: [src/commands/jira/issue/assign.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/assign.ts)_
 
 ## `jira jira issue attachment ISSUEID FILE`
 
@@ -445,7 +445,7 @@ EXAMPLES
   $ jira jira issue attachment PROJ-123 ./document.pdf
 ```
 
-_See code: [src/commands/jira/issue/attachment.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/attachment.ts)_
+_See code: [src/commands/jira/issue/attachment.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/attachment.ts)_
 
 ## `jira jira issue attachment-download ISSUEID ATTACHMENTID [OUTPUTPATH]`
 
@@ -473,7 +473,7 @@ EXAMPLES
   $ jira jira issue attachment-download PROJ-123 123 ~/Desktop/test.jpg
 ```
 
-_See code: [src/commands/jira/issue/attachment-download.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/attachment-download.ts)_
+_See code: [src/commands/jira/issue/attachment-download.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/attachment-download.ts)_
 
 ## `jira jira issue comment ISSUEID BODY`
 
@@ -485,7 +485,7 @@ USAGE
 
 ARGUMENTS
   ISSUEID  Issue ID or issue key
-  BODY     Comment text content
+  BODY     Comment text content. @<path> reads it from that file (@- for stdin; @@ for a literal @)
 
 FLAGS
   -p, --profile=<value>    Authentication profile name
@@ -500,7 +500,9 @@ EXAMPLES
   $ jira jira issue comment PROJ-123 "# Header
   - Item 1"
 
-  $ jira jira issue comment PROJ-123 "$(cat content.md)"
+  $ jira jira issue comment PROJ-123 @content.md
+
+  generate-report | jira jira issue comment PROJ-123 @-
 
   $ jira jira issue comment PROJ-123 "Here is the [bug](https://example.com/bug):
   ![screenshot](./screenshot.png)" --attach ./screenshot.png
@@ -513,7 +515,7 @@ EXAMPLES
   $ jira jira issue comment PROJ-123 "See also" --attach ./extra.png
 ```
 
-_See code: [src/commands/jira/issue/comment.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/comment.ts)_
+_See code: [src/commands/jira/issue/comment.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/comment.ts)_
 
 ## `jira jira issue comment-delete ISSUEID ID`
 
@@ -537,7 +539,7 @@ EXAMPLES
   $ jira jira issue comment-delete PROJ-123 123
 ```
 
-_See code: [src/commands/jira/issue/comment-delete.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/comment-delete.ts)_
+_See code: [src/commands/jira/issue/comment-delete.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/comment-delete.ts)_
 
 ## `jira jira issue comment-update ISSUEID ID BODY`
 
@@ -550,7 +552,7 @@ USAGE
 ARGUMENTS
   ISSUEID  Issue ID or issue key
   ID       Comment ID to delete
-  BODY     Comment text content
+  BODY     Comment text content. @<path> reads it from that file (@- for stdin; @@ for a literal @)
 
 FLAGS
   -p, --profile=<value>  Authentication profile name
@@ -569,10 +571,10 @@ EXAMPLES
   ls -a
   ```"
 
-  $ jira jira issue comment-update PROJ-123 123 "$(cat content.md)"
+  $ jira jira issue comment-update PROJ-123 123 @content.md
 ```
 
-_See code: [src/commands/jira/issue/comment-update.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/comment-update.ts)_
+_See code: [src/commands/jira/issue/comment-update.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/comment-update.ts)_
 
 ## `jira jira issue create`
 
@@ -605,11 +607,13 @@ EXAMPLES
 
   $ jira jira issue create --fields project='{"key":"PROJ"}' issuetype='{"name":"Task"}' --text-fields 'summary=[1, 2] is a list' 'description=[1, 2]'
 
+  $ jira jira issue create --fields project='{"key":"PROJ"}' summary="New summary" description=@description.md issuetype='{"name":"Task"}'
+
 FLAG DESCRIPTIONS
   --fields=<value>...  Issue fields in key=value format
 
     Minimum fields required (from --fields or --text-fields): project, summary, description & issuetype. Values starting
-    with { or [ are parsed as JSON
+    with { or [ are parsed as JSON. A value of @<path> is read from that file (@- for stdin; @@ for a literal @)
 
   --text-fields=<value>...  Issue fields in key=value format, sent as literal strings
 
@@ -617,7 +621,7 @@ FLAG DESCRIPTIONS
     appear in both --fields and --text-fields
 ```
 
-_See code: [src/commands/jira/issue/create.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/create.ts)_
+_See code: [src/commands/jira/issue/create.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/create.ts)_
 
 ## `jira jira issue delete ISSUEID`
 
@@ -640,7 +644,7 @@ EXAMPLES
   $ jira jira issue delete PROJ-123
 ```
 
-_See code: [src/commands/jira/issue/delete.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/delete.ts)_
+_See code: [src/commands/jira/issue/delete.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/delete.ts)_
 
 ## `jira jira issue dev ISSUEID`
 
@@ -666,7 +670,7 @@ EXAMPLES
   $ jira jira issue dev 12345 --application-type bitbucket --data-type repository
 ```
 
-_See code: [src/commands/jira/issue/dev.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/dev.ts)_
+_See code: [src/commands/jira/issue/dev.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/dev.ts)_
 
 ## `jira jira issue link ISSUEID LINKEDISSUEID`
 
@@ -696,7 +700,7 @@ EXAMPLES
   $ jira jira issue link PROJ-123 PROJ-456 --type Duplicate --comment "Same root cause"
 ```
 
-_See code: [src/commands/jira/issue/link.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/link.ts)_
+_See code: [src/commands/jira/issue/link.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/link.ts)_
 
 ## `jira jira issue search JQL`
 
@@ -727,7 +731,7 @@ EXAMPLES
   $ jira jira issue search 'timeestimate > 4h' --fields comment,creator,timeestimate
 ```
 
-_See code: [src/commands/jira/issue/search.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/search.ts)_
+_See code: [src/commands/jira/issue/search.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/search.ts)_
 
 ## `jira jira issue transition ISSUEID TRANSITIONID`
 
@@ -751,7 +755,7 @@ EXAMPLES
   $ jira jira issue transition PROJ-123 123
 ```
 
-_See code: [src/commands/jira/issue/transition.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/transition.ts)_
+_See code: [src/commands/jira/issue/transition.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/transition.ts)_
 
 ## `jira jira issue transitions ISSUEID`
 
@@ -775,7 +779,7 @@ EXAMPLES
   $ jira jira issue transitions PROJ-123
 ```
 
-_See code: [src/commands/jira/issue/transitions.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/transitions.ts)_
+_See code: [src/commands/jira/issue/transitions.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/transitions.ts)_
 
 ## `jira jira issue update ISSUEID`
 
@@ -791,10 +795,12 @@ ARGUMENTS
 FLAGS
   -p, --profile=<value>         Authentication profile name
       --fields=<value>...       Issue fields to update in key=value format. Values starting with { or [ are parsed as
-                                JSON. At least one of --fields or --text-fields is required
+                                JSON. A value of @<path> is read from that file (@- for stdin; @@ for a literal @). At
+                                least one of --fields or --text-fields is required
       --text-fields=<value>...  Issue fields to update in key=value format, sent as literal strings: the value is never
                                 JSON-parsed. Rich-text fields (description, ADF custom fields) are still converted from
-                                Markdown. A key may not appear in both --fields and --text-fields
+                                Markdown. @<path> reads the value from a file. A key may not appear in both --fields and
+                                --text-fields
 
 DESCRIPTION
   Update an existing issue
@@ -811,14 +817,14 @@ EXAMPLES
   ls -a
   ```'
 
-  $ jira jira issue update PROJ-123 --fields description="$(cat content.md)"
+  $ jira jira issue update PROJ-123 --fields description=@content.md
 
   $ jira jira issue update PROJ-123 --fields timetracking='{"originalEstimate": "5h"}'
 
   $ jira jira issue update PROJ-123 --text-fields 'summary={"fix":"login"}'
 ```
 
-_See code: [src/commands/jira/issue/update.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/update.ts)_
+_See code: [src/commands/jira/issue/update.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/update.ts)_
 
 ## `jira jira issue worklog ISSUEID STARTED TIMESPENT [COMMENT]`
 
@@ -832,7 +838,7 @@ ARGUMENTS
   ISSUEID    Issue ID or issue key
   STARTED    Datetime the worklog effort started
   TIMESPENT  Time spent working on the issue
-  [COMMENT]  Comment text content
+  [COMMENT]  Comment text content. @<path> reads it from that file (@- for stdin; @@ for a literal @)
 
 FLAGS
   -p, --profile=<value>  Authentication profile name
@@ -849,9 +855,11 @@ EXAMPLES
   $ jira jira issue worklog PROJ-123 $(date +"%Y-%m-%dT%H:%M:%S.000%z") 6h "Fix test"
 
   $ jira jira issue worklog PROJ-123 $(date +"%Y-%m-%dT08:30:00.000%z") 6h
+
+  $ jira jira issue worklog PROJ-123 2026-02-03T12:34:00.000+0000 2h @notes.md
 ```
 
-_See code: [src/commands/jira/issue/worklog.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/worklog.ts)_
+_See code: [src/commands/jira/issue/worklog.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/worklog.ts)_
 
 ## `jira jira issue worklog-delete ISSUEID ID`
 
@@ -875,7 +883,7 @@ EXAMPLES
   $ jira jira issue worklog-delete PROJ-123 123
 ```
 
-_See code: [src/commands/jira/issue/worklog-delete.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/worklog-delete.ts)_
+_See code: [src/commands/jira/issue/worklog-delete.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/worklog-delete.ts)_
 
 ## `jira jira issue worklogs ISSUEID`
 
@@ -901,7 +909,7 @@ EXAMPLES
   $ jira jira issue worklogs PROJ-123
 ```
 
-_See code: [src/commands/jira/issue/worklogs.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/issue/worklogs.ts)_
+_See code: [src/commands/jira/issue/worklogs.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/issue/worklogs.ts)_
 
 ## `jira jira project PROJECTID`
 
@@ -925,7 +933,7 @@ EXAMPLES
   $ jira jira project PROJ
 ```
 
-_See code: [src/commands/jira/project/index.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/project/index.ts)_
+_See code: [src/commands/jira/project/index.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/project/index.ts)_
 
 ## `jira jira project list`
 
@@ -946,7 +954,7 @@ EXAMPLES
   $ jira jira project list
 ```
 
-_See code: [src/commands/jira/project/list.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/project/list.ts)_
+_See code: [src/commands/jira/project/list.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/project/list.ts)_
 
 ## `jira jira user [ACCOUNTID]`
 
@@ -977,7 +985,7 @@ EXAMPLES
   $ jira jira user -q john@email.com
 ```
 
-_See code: [src/commands/jira/user/index.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/user/index.ts)_
+_See code: [src/commands/jira/user/index.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/user/index.ts)_
 
 ## `jira jira user list-assignable ISSUEID`
 
@@ -1004,5 +1012,5 @@ EXAMPLES
   $ jira jira user list-assignable PROJ-123 -q john
 ```
 
-_See code: [src/commands/jira/user/list-assignable.ts](https://github.com/hesedcasa/jira/blob/v1.3.3/src/commands/jira/user/list-assignable.ts)_
+_See code: [src/commands/jira/user/list-assignable.ts](https://github.com/hesedcasa/jira/blob/v1.4.0/src/commands/jira/user/list-assignable.ts)_
 <!-- commandsstop -->
