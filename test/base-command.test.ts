@@ -1,5 +1,8 @@
+import {type Config} from '@oclif/core'
 import {expect} from 'chai'
 import esmock from 'esmock'
+
+import {BaseCommand} from '../src/base-command.js'
 
 describe('BaseCommand', () => {
   let originalExitCode: NodeJS.Process['exitCode']
@@ -13,7 +16,7 @@ describe('BaseCommand', () => {
   })
 
   async function runWithResult(result: unknown): Promise<void> {
-    const {BaseCommand} = await esmock('../src/base-command.js', {
+    const {BaseCommand: MockedBaseCommand} = await esmock('../src/base-command.js', {
       '@oclif/core': {
         Command: class {
           protected async _run(): Promise<unknown> {
@@ -23,7 +26,7 @@ describe('BaseCommand', () => {
       },
     })
 
-    class TestCommand extends BaseCommand {
+    class TestCommand extends MockedBaseCommand {
       public execute(): Promise<unknown> {
         return this._run()
       }
@@ -37,7 +40,7 @@ describe('BaseCommand', () => {
   }
 
   async function runWithThrown(thrown: unknown): Promise<void> {
-    const {BaseCommand} = await esmock('../src/base-command.js', {
+    const {BaseCommand: MockedBaseCommand} = await esmock('../src/base-command.js', {
       '@oclif/core': {
         Command: class {
           protected async _run(): Promise<unknown> {
@@ -65,13 +68,44 @@ describe('BaseCommand', () => {
       },
     })
 
-    class TestCommand extends BaseCommand {
+    class TestCommand extends MockedBaseCommand {
       public execute(): Promise<unknown> {
         return this._run()
       }
     }
 
     await new TestCommand().execute()
+  }
+
+  // Runs the command through the real, lockfile-pinned @oclif/core 5.1.2
+  // superclass (no esmock), so the override is exercised against the catch()
+  // the standalone leg actually resolves. The config only needs what _run's
+  // init touches; the JSON-mode error print goes through console.log.
+  async function runPinnedOclif(command_: (command: BaseCommand) => void): Promise<void> {
+    class TestCommand extends BaseCommand {
+      public execute(): Promise<unknown> {
+        return this._run()
+      }
+
+      public async run(): Promise<unknown> {
+        this.parsed = true
+        command_(this)
+        return undefined
+      }
+    }
+
+    const config = {
+      bin: 'jira',
+      scopedEnvVarKeys: () => [],
+    } as unknown as Config
+
+    const originalLog = console.log
+    console.log = () => {}
+    try {
+      await new TestCommand([], config).execute()
+    } finally {
+      console.log = originalLog
+    }
   }
 
   for (const exitCode of [undefined, 0]) {
@@ -106,5 +140,25 @@ describe('BaseCommand', () => {
     await runWithThrown(Object.assign(new Error('EEXIT: 7'), {code: 'EEXIT', oclif: {exit: 7}}))
 
     expect(process.exitCode).to.equal(7)
+  })
+
+  it('keeps the exit code of a real this.exit() under the pinned @oclif/core superclass', async () => {
+    process.exitCode = undefined
+
+    await runPinnedOclif((command: BaseCommand) => {
+      command.exit(7)
+    })
+
+    expect(process.exitCode).to.equal(7)
+  })
+
+  it('pins exitCode to 1 for a real CLIError under the pinned @oclif/core superclass', async () => {
+    process.exitCode = undefined
+
+    await runPinnedOclif((command: BaseCommand) => {
+      command.error('Missing authentication config.', {exit: 2})
+    })
+
+    expect(process.exitCode).to.equal(1)
   })
 })
