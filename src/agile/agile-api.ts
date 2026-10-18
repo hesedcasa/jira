@@ -2,6 +2,7 @@ import {type ApiResult, type AuthConfig} from '@hesed/plugin-lib'
 import {type AgileClient, createAgileClient} from 'jira.js'
 import {createClient} from 'jira.js/core'
 
+import {callJira, errorToApiResult} from '../api-result.js'
 import {configureFetchProxy} from '../proxy.js'
 import {defaultFields, processIssueRenderedAndFields} from '../utils.js'
 
@@ -30,22 +31,20 @@ export class AgileApi {
   async getAllBoards(projectKeyOrId?: string, maxResults = 10, startAt?: number): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      const boards = await client.board.getAllBoards({
-        maxResults,
-        projectKeyOrId,
-        startAt,
-      })
+      const boards = await callJira(async () =>
+        client.board.getAllBoards({
+          maxResults,
+          projectKeyOrId,
+          startAt,
+        }),
+      )
 
       return {
         data: boards,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -55,23 +54,21 @@ export class AgileApi {
   async getAllSprints(boardId: number, maxResults = 10, startAt?: number, state?: string): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      const boards = await client.board.getAllSprints({
-        boardId,
-        maxResults,
-        startAt,
-        state,
-      })
+      const boards = await callJira(async () =>
+        client.board.getAllSprints({
+          boardId,
+          maxResults,
+          startAt,
+          state,
+        }),
+      )
 
       return {
         data: boards,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -81,23 +78,21 @@ export class AgileApi {
   async getAllVersions(boardId: number, maxResults = 10, startAt?: number, released?: string): Promise<ApiResult> {
     try {
       const client = this.getClient()
-      const versions = await client.board.getAllVersions({
-        boardId,
-        maxResults,
-        released,
-        startAt,
-      })
+      const versions = await callJira(async () =>
+        client.board.getAllVersions({
+          boardId,
+          maxResults,
+          released,
+          startAt,
+        }),
+      )
 
       return {
         data: versions,
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -116,14 +111,16 @@ export class AgileApi {
     try {
       const client = this.getClient()
       const finalFields = [...new Set<string>([...(fields ?? []), ...defaultFields])]
-      const result = await client.board.getBoardIssuesForSprint({
-        boardId,
-        fields: finalFields,
-        jql,
-        maxResults,
-        nextPageToken,
-        sprintId,
-      })
+      const result = await callJira(async () =>
+        client.board.getBoardIssuesForSprint({
+          boardId,
+          fields: finalFields,
+          jql,
+          maxResults,
+          nextPageToken,
+          sprintId,
+        }),
+      )
 
       if (result.issues) {
         for (const issue of result.issues) {
@@ -140,11 +137,7 @@ export class AgileApi {
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 
@@ -184,13 +177,15 @@ export class AgileApi {
     try {
       const client = this.getClient()
       const finalFields = [...new Set<string>([...(fields ?? []), ...defaultFields])]
-      const result = await client.board.getIssuesForBacklog({
-        boardId,
-        fields: finalFields,
-        jql,
-        maxResults,
-        nextPageToken,
-      })
+      const result = await callJira(async () =>
+        client.board.getIssuesForBacklog({
+          boardId,
+          fields: finalFields,
+          jql,
+          maxResults,
+          nextPageToken,
+        }),
+      )
 
       if (result.issues) {
         for (const issue of result.issues) {
@@ -207,11 +202,7 @@ export class AgileApi {
         success: true,
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return {
-        error: errorMessage,
-        success: false,
-      }
+      return errorToApiResult(error)
     }
   }
 }
